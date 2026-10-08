@@ -7,6 +7,7 @@ import { makeRenderer } from "./gl.js";
 import { makeInput } from "./input.js";
 import { makeHud } from "./hud.js";
 import { makeGarage } from "./garage.js";
+import { makeStarMap, plusText } from "./starmap.js";
 
 const BUILD = "__BUILD__";
 const SAVE_KEY = "iron-vector.build";
@@ -44,20 +45,6 @@ function fillCopy(copy) {
       row.insertCell().textContent = does;
     }
   }
-  el("briefing-text").replaceChildren(
-    ...copy.briefing.map((t) => {
-      const p = document.createElement("p");
-      p.textContent = t;
-      return p;
-    }),
-  );
-  el("objectives").replaceChildren(
-    ...copy.objectives.map((t) => {
-      const li = document.createElement("li");
-      li.textContent = t;
-      return li;
-    }),
-  );
 }
 
 async function start() {
@@ -68,12 +55,14 @@ async function start() {
       "data/parts.json",
       "data/palette.json",
       "data/missions.json",
+      "data/planets.json",
       "data/pilots.json",
+      "data/units.json",
       "data/shaders/scene.vert",
       "data/shaders/scene.frag",
     ].map(file),
   );
-  const [copyText, controlsText, parts, palette, missions, pilots, vertex, fragment] = texts;
+  const [copyText, controlsText, parts, palette, missions, planets, pilots, units, vertex, fragment] = texts;
   const copy = JSON.parse(copyText);
   fillCopy(copy);
   await init();
@@ -81,7 +70,7 @@ async function start() {
 
   let game;
   try {
-    game = new Game(parts, palette, missions, pilots, storage.load());
+    game = new Game(parts, palette, missions, planets, pilots, units, storage.load());
   } catch (e) {
     el("message").textContent = String(e);
     document.body.dataset.ready = "true";
@@ -89,20 +78,43 @@ async function start() {
   }
 
   const canvas = el("view");
-  const renderer = makeRenderer(canvas, N, { vertex, fragment }, (id) => mesh(id), game.uniforms(), game.clear_color());
+  const renderer = makeRenderer(canvas, N, { vertex, fragment }, (id) => mesh(id));
   if (!renderer) el("message").textContent = copy.no_webgl;
   let sceneVersion = null;
 
+  const save = () => storage.save(game.saved());
   const hud = makeHud(copy);
-  const garage = makeGarage(game, copy, (text) => storage.save(text));
+  const garage = makeGarage(game, copy, save);
+  const starMap = makeStarMap(game, copy);
   const overlay = el("overlay");
   const input = makeInput(canvas, JSON.parse(controlsText), N.actions, () => {
     overlay.hidden = true;
   });
 
-  const screens = { garage: el("garage"), briefing: el("briefing"), debrief: el("debrief") };
+  const screens = { garage: el("garage"), select: el("select"), debrief: el("debrief") };
   let mode = null;
   let paused = null;
+
+  function showDebrief(d) {
+    el("debrief-mission").textContent = d.name;
+    el("debrief-title").textContent = d.success ? copy.debrief_success : copy.debrief_failure;
+    el("debrief-reason").textContent = d.reason ? copy[d.reason] : "";
+    el("d-time").textContent = `${d.seconds} s`;
+    el("d-ap").textContent = `${d.ap_kept_pct}%`;
+    el("d-kills").textContent = d.kills;
+    el("d-rank").textContent = d.rank;
+    el("d-rewards").replaceChildren(
+      ...d.rewards.map(([name, plus]) => {
+        const li = document.createElement("li");
+        li.className = plus ? "plus" : "";
+        li.textContent = `${plus ? copy.plus_won : copy.new_part}: ${name}`;
+        return li;
+      }),
+    );
+    const [rule, value] = d.plus || [];
+    el("d-plus").textContent = d.plus ? `${d.plus_met ? copy.plus_won : copy.plus_now} ${plusText(copy, rule, value)}` : "";
+    save();
+  }
 
   function showMode(h) {
     mode = h.mode;
@@ -114,31 +126,21 @@ async function start() {
     el("abort").hidden = !flying;
     if (!flying) input.release();
     if (mode === "garage") garage.draw(true);
-    if (mode === "debrief") {
-      const d = h.debrief;
-      el("debrief-title").textContent = d.success ? copy.debrief_success : copy.debrief_failure;
-      el("d-time").textContent = `${d.seconds} s`;
-      el("d-ap").textContent = `${d.ap_kept_pct}%`;
-      el("d-kills").textContent = d.kills;
-      el("d-rank").textContent = d.rank;
-    }
+    if (mode === "select") starMap.refresh();
+    if (mode === "debrief") showDebrief(h.debrief);
   }
 
-  el("to-briefing").addEventListener("click", () => game.briefing());
-  el("to-test").addEventListener("click", () => {
-    game.test_field();
+  const fly = (action) => () => {
+    action();
     input.engage();
-  });
-  el("briefing-back").addEventListener("click", () => game.to_garage());
-  el("launch").addEventListener("click", () => {
-    game.launch();
-    input.engage();
-  });
-  el("retry").addEventListener("click", () => {
-    game.launch();
-    input.engage();
-  });
+  };
+  el("to-map").addEventListener("click", () => game.star_map());
+  el("to-test").addEventListener("click", fly(() => game.test_field()));
+  el("map-back").addEventListener("click", () => game.leave_star_map());
+  el("launch").addEventListener("click", fly(() => game.launch()));
+  el("retry").addEventListener("click", fly(() => game.retry()));
   el("debrief-garage").addEventListener("click", () => game.to_garage());
+  el("debrief-map").addEventListener("click", () => game.star_map());
   el("abort").addEventListener("click", () => game.to_garage());
   el("start").addEventListener("click", () => input.engage());
   canvas.addEventListener("click", () => {
@@ -157,7 +159,7 @@ async function start() {
     game.advance(now, bits, dx, dy);
     if (renderer && game.scene_version() !== sceneVersion) {
       sceneVersion = game.scene_version();
-      renderer.setStatic(game.static_instances());
+      renderer.setScene(game.static_instances(), game.uniforms(), game.clear_color());
     }
     if (renderer) renderer.frame(game.view(), game.instances(), game.draws());
     const h = JSON.parse(game.hud());
@@ -166,6 +168,7 @@ async function start() {
       showMode(h);
     }
     if (mode === "sortie" || mode === "test") hud.update(h);
+    if (mode === "select") starMap.update(JSON.parse(game.star_map_info()).ready);
     requestAnimationFrame(frame);
   }
 

@@ -1,0 +1,3006 @@
+{
+ "_note": "The campaign. Planets open when the number of missions cleared reaches opens_at. A mission opens with its planet once every mission it requires is cleared. Each mission gives one part on its first clear and another for meeting its plus challenge, which is shown only after the first clear. Coordinates in metres: start and mech at are [x, z, yaw_deg]; unit at is [x, z, altitude], and an altitude below zero means on top of whatever stands there.",
+ "planets": [
+  {
+   "id": "halden",
+   "name": "HALDEN",
+   "opens_at": 0,
+   "blurb": "An industrial world of foundries and freight yards, and home port. Its towers are lit all night.",
+   "gimmick": "Standard gravity. A good place to learn the frame.",
+   "star": {
+    "color": [
+     86,
+     140,
+     210
+    ],
+    "band": [
+     210,
+     200,
+     170
+    ],
+    "size": 100,
+    "rings": false,
+    "moons": 1,
+    "glow": 0
+   },
+   "look": {
+    "sky": [
+     148,
+     166,
+     178
+    ],
+    "fog": [
+     160,
+     172,
+     178
+    ],
+    "ground": [
+     104,
+     100,
+     92
+    ],
+    "grid": [
+     84,
+     80,
+     74
+    ],
+    "buildings": [
+     [
+      120,
+      122,
+      124
+     ],
+     [
+      138,
+      134,
+      126
+     ],
+     [
+      100,
+      106,
+      112
+     ],
+     [
+      146,
+      142,
+      136
+     ],
+     [
+      86,
+      92,
+      98
+     ]
+    ],
+    "roof": [
+     70,
+     72,
+     76
+    ],
+    "window": [
+     228,
+     196,
+     128
+    ],
+    "windows": true,
+    "light_dir": [
+     -40,
+     100,
+     30
+    ],
+    "fog_near_m": 300,
+    "fog_far_m": 1400,
+    "ground_glow_pct": 0,
+    "stars": false,
+    "structure": [
+     90,
+     170,
+     255
+    ]
+   },
+   "climate": {
+    "gravity_pct": 100,
+    "traction_pct": 100,
+    "floor_dps": 0
+   },
+   "map": {
+    "seed": 20261008,
+    "width_m": 1400,
+    "length_m": 2400,
+    "cell_m": 80,
+    "street_m": 24,
+    "empty_pct": 20,
+    "min_h_m": 12,
+    "max_h_m": 60,
+    "tall_pct": 12,
+    "tall_h_m": 130,
+    "ceiling_m": 420,
+    "avenue_m": 70,
+    "style": "towers",
+    "clearings": [
+     {
+      "x_m": 0,
+      "z_m": 1000,
+      "r_m": 70
+     },
+     {
+      "x_m": -360,
+      "z_m": -300,
+      "r_m": 160
+     },
+     {
+      "x_m": 350,
+      "z_m": -800,
+      "r_m": 200
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "halden-1",
+     "name": "GUNSHIP SWEEP",
+     "scene": "Two contractor gunships are circling the freight avenue. Clear the sky over Halden.",
+     "kind": "destroy",
+     "start": [
+      0,
+      1000,
+      0
+     ],
+     "reward": "hd-kestrel",
+     "plus": {
+      "rule": "max_rounds",
+      "value": 10,
+      "reward": "cr-vane"
+     },
+     "units": [
+      {
+       "type": "heli",
+       "at": [
+        -60,
+        820,
+        70
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        80,
+        760,
+        85
+       ],
+       "wave": 0
+      }
+     ],
+     "time_limit_s": 300
+    },
+    {
+     "id": "halden-2",
+     "name": "SHAKEDOWN RUN",
+     "scene": "Your old wingmate bets you can't beat them down the avenue. Friendly race, no weapons.",
+     "kind": "race",
+     "start": [
+      -14,
+      1060,
+      0
+     ],
+     "reward": "ar-reed",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 52,
+      "reward": "lg-wisp"
+     },
+     "weapons": false,
+     "mechs": [
+      {
+       "name": "WREN · FRIEND",
+       "pilot": "racer",
+       "at": [
+        14,
+        1060,
+        0
+       ],
+       "ap_pct": 100,
+       "racer": true,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "rf-marrow",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "course": [
+      [
+       0,
+       900,
+       20
+      ],
+      [
+       24,
+       720,
+       35
+      ],
+      [
+       -24,
+       540,
+       55
+      ],
+      [
+       0,
+       360,
+       25
+      ],
+      [
+       28,
+       180,
+       70
+      ],
+      [
+       -20,
+       0,
+       40
+      ],
+      [
+       16,
+       -200,
+       25
+      ],
+      [
+       -26,
+       -420,
+       60
+      ],
+      [
+       10,
+       -640,
+       30
+      ],
+      [
+       0,
+       -860,
+       45
+      ]
+     ],
+     "time_limit_s": 180
+    },
+    {
+     "id": "halden-3",
+     "name": "HOLD THE YARDS",
+     "scene": "An invading column is rolling on the freight yards. If more than three depots fall, Halden's supply line goes with them.",
+     "kind": "defend",
+     "start": [
+      -360,
+      -145,
+      0
+     ],
+     "reward": "bt-comet",
+     "plus": {
+      "rule": "max_lost",
+      "value": 1,
+      "reward": "gn-ember"
+     },
+     "requires": [
+      "halden-1"
+     ],
+     "protect": [
+      {
+       "at": [
+        -360,
+        -300
+       ],
+       "size": [
+        22,
+        22,
+        34
+       ],
+       "ap": 2600
+      },
+      {
+       "at": [
+        -430,
+        -350
+       ],
+       "size": [
+        22,
+        22,
+        22
+       ],
+       "ap": 2600
+      },
+      {
+       "at": [
+        -290,
+        -350
+       ],
+       "size": [
+        22,
+        22,
+        22
+       ],
+       "ap": 2600
+      },
+      {
+       "at": [
+        -440,
+        -260
+       ],
+       "size": [
+        22,
+        22,
+        18
+       ],
+       "ap": 2600
+      },
+      {
+       "at": [
+        -280,
+        -260
+       ],
+       "size": [
+        22,
+        22,
+        18
+       ],
+       "ap": 2600
+      },
+      {
+       "at": [
+        -360,
+        -395
+       ],
+       "size": [
+        22,
+        22,
+        26
+       ],
+       "ap": 2600
+      }
+     ],
+     "may_lose": 3,
+     "units": [
+      {
+       "type": "tank",
+       "at": [
+        -360,
+        -150,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -210,
+        -300,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -360,
+        -450,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -510,
+        -300,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -301,
+        -161,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -221,
+        -358,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -418,
+        -438,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -498,
+        -241,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -360,
+        -180,
+        70
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -360,
+        -420,
+        70
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -330,
+        -152,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -217,
+        -252,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -247,
+        -399,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -389,
+        -447,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -502,
+        -347,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -472,
+        -200,
+        0
+       ],
+       "wave": 2
+      }
+     ],
+     "time_limit_s": 420
+    },
+    {
+     "id": "halden-4",
+     "name": "MIRROR MATCH",
+     "scene": "A rival contractor has copied your frame part for part. Prove the pilot matters.",
+     "kind": "duel",
+     "start": [
+      350,
+      -640,
+      0
+     ],
+     "reward": "sg-brand",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 50,
+      "reward": "mp-swarm"
+     },
+     "requires": [
+      "halden-2"
+     ],
+     "mechs": [
+      {
+       "name": "MIRROR",
+       "pilot": "duelist",
+       "at": [
+        350,
+        -960,
+        180
+       ],
+       "ap_pct": 100
+      }
+     ],
+     "time_limit_s": 300
+    }
+   ]
+  },
+  {
+   "id": "sere",
+   "name": "SERE",
+   "opens_at": 2,
+   "blurb": "A desert of red mesas under a sky full of sand. You will hear things before you see them.",
+   "gimmick": "Sandstorm: you see a few hundred metres at most.",
+   "star": {
+    "color": [
+     214,
+     120,
+     60
+    ],
+    "band": [
+     240,
+     190,
+     120
+    ],
+    "size": 118,
+    "rings": false,
+    "moons": 2,
+    "glow": 0
+   },
+   "look": {
+    "sky": [
+     196,
+     140,
+     92
+    ],
+    "fog": [
+     190,
+     132,
+     84
+    ],
+    "ground": [
+     176,
+     128,
+     84
+    ],
+    "grid": [
+     150,
+     104,
+     66
+    ],
+    "buildings": [
+     [
+      168,
+      92,
+      58
+     ],
+     [
+      150,
+      80,
+      52
+     ],
+     [
+      184,
+      108,
+      68
+     ],
+     [
+      136,
+      74,
+      50
+     ]
+    ],
+    "roof": [
+     120,
+     66,
+     44
+    ],
+    "window": [
+     255,
+     200,
+     120
+    ],
+    "windows": false,
+    "light_dir": [
+     60,
+     100,
+     -20
+    ],
+    "fog_near_m": 80,
+    "fog_far_m": 520,
+    "ground_glow_pct": 0,
+    "stars": false,
+    "structure": [
+     255,
+     210,
+     120
+    ]
+   },
+   "climate": {
+    "gravity_pct": 100,
+    "traction_pct": 90,
+    "floor_dps": 0
+   },
+   "map": {
+    "seed": 7713,
+    "width_m": 1800,
+    "length_m": 2400,
+    "cell_m": 110,
+    "street_m": 30,
+    "empty_pct": 45,
+    "min_h_m": 20,
+    "max_h_m": 70,
+    "tall_pct": 8,
+    "tall_h_m": 110,
+    "ceiling_m": 420,
+    "avenue_m": 90,
+    "style": "mesas",
+    "clearings": [
+     {
+      "x_m": 0,
+      "z_m": 1000,
+      "r_m": 80
+     },
+     {
+      "x_m": -450,
+      "z_m": 100,
+      "r_m": 120
+     },
+     {
+      "x_m": 450,
+      "z_m": -800,
+      "r_m": 200
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "sere-1",
+     "name": "CONVOY BREAK",
+     "scene": "A tank convoy is running the canyon road south with stolen reactor cores. Stop every one before it reaches the gate.",
+     "kind": "destroy",
+     "start": [
+      0,
+      1000,
+      0
+     ],
+     "reward": "lg-bastion",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 80,
+      "reward": "ar-bastion"
+     },
+     "units": [
+      {
+       "type": "tank",
+       "at": [
+        -10,
+        700,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        10,
+        660,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        -10,
+        620,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        10,
+        580,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        -10,
+        540,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        10,
+        500,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        -10,
+        460,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      },
+      {
+       "type": "tank",
+       "at": [
+        10,
+        420,
+        0
+       ],
+       "wave": 0,
+       "goal": [
+        0,
+        -1100
+       ]
+      }
+     ],
+     "time_limit_s": 240
+    },
+    {
+     "id": "sere-2",
+     "name": "GLASS NEST",
+     "scene": "Turrets dug into the mesa tops have closed the western pass. Break the nest; the gunships will come.",
+     "kind": "destroy",
+     "start": [
+      -450,
+      260,
+      180
+     ],
+     "reward": "hd-mantle",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 80,
+      "reward": "cr-citadel"
+     },
+     "units": [
+      {
+       "type": "turret",
+       "at": [
+        -450,
+        270,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -302,
+        185,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -302,
+        15,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -450,
+        -70,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -597,
+        14,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -597,
+        185,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -500,
+        60,
+        80
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -400,
+        140,
+        90
+       ],
+       "wave": 1
+      }
+     ],
+     "time_limit_s": 360
+    },
+    {
+     "id": "sere-3",
+     "name": "DUNE GAUNTLET",
+     "scene": "The canyon racers of Sere run blind through the sand. One has challenged you.",
+     "kind": "race",
+     "start": [
+      -14,
+      1050,
+      0
+     ],
+     "reward": "bt-titan",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 58,
+      "reward": "rj-hare"
+     },
+     "weapons": false,
+     "requires": [
+      "sere-1"
+     ],
+     "mechs": [
+      {
+       "name": "DUST · RIVAL",
+       "pilot": "racer_hot",
+       "at": [
+        14,
+        1050,
+        0
+       ],
+       "ap_pct": 100,
+       "racer": true,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "rf-marrow",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "course": [
+      [
+       0,
+       880,
+       18
+      ],
+      [
+       -30,
+       680,
+       30
+      ],
+      [
+       30,
+       480,
+       18
+      ],
+      [
+       -30,
+       280,
+       45
+      ],
+      [
+       30,
+       80,
+       20
+      ],
+      [
+       0,
+       -120,
+       70
+      ],
+      [
+       -34,
+       -340,
+       25
+      ],
+      [
+       34,
+       -560,
+       35
+      ],
+      [
+       -20,
+       -780,
+       20
+      ],
+      [
+       0,
+       -1000,
+       50
+      ]
+     ],
+     "time_limit_s": 180
+    },
+    {
+     "id": "sere-4",
+     "name": "THE SCORPION",
+     "scene": "A heavy frame with a shotgun has been taking convoys apart up close. Keep your distance, or don't.",
+     "kind": "duel",
+     "start": [
+      450,
+      -640,
+      0
+     ],
+     "reward": "gn-forge",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 75,
+      "reward": "lr-glint"
+     },
+     "requires": [
+      "sere-2",
+      "sere-3"
+     ],
+     "mechs": [
+      {
+       "name": "SCORPION",
+       "pilot": "brute",
+       "at": [
+        450,
+        -960,
+        180
+       ],
+       "ap_pct": 110,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "sg-brand",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       }
+      }
+     ],
+     "time_limit_s": 300
+    }
+   ]
+  },
+  {
+   "id": "spindle",
+   "name": "SPINDLE",
+   "opens_at": 5,
+   "blurb": "A ring of a world that broke apart, rebuilt around its own wreckage and spun for gravity. The ground curves up overhead.",
+   "gimmick": "Ring gravity: you are thrown outward onto the inside of the ring. Run far enough sideways and you come back round.",
+   "star": {
+    "color": [
+     150,
+     160,
+     176
+    ],
+    "band": [
+     110,
+     230,
+     255
+    ],
+    "size": 92,
+    "rings": true,
+    "moons": 0,
+    "glow": 0
+   },
+   "look": {
+    "sky": [
+     14,
+     18,
+     26
+    ],
+    "fog": [
+     26,
+     32,
+     44
+    ],
+    "ground": [
+     72,
+     78,
+     88
+    ],
+    "grid": [
+     110,
+     230,
+     255
+    ],
+    "buildings": [
+     [
+      90,
+      94,
+      102
+     ],
+     [
+      70,
+      74,
+      82
+     ],
+     [
+      110,
+      104,
+      96
+     ],
+     [
+      58,
+      62,
+      70
+     ]
+    ],
+    "roof": [
+     40,
+     44,
+     50
+    ],
+    "window": [
+     110,
+     230,
+     255
+    ],
+    "windows": true,
+    "light_dir": [
+     0,
+     100,
+     20
+    ],
+    "fog_near_m": 260,
+    "fog_far_m": 1200,
+    "ground_glow_pct": 0,
+    "stars": true,
+    "structure": [
+     255,
+     170,
+     80
+    ]
+   },
+   "climate": {
+    "gravity_pct": 100,
+    "traction_pct": 100,
+    "floor_dps": 0
+   },
+   "map": {
+    "seed": 5151,
+    "width_m": 1100,
+    "length_m": 3600,
+    "cell_m": 80,
+    "street_m": 26,
+    "empty_pct": 55,
+    "min_h_m": 8,
+    "max_h_m": 40,
+    "tall_pct": 10,
+    "tall_h_m": 95,
+    "ceiling_m": 150,
+    "style": "ruins",
+    "wrap": true,
+    "clearings": [
+     {
+      "x_m": 0,
+      "z_m": 1600,
+      "r_m": 80
+     },
+     {
+      "x_m": 0,
+      "z_m": 0,
+      "r_m": 150
+     },
+     {
+      "x_m": 0,
+      "z_m": -1400,
+      "r_m": 160
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "spindle-1",
+     "name": "SPIN-UP",
+     "scene": "Twelve survey drones went dark across the ring. Find and destroy them before their data is sold.",
+     "kind": "destroy",
+     "start": [
+      0,
+      1600,
+      0
+     ],
+     "reward": "hd-osprey",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 70,
+      "reward": "cr-spire"
+     },
+     "units": [
+      {
+       "type": "drone",
+       "at": [
+        0,
+        1450,
+        18
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        351,
+        1395,
+        31
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        -518,
+        1340,
+        44
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        412,
+        1285,
+        57
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        -90,
+        1230,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        -279,
+        1175,
+        43
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        502,
+        1120,
+        56
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        -461,
+        1065,
+        29
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        178,
+        1010,
+        42
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        198,
+        955,
+        55
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        -470,
+        900,
+        28
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        496,
+        845,
+        41
+       ],
+       "wave": 0
+      }
+     ],
+     "time_limit_s": 150
+    },
+    {
+     "id": "spindle-2",
+     "name": "COLD FLOW",
+     "scene": "Hold the central clearing while the station's last coolant flows through. Ninety seconds.",
+     "kind": "survive",
+     "start": [
+      0,
+      60,
+      0
+     ],
+     "reward": "ar-heron",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 70,
+      "reward": "lg-gale"
+     },
+     "units": [
+      {
+       "type": "turret",
+       "at": [
+        0,
+        140,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        140,
+        0,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        0,
+        -140,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -140,
+        0,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        110,
+        60
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        95,
+        -54,
+        60
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -95,
+        -55,
+        60
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        52,
+        96,
+        70
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        57,
+        -93,
+        70
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -109,
+        -2,
+        70
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        21,
+        107,
+        80
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        107,
+        -21,
+        80
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -21,
+        -107,
+        80
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -107,
+        21,
+        80
+       ],
+       "wave": 2
+      }
+     ],
+     "time_limit_s": 90
+    },
+    {
+     "id": "spindle-3",
+     "name": "LONG WAY ROUND",
+     "scene": "The ring's couriers race a full turn of the Spindle and on down the spin. Keep your head; the floor goes up.",
+     "kind": "race",
+     "start": [
+      -14,
+      1650,
+      0
+     ],
+     "reward": "bt-flare",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 62,
+      "reward": "rf-gatling"
+     },
+     "weapons": false,
+     "requires": [
+      "spindle-1"
+     ],
+     "mechs": [
+      {
+       "name": "ORBIT · COURIER",
+       "pilot": "racer_hot",
+       "at": [
+        14,
+        1650,
+        0
+       ],
+       "ap_pct": 100,
+       "racer": true,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-flare",
+        "generator": "gn-corona",
+        "right_weapon": "rf-marrow",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "course": [
+      [
+       0,
+       1500,
+       20
+      ],
+      [
+       120,
+       1270,
+       45
+      ],
+      [
+       240,
+       1040,
+       70
+      ],
+      [
+       360,
+       810,
+       20
+      ],
+      [
+       480,
+       580,
+       45
+      ],
+      [
+       -500,
+       350,
+       70
+      ],
+      [
+       -380,
+       120,
+       20
+      ],
+      [
+       -260,
+       -110,
+       45
+      ],
+      [
+       -140,
+       -340,
+       70
+      ],
+      [
+       -20,
+       -570,
+       20
+      ],
+      [
+       100,
+       -800,
+       45
+      ]
+     ],
+     "time_limit_s": 200
+    },
+    {
+     "id": "spindle-4",
+     "name": "KEEPER OF THE SPINDLE",
+     "scene": "The ring's keeper flies close to the axis and rains missiles down the curve. Bring it to the floor.",
+     "kind": "duel",
+     "start": [
+      0,
+      -1250,
+      0
+     ],
+     "reward": "bz-maul",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 100,
+      "reward": "gn-corona"
+     },
+     "requires": [
+      "spindle-2",
+      "spindle-3"
+     ],
+     "mechs": [
+      {
+       "name": "KEEPER",
+       "pilot": "keeper",
+       "at": [
+        0,
+        -1550,
+        180
+       ],
+       "ap_pct": 120,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-bulwark",
+        "arms": "ar-lancer",
+        "legs": "rj-hare",
+        "booster": "bt-comet",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "time_limit_s": 300
+    }
+   ]
+  },
+  {
+   "id": "rime",
+   "name": "RIME",
+   "opens_at": 8,
+   "blurb": "A pale moon of ice needles. Gravity is light and the ground gives no grip.",
+   "gimmick": "Low gravity and ice: jumps soar, and a frame slides into and out of every move.",
+   "star": {
+    "color": [
+     220,
+     236,
+     250
+    ],
+    "band": [
+     150,
+     200,
+     240
+    ],
+    "size": 86,
+    "rings": false,
+    "moons": 0,
+    "glow": 0
+   },
+   "look": {
+    "sky": [
+     8,
+     12,
+     26
+    ],
+    "fog": [
+     40,
+     56,
+     82
+    ],
+    "ground": [
+     214,
+     226,
+     236
+    ],
+    "grid": [
+     170,
+     196,
+     222
+    ],
+    "buildings": [
+     [
+      196,
+      220,
+      240
+     ],
+     [
+      170,
+      204,
+      236
+     ],
+     [
+      226,
+      236,
+      246
+     ],
+     [
+      150,
+      188,
+      226
+     ]
+    ],
+    "roof": [
+     240,
+     248,
+     255
+    ],
+    "window": [
+     120,
+     200,
+     255
+    ],
+    "windows": true,
+    "light_dir": [
+     30,
+     100,
+     60
+    ],
+    "fog_near_m": 360,
+    "fog_far_m": 1700,
+    "ground_glow_pct": 0,
+    "stars": true,
+    "structure": [
+     255,
+     120,
+     90
+    ]
+   },
+   "climate": {
+    "gravity_pct": 40,
+    "traction_pct": 22,
+    "floor_dps": 0
+   },
+   "map": {
+    "seed": 313,
+    "width_m": 1600,
+    "length_m": 2200,
+    "cell_m": 90,
+    "street_m": 26,
+    "empty_pct": 35,
+    "min_h_m": 30,
+    "max_h_m": 110,
+    "tall_pct": 25,
+    "tall_h_m": 220,
+    "ceiling_m": 520,
+    "style": "spires",
+    "clearings": [
+     {
+      "x_m": 0,
+      "z_m": 900,
+      "r_m": 90
+     },
+     {
+      "x_m": 0,
+      "z_m": 0,
+      "r_m": 200
+     },
+     {
+      "x_m": -400,
+      "z_m": -700,
+      "r_m": 160
+     },
+     {
+      "x_m": 400,
+      "z_m": -700,
+      "r_m": 200
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "rime-1",
+     "name": "WHITEOUT",
+     "scene": "Gunships and turrets hold the ice plain. Clear it; mind your footing.",
+     "kind": "destroy",
+     "start": [
+      0,
+      220,
+      0
+     ],
+     "reward": "hd-bastille",
+     "plus": {
+      "rule": "max_rounds",
+      "value": 40,
+      "reward": "cr-anvil"
+     },
+     "units": [
+      {
+       "type": "turret",
+       "at": [
+        0,
+        160,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        160,
+        0,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        0,
+        -160,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -160,
+        0,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        120,
+        90
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        120,
+        0,
+        90
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        -120,
+        90
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -120,
+        0,
+        90
+       ],
+       "wave": 1
+      }
+     ],
+     "time_limit_s": 360
+    },
+    {
+     "id": "rime-2",
+     "name": "SKATER",
+     "scene": "Rime's ice-racers run the needles low and fast. Little grip, less margin.",
+     "kind": "race",
+     "start": [
+      -14,
+      950,
+      0
+     ],
+     "reward": "ar-grip",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 60,
+      "reward": "rj-lynx"
+     },
+     "weapons": false,
+     "mechs": [
+      {
+       "name": "FROST · SKATER",
+       "pilot": "racer_hot",
+       "at": [
+        14,
+        950,
+        0
+       ],
+       "ap_pct": 100,
+       "racer": true,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-gale",
+        "booster": "bt-flare",
+        "generator": "gn-corona",
+        "right_weapon": "rf-marrow",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "course": [
+      [
+       0,
+       800,
+       12
+      ],
+      [
+       90,
+       600,
+       25
+      ],
+      [
+       120,
+       380,
+       15
+      ],
+      [
+       40,
+       160,
+       40
+      ],
+      [
+       -80,
+       0,
+       20
+      ],
+      [
+       -140,
+       -200,
+       30
+      ],
+      [
+       -60,
+       -420,
+       15
+      ],
+      [
+       60,
+       -620,
+       35
+      ],
+      [
+       180,
+       -760,
+       20
+      ],
+      [
+       400,
+       -700,
+       40
+      ]
+     ],
+     "time_limit_s": 180
+    },
+    {
+     "id": "rime-3",
+     "name": "THAW LINE",
+     "scene": "Raiders want the relay pylons on the western shelf. Lose two and the moon goes silent.",
+     "kind": "defend",
+     "start": [
+      -400,
+      -610,
+      0
+     ],
+     "reward": "bt-ram",
+     "plus": {
+      "rule": "max_lost",
+      "value": 0,
+      "reward": "gn-reactor"
+     },
+     "requires": [
+      "rime-1"
+     ],
+     "protect": [
+      {
+       "at": [
+        -400,
+        -700
+       ],
+       "size": [
+        18,
+        18,
+        40
+       ],
+       "ap": 3000
+      },
+      {
+       "at": [
+        -460,
+        -740
+       ],
+       "size": [
+        18,
+        18,
+        28
+       ],
+       "ap": 3000
+      },
+      {
+       "at": [
+        -340,
+        -740
+       ],
+       "size": [
+        18,
+        18,
+        28
+       ],
+       "ap": 3000
+      },
+      {
+       "at": [
+        -450,
+        -650
+       ],
+       "size": [
+        18,
+        18,
+        24
+       ],
+       "ap": 3000
+      },
+      {
+       "at": [
+        -350,
+        -650
+       ],
+       "size": [
+        18,
+        18,
+        24
+       ],
+       "ap": 3000
+      }
+     ],
+     "may_lose": 2,
+     "units": [
+      {
+       "type": "tank",
+       "at": [
+        -400,
+        -550,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -257,
+        -653,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -311,
+        -821,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -488,
+        -821,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -542,
+        -653,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -400,
+        -580,
+        80
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -296,
+        -760,
+        80
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -503,
+        -760,
+        80
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -355,
+        -556,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -250,
+        -697,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -351,
+        -841,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -520,
+        -789,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -522,
+        -613,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -315,
+        -576,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -250,
+        -711,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -335,
+        -835,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -484,
+        -823,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -549,
+        -688,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -464,
+        -564,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -342,
+        -594,
+        90
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -337,
+        -802,
+        90
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -519,
+        -702,
+        90
+       ],
+       "wave": 2
+      }
+     ],
+     "time_limit_s": 480,
+     "power_pct": 120
+    },
+    {
+     "id": "rime-4",
+     "name": "TWIN SHADOWS",
+     "scene": "Two light frames that fight as one. When one dodges, the other fires.",
+     "kind": "duel",
+     "start": [
+      400,
+      -540,
+      0
+     ],
+     "reward": "sg-thunder",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 40,
+      "reward": "mp-hydra"
+     },
+     "requires": [
+      "rime-2",
+      "rime-3"
+     ],
+     "mechs": [
+      {
+       "name": "SHADOW A",
+       "pilot": "twin",
+       "at": [
+        340,
+        -880,
+        180
+       ],
+       "ap_pct": 80,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "sg-brand",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      },
+      {
+       "name": "SHADOW B",
+       "pilot": "twin",
+       "at": [
+        460,
+        -880,
+        180
+       ],
+       "ap_pct": 80,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "time_limit_s": 360
+    }
+   ]
+  },
+  {
+   "id": "cinder",
+   "name": "CINDER",
+   "opens_at": 11,
+   "blurb": "A world of basalt columns standing in lava. The air is ash; the ground is death.",
+   "gimmick": "The floor burns: every second on the bare ground costs AP. Stay on the columns or in the air.",
+   "star": {
+    "color": [
+     60,
+     30,
+     26
+    ],
+    "band": [
+     255,
+     110,
+     30
+    ],
+    "size": 110,
+    "rings": false,
+    "moons": 1,
+    "glow": 1
+   },
+   "look": {
+    "sky": [
+     44,
+     18,
+     14
+    ],
+    "fog": [
+     70,
+     30,
+     20
+    ],
+    "ground": [
+     255,
+     96,
+     30
+    ],
+    "grid": [
+     255,
+     190,
+     80
+    ],
+    "buildings": [
+     [
+      52,
+      46,
+      46
+     ],
+     [
+      40,
+      36,
+      38
+     ],
+     [
+      64,
+      56,
+      52
+     ],
+     [
+      34,
+      30,
+      32
+     ]
+    ],
+    "roof": [
+     90,
+     40,
+     30
+    ],
+    "window": [
+     255,
+     120,
+     40
+    ],
+    "windows": false,
+    "light_dir": [
+     -20,
+     100,
+     -40
+    ],
+    "fog_near_m": 160,
+    "fog_far_m": 900,
+    "ground_glow_pct": 70,
+    "stars": false,
+    "structure": [
+     120,
+     220,
+     255
+    ]
+   },
+   "climate": {
+    "gravity_pct": 110,
+    "traction_pct": 100,
+    "floor_dps": 240
+   },
+   "map": {
+    "seed": 6660,
+    "width_m": 1600,
+    "length_m": 2200,
+    "cell_m": 70,
+    "street_m": 22,
+    "empty_pct": 30,
+    "min_h_m": 15,
+    "max_h_m": 80,
+    "tall_pct": 10,
+    "tall_h_m": 140,
+    "ceiling_m": 480,
+    "style": "pillars",
+    "clearings": [
+     {
+      "x_m": -400,
+      "z_m": -200,
+      "r_m": 140
+     },
+     {
+      "x_m": 300,
+      "z_m": -700,
+      "r_m": 180
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "cinder-1",
+     "name": "ASHFALL",
+     "scene": "Turrets on the columns are shelling the evacuation. Silence them without touching the floor more than you must.",
+     "kind": "destroy",
+     "start": [
+      0,
+      800,
+      0
+     ],
+     "reward": "hd-sentinel",
+     "plus": {
+      "rule": "max_floor_seconds",
+      "value": 3,
+      "reward": "cr-lattice"
+     },
+     "pads": [
+      {
+       "at": [
+        0,
+        800
+       ],
+       "size": [
+        40,
+        40,
+        30
+       ]
+      }
+     ],
+     "units": [
+      {
+       "type": "turret",
+       "at": [
+        0,
+        720,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        190,
+        610,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        190,
+        390,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        0,
+        280,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -190,
+        389,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -190,
+        610,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        650,
+        90
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        129,
+        425,
+        90
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -129,
+        424,
+        90
+       ],
+       "wave": 1
+      }
+     ],
+     "time_limit_s": 360
+    },
+    {
+     "id": "cinder-2",
+     "name": "EMBER RUN",
+     "scene": "A race through the columns. Touch the lava and it will cost you more than time.",
+     "kind": "race",
+     "start": [
+      -14,
+      900,
+      0
+     ],
+     "reward": "ar-titan",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 66,
+      "reward": "lg-monolith"
+     },
+     "weapons": false,
+     "pads": [
+      {
+       "at": [
+        0,
+        900
+       ],
+       "size": [
+        60,
+        40,
+        25
+       ]
+      }
+     ],
+     "mechs": [
+      {
+       "name": "SPARK · RIVAL",
+       "pilot": "racer_hot",
+       "at": [
+        14,
+        900,
+        0
+       ],
+       "ap_pct": 100,
+       "racer": true,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-gale",
+        "booster": "bt-flare",
+        "generator": "gn-corona",
+        "right_weapon": "rf-marrow",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "course": [
+      [
+       0,
+       760,
+       45
+      ],
+      [
+       -120,
+       600,
+       60
+      ],
+      [
+       -60,
+       400,
+       40
+      ],
+      [
+       100,
+       260,
+       70
+      ],
+      [
+       160,
+       60,
+       50
+      ],
+      [
+       40,
+       -120,
+       60
+      ],
+      [
+       -140,
+       -260,
+       45
+      ],
+      [
+       -60,
+       -460,
+       75
+      ],
+      [
+       140,
+       -560,
+       50
+      ],
+      [
+       300,
+       -700,
+       60
+      ]
+     ],
+     "time_limit_s": 180
+    },
+    {
+     "id": "cinder-3",
+     "name": "LAST FOUNDRY",
+     "scene": "The last four foundries on Cinder are all that make frames like yours. Crawlers are coming through the lava for them.",
+     "kind": "defend",
+     "start": [
+      -400,
+      -120,
+      0
+     ],
+     "reward": "bt-wisp",
+     "plus": {
+      "rule": "max_lost",
+      "value": 0,
+      "reward": "lr-spear"
+     },
+     "requires": [
+      "cinder-1"
+     ],
+     "pads": [
+      {
+       "at": [
+        -400,
+        -120
+       ],
+       "size": [
+        40,
+        30,
+        20
+       ]
+      }
+     ],
+     "protect": [
+      {
+       "at": [
+        -460,
+        -230
+       ],
+       "size": [
+        26,
+        26,
+        30
+       ],
+       "ap": 3200
+      },
+      {
+       "at": [
+        -340,
+        -230
+       ],
+       "size": [
+        26,
+        26,
+        30
+       ],
+       "ap": 3200
+      },
+      {
+       "at": [
+        -450,
+        -300
+       ],
+       "size": [
+        26,
+        26,
+        24
+       ],
+       "ap": 3200
+      },
+      {
+       "at": [
+        -350,
+        -300
+       ],
+       "size": [
+        26,
+        26,
+        24
+       ],
+       "ap": 3200
+      }
+     ],
+     "may_lose": 1,
+     "units": [
+      {
+       "type": "tank",
+       "at": [
+        -400,
+        -60,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -266,
+        -156,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -317,
+        -313,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -482,
+        -313,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -533,
+        -156,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -400,
+        -90,
+        80
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -304,
+        -254,
+        80
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -495,
+        -255,
+        80
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -358,
+        -66,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -263,
+        -168,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -304,
+        -302,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -441,
+        -333,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -536,
+        -231,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -495,
+        -97,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -400,
+        -90,
+        90
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -290,
+        -200,
+        90
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -400,
+        -310,
+        90
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -510,
+        -200,
+        90
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -320,
+        -84,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -260,
+        -210,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -339,
+        -326,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -479,
+        -315,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -539,
+        -189,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -460,
+        -73,
+        0
+       ],
+       "wave": 2
+      }
+     ],
+     "time_limit_s": 480,
+     "power_pct": 130
+    },
+    {
+     "id": "cinder-4",
+     "name": "IRON VECTOR",
+     "scene": "The contractor's ace, in the best frame money can buy, with two gunships at its shoulders. This is the job.",
+     "kind": "duel",
+     "start": [
+      300,
+      -560,
+      0
+     ],
+     "reward": "gc-quake",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 50,
+      "reward": "lc-halo"
+     },
+     "requires": [
+      "cinder-2",
+      "cinder-3"
+     ],
+     "pads": [
+      {
+       "at": [
+        300,
+        -560
+       ],
+       "size": [
+        50,
+        40,
+        30
+       ]
+      },
+      {
+       "at": [
+        300,
+        -860
+       ],
+       "size": [
+        50,
+        40,
+        30
+       ]
+      }
+     ],
+     "mechs": [
+      {
+       "name": "ACE · IRON VECTOR",
+       "pilot": "ace",
+       "at": [
+        300,
+        -860,
+        180
+       ],
+       "ap_pct": 130,
+       "loadout": {
+        "head": "hd-sentinel",
+        "core": "cr-lattice",
+        "arms": "ar-grip",
+        "legs": "rj-lynx",
+        "booster": "bt-ram",
+        "generator": "gn-reactor",
+        "right_weapon": "lr-spear",
+        "left_weapon": "rf-gatling",
+        "shoulder_weapon": "mp-hydra"
+       }
+      }
+     ],
+     "units": [
+      {
+       "type": "heli",
+       "at": [
+        220,
+        -820,
+        90
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        380,
+        -820,
+        90
+       ],
+       "wave": 0
+      }
+     ],
+     "time_limit_s": 420,
+     "power_pct": 130
+    }
+   ]
+  }
+ ]
+}

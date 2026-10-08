@@ -2,7 +2,7 @@
 //! (position, normal) pairs in Q16, centred on the origin and one unit across,
 //! so a box's model matrix carries its size.
 
-use crate::fx::ONE;
+use crate::fx::{self, ONE};
 use crate::geom::{v3, V3};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -11,10 +11,12 @@ pub enum Mesh {
     Wedge = 1,
     Octa = 2,
     Ground = 3,
+    /// a globe, for planets and moons on the star map
+    Sphere = 4,
 }
 
 impl Mesh {
-    pub const ALL: [Mesh; 4] = [Mesh::Cube, Mesh::Wedge, Mesh::Octa, Mesh::Ground];
+    pub const ALL: [Mesh; 5] = [Mesh::Cube, Mesh::Wedge, Mesh::Octa, Mesh::Ground, Mesh::Sphere];
 
     pub fn from_name(s: &str) -> Option<Mesh> {
         match s {
@@ -82,6 +84,38 @@ pub fn vertices(mesh: Mesh) -> Vec<i32> {
             let p = |x: i32, z: i32| v3(x * H, 0, z * H);
             push_quad(&mut o, p(-1, 1), p(1, 1), p(1, -1), p(-1, -1));
         }
+        Mesh::Sphere => {
+            // latitude and longitude bands; each vertex's normal is itself
+            const LAT: i32 = 10;
+            const LON: i32 = 16;
+            let at = |i: i32, j: i32| {
+                let lat = fx::HALF * i / LAT - fx::QUARTER;
+                let lon = fx::TURN * j / LON;
+                let r = fx::cos(lat);
+                v3(
+                    fx::mul(fx::mul(r, fx::cos(lon)), H),
+                    fx::mul(fx::sin(lat), H),
+                    fx::mul(fx::mul(r, -fx::sin(lon)), H),
+                )
+            };
+            let mut tri = |a: V3, b: V3, c: V3| {
+                for p in [a, b, c] {
+                    let n = p.norm();
+                    o.extend_from_slice(&[p.x, p.y, p.z, n.x, n.y, n.z]);
+                }
+            };
+            for i in 0..LAT {
+                for j in 0..LON {
+                    let (a, b, c, d) = (at(i, j), at(i, j + 1), at(i + 1, j + 1), at(i + 1, j));
+                    if i > 0 {
+                        tri(a, b, c);
+                    }
+                    if i < LAT - 1 {
+                        tri(a, c, d);
+                    }
+                }
+            }
+        }
     }
     o
 }
@@ -108,6 +142,7 @@ mod tests {
             (Mesh::Cube, V3::ZERO),
             (Mesh::Wedge, wedge_centre),
             (Mesh::Octa, V3::ZERO),
+            (Mesh::Sphere, V3::ZERO),
         ] {
             for [a, b, c, n] in tris(m) {
                 let centroid = v3(

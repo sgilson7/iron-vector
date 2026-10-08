@@ -48,13 +48,8 @@ pub struct Palette {
     pub note: String,
     pub schemes: Vec<Scheme>,
     pub enemy: Scheme,
-    pub sky: Rgb,
-    pub fog: Rgb,
-    pub ground: Rgb,
-    pub grid: Rgb,
-    pub buildings: Vec<Rgb>,
-    pub roof: Rgb,
-    pub window: Rgb,
+    /// the garage bay; each planet brings its own look
+    pub hangar: crate::campaign::Look,
     pub shadow: Rgb,
     pub flame: Rgb,
     pub flame_qb: Rgb,
@@ -64,9 +59,19 @@ pub struct Palette {
     pub enemy_shot: Rgb,
     pub blast: Rgb,
     pub drone: Rgb,
-    pub drone_eye: Rgb,
     pub beacon: Rgb,
-    pub light_dir: [i32; 3],
+    pub drone_eye: Rgb,
+    pub tank: Rgb,
+    pub turret: Rgb,
+    pub checkpoint: Rgb,
+    /// the cockpit and its star map
+    pub cockpit: Rgb,
+    pub cockpit_light: Rgb,
+    pub hologram: Rgb,
+    pub locked: Rgb,
+    pub open: Rgb,
+    pub cleared: Rgb,
+    pub plus: Rgb,
 }
 
 /// A colour in Q16, each channel 0 to ONE.
@@ -78,7 +83,7 @@ impl Palette {
     pub fn parse(json: &str) -> Result<Palette, String> {
         let p: Palette = serde_json::from_str(json).map_err(|e| format!("palette: {e}"))?;
         let schemes = p.schemes.iter().chain([&p.enemy]).flat_map(|s| s.channels());
-        for c in schemes.chain(p.buildings.iter().copied()) {
+        for c in schemes.chain(p.hangar.buildings.iter().copied()) {
             if c.iter().any(|v| !(0..=255).contains(v)) {
                 return Err(format!("palette: a colour channel is outside 0-255: {c:?}"));
             }
@@ -86,7 +91,7 @@ impl Palette {
         if p.schemes.is_empty() {
             return Err("palette: no paint schemes".into());
         }
-        if p.buildings.is_empty() {
+        if p.hangar.buildings.is_empty() {
             return Err("palette: no building colours".into());
         }
         Ok(p)
@@ -112,7 +117,6 @@ pub struct Proving {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Missions {
     pub proving: Proving,
-    pub mission: crate::mission::MissionSpec,
 }
 impl Missions {
     pub fn parse(json: &str) -> Result<Missions, String> {
@@ -145,8 +149,10 @@ pub(crate) mod tests {
 
     #[test]
     fn a_scheme_missing_a_paint_is_refused() {
-        let text = include_str!("../../../data/palette.json").replacen("\"glow\": [255, 168, 60], ", "", 1);
-        assert!(Palette::parse(&text).unwrap_err().contains("glow"));
+        let mut v: serde_json::Value =
+            serde_json::from_str(include_str!("../../../data/palette.json")).unwrap();
+        v["schemes"][0].as_object_mut().unwrap().remove("glow");
+        assert!(Palette::parse(&v.to_string()).unwrap_err().contains("glow"));
     }
 
     #[test]

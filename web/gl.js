@@ -24,7 +24,7 @@ function link(gl, vertexSource, fragmentSource) {
 }
 
 // Returns null when the browser has no WebGL 2; the page then says so.
-export function makeRenderer(canvas, N, shaders, meshData, uniformValues, clearColor) {
+export function makeRenderer(canvas, N, shaders, meshData) {
   const gl = canvas.getContext("webgl2", { antialias: true, powerPreference: "high-performance" });
   if (!gl) return null;
 
@@ -32,8 +32,6 @@ export function makeRenderer(canvas, N, shaders, meshData, uniformValues, clearC
   gl.useProgram(program);
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
-  const [r, g, b] = clearColor;
-  gl.clearColor(r, g, b, 1);
 
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
@@ -52,12 +50,7 @@ export function makeRenderer(canvas, N, shaders, meshData, uniformValues, clearC
   for (const a of instanceAttributes) gl.vertexAttribDivisor(a.loc, 1);
 
   const uniform = (name) => gl.getUniformLocation(program, name);
-  let at = 0;
-  for (const [name, size] of N.uniforms) {
-    const values = uniformValues.subarray(at, at + size);
-    gl[`uniform${size}fv`](uniform(name), values);
-    at += size;
-  }
+  const sceneUniforms = N.uniforms.map(([name, size]) => ({ loc: uniform(name), size }));
   const uVP = uniform("uVP");
   const uEye = uniform("uEye");
   const uGridOn = uniform("uGridOn");
@@ -67,10 +60,18 @@ export function makeRenderer(canvas, N, shaders, meshData, uniformValues, clearC
   const dynamicSlot = N.buffers.dynamic;
 
   return {
-    // The ground and buildings never move: uploaded once.
-    setStatic(values) {
+    // The ground and buildings never move: uploaded once a scene, with the
+    // scene's light, fog and sky.
+    setScene(values, uniformValues, clearColor) {
       gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffers[staticSlot]);
       gl.bufferData(gl.ARRAY_BUFFER, values, gl.STATIC_DRAW);
+      let at = 0;
+      for (const u of sceneUniforms) {
+        gl[`uniform${u.size}fv`](u.loc, uniformValues.subarray(at, at + u.size));
+        at += u.size;
+      }
+      const [r, g, b] = clearColor;
+      gl.clearColor(r, g, b, 1);
     },
     resize(width, height) {
       canvas.width = width;

@@ -1,26 +1,1028 @@
 {
-  "_note": "Enemy pilots. A pilot reads the world as a player would and returns only the controls a player could press. Its rules are tried top to bottom each time it thinks; the first whose condition holds is what it does. Conditions: staggered, missile_near, en_low, far, too_close, below_target, always. Actions: hold, dodge, recover, approach, retreat, climb, strafe.",
-  "frame": {
-    "think_ms": 250,
-    "aim_error_deg": 5,
-    "keep_min_m": 80,
-    "keep_max_m": 220,
-    "strafe_flip_ms": 2600,
-    "burst_ms": 900,
-    "pause_ms": 1500,
-    "missile_every_ms": 5500,
-    "shoulder_every_ms": 9000,
-    "dodge_range_m": 70,
-    "climb_gap_m": 25,
-    "en_low_pct": 22,
-    "rules": [
-      { "when": "staggered", "do": "hold" },
-      { "when": "missile_near", "do": "dodge" },
-      { "when": "en_low", "do": "recover" },
-      { "when": "far", "do": "approach" },
-      { "when": "too_close", "do": "retreat" },
-      { "when": "below_target", "do": "climb" },
-      { "when": "always", "do": "strafe" }
-    ]
+ "_note": "Enemy pilots, after vagrancy's behaviour trees. A tree's rules are tried top to bottom when the pilot is free; the first whose conditions all hold starts its move, and the pilot commits to the move until it ends unless an interrupt rule holds. A move is beats of keys over ticks (60 a second): fwd, back, left, right, ascend, quick_boost, glide, walk, fire_r, fire_l, fire_s, and which way to face: target, course or away. Conditions: dist_above, dist_below, en_below, en_above, ap_below, opp_ap_below, can_see, cannot_see, missile_near, opp_above, opp_below, alt_below, airborne, grounded, staggered, opp_staggered, chance, ready_r, ready_l, ready_s, course_above, course_far, floor_burning. The pilot sees its opponent as it was reaction_ms ago.",
+ "moves": {
+  "close_in": {
+   "label": "closing in",
+   "beats": [
+    {
+     "from": 0,
+     "to": 40,
+     "keys": [
+      "fwd",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "close_boost": {
+   "label": "boosting in",
+   "beats": [
+    {
+     "from": 0,
+     "to": 0,
+     "keys": [
+      "fwd",
+      "quick_boost",
+      "glide"
+     ]
+    },
+    {
+     "from": 1,
+     "to": 24,
+     "keys": [
+      "fwd",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "orbit_left": {
+   "label": "circling left",
+   "beats": [
+    {
+     "from": 0,
+     "to": 54,
+     "keys": [
+      "left",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "orbit_right": {
+   "label": "circling right",
+   "beats": [
+    {
+     "from": 0,
+     "to": 54,
+     "keys": [
+      "right",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "back_off": {
+   "label": "opening range",
+   "beats": [
+    {
+     "from": 0,
+     "to": 36,
+     "keys": [
+      "back",
+      "left",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "dodge_left": {
+   "label": "evading",
+   "beats": [
+    {
+     "from": 0,
+     "to": 0,
+     "keys": [
+      "left",
+      "quick_boost"
+     ]
+    },
+    {
+     "from": 1,
+     "to": 12,
+     "keys": [
+      "left",
+      "glide"
+     ]
+    }
+   ]
+  },
+  "dodge_right": {
+   "label": "evading",
+   "beats": [
+    {
+     "from": 0,
+     "to": 0,
+     "keys": [
+      "right",
+      "quick_boost"
+     ]
+    },
+    {
+     "from": 1,
+     "to": 12,
+     "keys": [
+      "right",
+      "glide"
+     ]
+    }
+   ]
+  },
+  "climb": {
+   "label": "taking the high ground",
+   "beats": [
+    {
+     "from": 0,
+     "to": 45,
+     "keys": [
+      "ascend",
+      "left",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "drop": {
+   "label": "dropping",
+   "beats": [
+    {
+     "from": 0,
+     "to": 30,
+     "keys": [
+      "walk",
+      "right",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "recover": {
+   "label": "recovering EN",
+   "beats": [
+    {
+     "from": 0,
+     "to": 60,
+     "keys": [
+      "walk",
+      "left",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "missile_volley": {
+   "label": "missile volley",
+   "beats": [
+    {
+     "from": 0,
+     "to": 6,
+     "keys": [
+      "fire_r",
+      "glide"
+     ]
+    },
+    {
+     "from": 7,
+     "to": 30,
+     "keys": [
+      "right",
+      "glide",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "shoulder_shot": {
+   "label": "firing the cannon",
+   "beats": [
+    {
+     "from": 0,
+     "to": 4,
+     "keys": [
+      "fire_s"
+     ]
+    },
+    {
+     "from": 5,
+     "to": 24,
+     "keys": [
+      "left",
+      "glide"
+     ]
+    }
+   ]
+  },
+  "punish": {
+   "label": "pressing the stagger",
+   "beats": [
+    {
+     "from": 0,
+     "to": 0,
+     "keys": [
+      "fwd",
+      "quick_boost",
+      "glide"
+     ]
+    },
+    {
+     "from": 1,
+     "to": 40,
+     "keys": [
+      "fwd",
+      "glide",
+      "fire_l",
+      "fire_r",
+      "fire_s"
+     ]
+    }
+   ]
+  },
+  "brawl": {
+   "label": "brawling",
+   "beats": [
+    {
+     "from": 0,
+     "to": 0,
+     "keys": [
+      "fwd",
+      "quick_boost"
+     ]
+    },
+    {
+     "from": 1,
+     "to": 30,
+     "keys": [
+      "fwd",
+      "glide",
+      "fire_r",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "high_perch": {
+   "label": "holding altitude",
+   "beats": [
+    {
+     "from": 0,
+     "to": 50,
+     "keys": [
+      "ascend",
+      "right",
+      "glide",
+      "fire_r",
+      "fire_l"
+     ]
+    }
+   ]
+  },
+  "lava_hop": {
+   "label": "leaving the lava",
+   "beats": [
+    {
+     "from": 0,
+     "to": 30,
+     "keys": [
+      "ascend",
+      "fwd",
+      "glide"
+     ]
+    }
+   ]
+  },
+  "hold": {
+   "label": "staggered",
+   "beats": [
+    {
+     "from": 0,
+     "to": 20,
+     "keys": []
+    }
+   ]
+  },
+  "race_line": {
+   "label": "racing",
+   "beats": [
+    {
+     "from": 0,
+     "to": 20,
+     "keys": [
+      "fwd",
+      "glide"
+     ],
+     "face": "course"
+    }
+   ]
+  },
+  "race_climb": {
+   "label": "climbing to the gate",
+   "beats": [
+    {
+     "from": 0,
+     "to": 20,
+     "keys": [
+      "fwd",
+      "glide",
+      "ascend"
+     ],
+     "face": "course"
+    }
+   ]
+  },
+  "race_boost": {
+   "label": "boosting",
+   "beats": [
+    {
+     "from": 0,
+     "to": 0,
+     "keys": [
+      "fwd",
+      "quick_boost",
+      "glide"
+     ],
+     "face": "course"
+    },
+    {
+     "from": 1,
+     "to": 18,
+     "keys": [
+      "fwd",
+      "glide"
+     ],
+     "face": "course"
+    }
+   ]
+  },
+  "race_recover": {
+   "label": "saving EN",
+   "beats": [
+    {
+     "from": 0,
+     "to": 40,
+     "keys": [
+      "fwd"
+     ],
+     "face": "course"
+    }
+   ]
   }
+ },
+ "trees": {
+  "racer": {
+   "reaction_ms": 250,
+   "aim_error_deg": 4,
+   "salt": 11,
+   "rules": [
+    {
+     "if": [
+      {
+       "en_below": 15
+      }
+     ],
+     "do": "race_recover"
+    },
+    {
+     "if": [
+      {
+       "course_above": 12
+      }
+     ],
+     "do": "race_climb"
+    },
+    {
+     "if": [
+      {
+       "course_far": 140
+      },
+      {
+       "en_above": 70
+      },
+      {
+       "chance": 4
+      }
+     ],
+     "do": "race_boost"
+    },
+    {
+     "if": [],
+     "do": "race_line"
+    }
+   ]
+  },
+  "racer_hot": {
+   "reaction_ms": 180,
+   "aim_error_deg": 3,
+   "salt": 12,
+   "rules": [
+    {
+     "if": [
+      {
+       "en_below": 12
+      }
+     ],
+     "do": "race_recover"
+    },
+    {
+     "if": [
+      {
+       "course_above": 10
+      }
+     ],
+     "do": "race_climb"
+    },
+    {
+     "if": [
+      {
+       "course_far": 110
+      },
+      {
+       "en_above": 55
+      },
+      {
+       "chance": 10
+      }
+     ],
+     "do": "race_boost"
+    },
+    {
+     "if": [],
+     "do": "race_line"
+    }
+   ]
+  },
+  "duelist": {
+   "reaction_ms": 220,
+   "aim_error_deg": 5,
+   "salt": 21,
+   "rules": [
+    {
+     "if": [
+      "staggered"
+     ],
+     "do": "hold",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      },
+      {
+       "chance": 50
+      }
+     ],
+     "do": "dodge_left",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      }
+     ],
+     "do": "dodge_right",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "floor_burning",
+      {
+       "en_above": 15
+      }
+     ],
+     "do": "lava_hop",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "opp_staggered",
+      "can_see"
+     ],
+     "do": "punish"
+    },
+    {
+     "if": [
+      {
+       "en_below": 20
+      }
+     ],
+     "do": "recover"
+    },
+    {
+     "if": [
+      "cannot_see"
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 240
+      },
+      {
+       "en_above": 50
+      }
+     ],
+     "do": "close_boost"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 240
+      }
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_below": 70
+      }
+     ],
+     "do": "back_off"
+    },
+    {
+     "if": [
+      "ready_r",
+      {
+       "chance": 30
+      }
+     ],
+     "do": "missile_volley"
+    },
+    {
+     "if": [
+      "ready_s",
+      {
+       "chance": 25
+      }
+     ],
+     "do": "shoulder_shot"
+    },
+    {
+     "if": [
+      {
+       "opp_above": 30
+      },
+      {
+       "en_above": 40
+      }
+     ],
+     "do": "climb"
+    },
+    {
+     "if": [
+      {
+       "chance": 50
+      }
+     ],
+     "do": "orbit_left"
+    },
+    {
+     "if": [],
+     "do": "orbit_right"
+    }
+   ]
+  },
+  "twin": {
+   "reaction_ms": 260,
+   "aim_error_deg": 6,
+   "salt": 22,
+   "rules": [
+    {
+     "if": [
+      "staggered"
+     ],
+     "do": "hold",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      },
+      {
+       "chance": 50
+      }
+     ],
+     "do": "dodge_left",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      }
+     ],
+     "do": "dodge_right",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "floor_burning",
+      {
+       "en_above": 15
+      }
+     ],
+     "do": "lava_hop",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "opp_staggered",
+      "can_see"
+     ],
+     "do": "punish"
+    },
+    {
+     "if": [
+      {
+       "en_below": 20
+      }
+     ],
+     "do": "recover"
+    },
+    {
+     "if": [
+      "cannot_see"
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 240
+      },
+      {
+       "en_above": 50
+      }
+     ],
+     "do": "close_boost"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 240
+      }
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_below": 70
+      }
+     ],
+     "do": "back_off"
+    },
+    {
+     "if": [
+      "ready_r",
+      {
+       "chance": 25
+      }
+     ],
+     "do": "missile_volley"
+    },
+    {
+     "if": [
+      "ready_s",
+      {
+       "chance": 25
+      }
+     ],
+     "do": "shoulder_shot"
+    },
+    {
+     "if": [
+      {
+       "opp_above": 30
+      },
+      {
+       "en_above": 40
+      }
+     ],
+     "do": "climb"
+    },
+    {
+     "if": [
+      {
+       "chance": 30
+      }
+     ],
+     "do": "orbit_left"
+    },
+    {
+     "if": [],
+     "do": "orbit_right"
+    }
+   ]
+  },
+  "brute": {
+   "reaction_ms": 240,
+   "aim_error_deg": 5,
+   "salt": 23,
+   "rules": [
+    {
+     "if": [
+      "staggered"
+     ],
+     "do": "hold",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 50
+      },
+      {
+       "en_above": 30
+      }
+     ],
+     "do": "dodge_right",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "floor_burning",
+      {
+       "en_above": 15
+      }
+     ],
+     "do": "lava_hop",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "opp_staggered",
+      "can_see"
+     ],
+     "do": "punish"
+    },
+    {
+     "if": [
+      {
+       "en_below": 15
+      }
+     ],
+     "do": "recover"
+    },
+    {
+     "if": [
+      {
+       "dist_below": 90
+      },
+      {
+       "en_above": 30
+      }
+     ],
+     "do": "brawl"
+    },
+    {
+     "if": [
+      {
+       "en_above": 45
+      }
+     ],
+     "do": "close_boost"
+    },
+    {
+     "if": [
+      "ready_s",
+      {
+       "chance": 30
+      }
+     ],
+     "do": "shoulder_shot"
+    },
+    {
+     "if": [],
+     "do": "close_in"
+    }
+   ]
+  },
+  "keeper": {
+   "reaction_ms": 220,
+   "aim_error_deg": 5,
+   "salt": 24,
+   "rules": [
+    {
+     "if": [
+      "staggered"
+     ],
+     "do": "hold",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      }
+     ],
+     "do": "dodge_left",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "en_below": 18
+      }
+     ],
+     "do": "drop"
+    },
+    {
+     "if": [
+      {
+       "alt_below": 70
+      },
+      {
+       "en_above": 40
+      }
+     ],
+     "do": "high_perch"
+    },
+    {
+     "if": [
+      "ready_r"
+     ],
+     "do": "missile_volley"
+    },
+    {
+     "if": [
+      "ready_s"
+     ],
+     "do": "shoulder_shot"
+    },
+    {
+     "if": [
+      "cannot_see"
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_below": 90
+      }
+     ],
+     "do": "back_off"
+    },
+    {
+     "if": [],
+     "do": "orbit_right"
+    }
+   ]
+  },
+  "ace": {
+   "reaction_ms": 150,
+   "aim_error_deg": 4,
+   "salt": 25,
+   "rules": [
+    {
+     "if": [
+      "staggered"
+     ],
+     "do": "hold",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      },
+      {
+       "chance": 50
+      }
+     ],
+     "do": "dodge_left",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "missile_near": 60
+      },
+      {
+       "en_above": 25
+      }
+     ],
+     "do": "dodge_right",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "floor_burning",
+      {
+       "en_above": 15
+      }
+     ],
+     "do": "lava_hop",
+     "interrupt": true
+    },
+    {
+     "if": [
+      "opp_staggered",
+      "can_see"
+     ],
+     "do": "punish"
+    },
+    {
+     "if": [
+      {
+       "en_below": 20
+      }
+     ],
+     "do": "recover"
+    },
+    {
+     "if": [
+      "cannot_see"
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 240
+      },
+      {
+       "en_above": 50
+      }
+     ],
+     "do": "close_boost"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 240
+      }
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_below": 70
+      }
+     ],
+     "do": "back_off"
+    },
+    {
+     "if": [
+      "ready_r",
+      {
+       "chance": 40
+      }
+     ],
+     "do": "missile_volley"
+    },
+    {
+     "if": [
+      "ready_s",
+      {
+       "chance": 25
+      }
+     ],
+     "do": "shoulder_shot"
+    },
+    {
+     "if": [
+      {
+       "opp_above": 30
+      },
+      {
+       "en_above": 40
+      }
+     ],
+     "do": "climb"
+    },
+    {
+     "if": [
+      {
+       "chance": 50
+      }
+     ],
+     "do": "orbit_left"
+    },
+    {
+     "if": [],
+     "do": "orbit_right"
+    }
+   ]
+  }
+ }
 }

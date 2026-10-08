@@ -132,6 +132,11 @@ pub struct Part {
     pub mounts: BTreeMap<String, [i32; 3]>,
     #[serde(default)]
     pub boxes: Vec<BoxSpec>,
+    /// Borrow another part's boxes and mounts, scaled by `scale_pct`.
+    #[serde(default)]
+    pub like: Option<String>,
+    #[serde(default)]
+    pub scale_pct: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -145,6 +150,9 @@ pub struct Catalog {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CatalogError(pub String);
 
+/// A part's boxes and mounts, and whether it borrowed them itself.
+type Shape = (Vec<BoxSpec>, BTreeMap<String, [i32; 3]>, bool);
+
 /// Mounts each frame part must name, so the model can be assembled.
 const REQUIRED_MOUNTS: &[(Slot, &[&str])] = &[
     (Slot::Legs, &["core"]),
@@ -154,9 +162,48 @@ const REQUIRED_MOUNTS: &[(Slot, &[&str])] = &[
 
 impl Catalog {
     pub fn parse(json: &str) -> Result<Catalog, CatalogError> {
-        let c: Catalog = serde_json::from_str(json).map_err(|e| CatalogError(e.to_string()))?;
+        let mut c: Catalog = serde_json::from_str(json).map_err(|e| CatalogError(e.to_string()))?;
+        c.resolve_likes()?;
         c.validate()?;
         Ok(c)
+    }
+
+    /// Gives every part that names another in `like` that part's boxes and
+    /// mounts, scaled. The borrowed part must draw its own shape.
+    fn resolve_likes(&mut self) -> Result<(), CatalogError> {
+        let shapes: BTreeMap<String, Shape> = self
+            .parts
+            .iter()
+            .map(|p| {
+                (
+                    p.id.clone(),
+                    (p.boxes.clone(), p.mounts.clone(), p.like.is_some()),
+                )
+            })
+            .collect();
+        for p in &mut self.parts {
+            let Some(base) = p.like.clone() else { continue };
+            let (boxes, mounts, borrowed) = shapes
+                .get(&base)
+                .ok_or_else(|| CatalogError(format!("{}: like names unknown part {base}", p.id)))?;
+            if *borrowed {
+                return Err(CatalogError(format!("{}: {base} borrows its own shape", p.id)));
+            }
+            let k = p.scale_pct.unwrap_or(100);
+            let sc = |v: [i32; 3]| v.map(|x| x * k / 100);
+            p.boxes = boxes
+                .iter()
+                .map(|b| BoxSpec {
+                    at: sc(b.at),
+                    size: sc(b.size),
+                    ..b.clone()
+                })
+                .collect();
+            if p.mounts.is_empty() {
+                p.mounts = mounts.iter().map(|(n, m)| (n.clone(), sc(*m))).collect();
+            }
+        }
+        Ok(())
     }
 
     fn validate(&self) -> Result<(), CatalogError> {
@@ -412,6 +459,20 @@ pub(crate) mod tests {
         let c = catalog();
         let l = c.default_loadout();
         assert_eq!(Loadout::restore(&l.save(), &c), l);
+    }
+
+    #[test]
+    fn a_borrowed_shape_is_the_base_part_scaled() {
+        let c = catalog();
+        let base = c.get("lr-glint").unwrap();
+        let spear = c.get("lr-spear").unwrap();
+        assert_eq!(spear.boxes.len(), base.boxes.len());
+        // 115%: a 140 cm barrel becomes 161 cm
+        assert_eq!(spear.boxes[0].size[2], base.boxes[0].size[2] * 115 / 100);
+        assert_eq!(
+            spear.mounts["muzzle"],
+            base.mounts["muzzle"].map(|x| x * 115 / 100)
+        );
     }
 
     #[test]

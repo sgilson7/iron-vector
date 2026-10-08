@@ -11,6 +11,13 @@ function item(tag, cls, text) {
   return node;
 }
 
+// Where a locked part is won, in words from the copy file.
+function lockText(copy, part) {
+  if (!part || !part.locked || !part.hint) return "";
+  const [mission, plus] = part.hint;
+  return (plus ? copy.unlock_plus : copy.unlock_hint).replace("{mission}", mission);
+}
+
 function sign(better) {
   if (better > 0) return "up";
   if (better < 0) return "down";
@@ -23,6 +30,7 @@ export function makeGarage(game, copy, onSave) {
     el("detail-maker").textContent = v.detail.maker;
     el("detail-blurb").textContent = v.detail.blurb;
     el("detail-kind").textContent = v.detail.kind ? copy[v.detail.kind] : "";
+    el("detail-lock").textContent = lockText(copy, v.parts.find((p) => p.hovered));
     const rows = el("detail-rows");
     rows.replaceChildren();
     for (const [key, value] of v.detail.rows) {
@@ -65,7 +73,8 @@ export function makeGarage(game, copy, onSave) {
     );
     el("parts").replaceChildren(
       ...v.parts.map((p, i) => {
-        const li = item("li", p.equipped ? "equipped" : "");
+        const li = item("li", [p.equipped ? "equipped" : "", p.locked ? "locked" : ""].join(" "));
+        li.title = lockText(copy, p);
         const name = item("span", "v", p.name);
         name.dataset.fitted = copy.equipped;
         li.append(item("span", "k", p.maker), name);

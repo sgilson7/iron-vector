@@ -1,0 +1,10 @@
+{
+  "_note": "Units that are not mechs. Speeds m/s, ranges m, times ms. A mission's power_pct scales ap and gun damage.",
+  "drone": { "ap": 700, "radius_m": 3, "speed_ms": 0, "orbit_m": 14 },
+  "heli": { "ap": 900, "radius_m": 5, "speed_ms": 20, "orbit_m": 70,
+            "gun": { "damage": 52, "speed_ms": 300, "range_m": 480, "burst": 6, "burst_gap_ms": 110, "reload_ms": 3200, "spread_deg": 2, "blast_m": 0 } },
+  "tank": { "ap": 1500, "radius_m": 4, "speed_ms": 9, "orbit_m": 0,
+            "gun": { "damage": 140, "speed_ms": 180, "range_m": 200, "burst": 1, "burst_gap_ms": 100, "reload_ms": 2600, "spread_deg": 1, "blast_m": 6 } },
+  "turret": { "ap": 1100, "radius_m": 4, "speed_ms": 0, "orbit_m": 0,
+              "gun": { "damage": 44, "speed_ms": 340, "range_m": 430, "burst": 4, "burst_gap_ms": 120, "reload_ms": 2400, "spread_deg": 2, "blast_m": 0 } }
+}

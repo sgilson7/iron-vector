@@ -37,3 +37,18 @@ One row per assumption, surprise or open item. **Kind** is *divergence* (what wa
 | B7 | finding | The garage could keep a second copy of the stats. | The page shows only `GarageView`, built in `garage.rs`; better or worse is decided per stat there (`SHOWN`). Test: `hovering_a_lighter_head_shows_less_weight_as_better`. | | done |
 | B8 | divergence | A saved build would be the loadout alone. | The paint scheme is saved too, as `{"loadout", "paint"}`. A save that does not parse, or names a part that no longer exists, falls back slot by slot to the default. | `Game::saved`, `Loadout::restore`. | done |
 | B9 | finding | rustfmt rewrapped lines between edits, so several scripted replacements silently missed and the build broke. | Replacements now assert that they matched, and `rustfmt.toml` sets `max_width = 110`. | | done |
+
+## Milestone 2: campaign, cockpit star map, behaviour trees
+
+| # | Kind | What was assumed or found | What is true | What changed | Status |
+| --- | --- | --- | --- | --- | --- |
+| C1 | finding | The planet's environment could be a field called `env`. | The boundary test bans `env` in the core (it is how `std::env` is named); the test failed on first compile. | Renamed to `climate`, in code and in `data/planets.json`. The ban stays. | done |
+| C2 | divergence | "Each planet a fixed map" could mean hand-built maps. | Five seeded generator specs with a style each (towers, mesas, ruins, spires, pillars) give fixed, distinct maps; mission pads and protected structures are set down by hand on top. | `MapSpec.style`, `MissionSpec.pads`, `protect`. | done |
+| C3 | finding | A ring world needs its own physics. | It does not: the simulation runs on the unrolled floor with x wrapping, and only drawing bends it (`render::Warp`). Gravity "outward" is simply the flat floor's down. Distances near the seam use `World::map_delta`. | Tests: `on_a_ring_the_floor_across_the_ring_is_overhead`, `on_a_ring_walking_off_one_edge_comes_back_on_the_other`. | done |
+| C4 | divergence | The plus challenge could be met on the first clear. | The request says the plus is revealed after the first clear, so a first clear never also wins the plus; the second run can. | `Progress::record`; test `a_clear_gives_the_reward_and_reveals_the_plus_which_a_later_run_can_win`. | done |
+| C5 | finding | Planet unlocks continue the request's 2, 5, 8 by +3. | Planet five opens at 11 clears. | `opens_at` in `data/planets.json`. | done |
+| C6 | divergence | An interrupt rule may break into any running move (vagrancy). | Two dodge rules interrupting each other kept restarting quick boosts. | An interrupt breaks in only for a rule of higher priority than the running one. | done |
+| C7 | finding | The browser check could wait with `page.wait_for_function("…")`. | The page's own CSP forbids evaluated strings, so Playwright's string wait is refused. | The check waits on a selector. The CSP stays. | done |
+| C8 | divergence | My browser test expected Halden's race to unlock LG-08 WISP. | That part is the race's plus reward; the plain reward is AR-02 REED. The test was wrong, not the game. | The test now records the plus, and its docstring says why. | done |
+| C9 | worklist | Planets 2–5 are built and pass the core tests (every mission builds, footing is solid, each kind wins and fails), but each is checked by eye before it is called done. | | Deploys follow planet by planet (Sam, mid-session: "deploy to live whenever you have a planet completed"). | open |
+| C10 | worklist | Difficulty of 20 missions is set by the agent. | | Sam's playtest, `TRIAGE.md`. | person |

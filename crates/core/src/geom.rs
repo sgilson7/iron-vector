@@ -245,6 +245,31 @@ impl Mat4 {
         Mat4::from_affine(&inv)
     }
 
+    /// The view matrix of a camera at `eye` looking along `fwd` with `up`
+    /// roughly up; both unit vectors.
+    pub fn look(eye: V3, fwd: V3, up: V3) -> Mat4 {
+        let s = fwd.cross(up).norm();
+        let u = s.cross(fwd);
+        Mat4([
+            s.x,
+            u.x,
+            -fwd.x,
+            0,
+            s.y,
+            u.y,
+            -fwd.y,
+            0,
+            s.z,
+            u.z,
+            -fwd.z,
+            0,
+            -s.dot(eye),
+            -u.dot(eye),
+            fwd.dot(eye),
+            ONE,
+        ])
+    }
+
     /// Clip-space coordinates `(x, y, z, w)` of a world point.
     pub fn project(&self, p: V3) -> [i32; 4] {
         let mut out = [0i32; 4];
@@ -309,6 +334,22 @@ mod tests {
         );
         let behind = eye.sub(facing(yaw, 0).scale(int(50)));
         assert!(vp.project(behind)[3] < 0);
+    }
+
+    #[test]
+    fn a_look_matrix_agrees_with_the_yaw_and_pitch_view() {
+        let eye = v3(int(3), int(4), int(5));
+        let (yaw, pitch) = (deg(40), deg(-15));
+        let a = Mat4::view(eye, yaw, pitch);
+        let b = Mat4::look(eye, facing(yaw, pitch), facing(yaw, pitch + crate::fx::QUARTER));
+        for k in 0..16 {
+            assert!(
+                (a.0[k] - b.0[k]).abs() < 64,
+                "entry {k}: {} vs {}",
+                a.0[k],
+                b.0[k]
+            );
+        }
     }
 
     #[test]

@@ -1,21 +1,63 @@
 {
   "_note": "Every colour the 3D view draws, as 0-255 RGB. The core reads this file; the page never holds a colour of its own for the scene.",
   "schemes": [
-    { "name": "Ash", "primary": [196, 190, 172], "secondary": [92, 98, 104], "dark": [44, 47, 52], "glow": [255, 168, 60], "accent": [210, 70, 46] },
-    { "name": "Oxide", "primary": [150, 62, 44], "secondary": [70, 58, 52], "dark": [36, 32, 30], "glow": [255, 214, 120], "accent": [230, 220, 200] },
-    { "name": "Glacier", "primary": [220, 226, 230], "secondary": [120, 140, 156], "dark": [52, 60, 70], "glow": [110, 210, 255], "accent": [60, 120, 200] },
-    { "name": "Night Shift", "primary": [52, 58, 62], "secondary": [30, 34, 38], "dark": [18, 20, 22], "glow": [60, 255, 200], "accent": [60, 200, 170] },
-    { "name": "Dune", "primary": [188, 160, 112], "secondary": [122, 100, 70], "dark": [60, 50, 38], "glow": [255, 120, 60], "accent": [180, 90, 40] },
-    { "name": "Signal", "primary": [226, 190, 40], "secondary": [40, 40, 40], "dark": [24, 24, 24], "glow": [255, 255, 255], "accent": [20, 20, 20] }
+    {
+      "name": "Ash",
+      "primary": [196, 190, 172],
+      "secondary": [92, 98, 104],
+      "dark": [44, 47, 52],
+      "glow": [255, 168, 60],
+      "accent": [210, 70, 46]
+    },
+    {
+      "name": "Oxide",
+      "primary": [150, 62, 44],
+      "secondary": [70, 58, 52],
+      "dark": [36, 32, 30],
+      "glow": [255, 214, 120],
+      "accent": [230, 220, 200]
+    },
+    {
+      "name": "Glacier",
+      "primary": [220, 226, 230],
+      "secondary": [120, 140, 156],
+      "dark": [52, 60, 70],
+      "glow": [110, 210, 255],
+      "accent": [60, 120, 200]
+    },
+    {
+      "name": "Night Shift",
+      "primary": [52, 58, 62],
+      "secondary": [30, 34, 38],
+      "dark": [18, 20, 22],
+      "glow": [60, 255, 200],
+      "accent": [60, 200, 170]
+    },
+    {
+      "name": "Dune",
+      "primary": [188, 160, 112],
+      "secondary": [122, 100, 70],
+      "dark": [60, 50, 38],
+      "glow": [255, 120, 60],
+      "accent": [180, 90, 40]
+    },
+    {
+      "name": "Signal",
+      "primary": [226, 190, 40],
+      "secondary": [40, 40, 40],
+      "dark": [24, 24, 24],
+      "glow": [255, 255, 255],
+      "accent": [20, 20, 20]
+    }
   ],
-  "enemy": { "name": "Hostile", "primary": [96, 104, 88], "secondary": [58, 64, 56], "dark": [34, 36, 34], "glow": [255, 60, 52], "accent": [255, 60, 52] },
-  "sky": [148, 166, 178],
-  "fog": [160, 172, 178],
-  "ground": [104, 100, 92],
-  "grid": [84, 80, 74],
-  "buildings": [[120, 122, 124], [138, 134, 126], [100, 106, 112], [146, 142, 136], [86, 92, 98]],
-  "roof": [70, 72, 76],
-  "window": [228, 196, 128],
+  "enemy": {
+    "name": "Hostile",
+    "primary": [96, 104, 88],
+    "secondary": [58, 64, 56],
+    "dark": [34, 36, 34],
+    "glow": [255, 60, 52],
+    "accent": [255, 60, 52]
+  },
   "shadow": [80, 77, 71],
   "flame": [255, 190, 110],
   "flame_qb": [140, 210, 255],
@@ -27,5 +69,36 @@
   "drone": [70, 76, 82],
   "beacon": [120, 220, 255],
   "drone_eye": [255, 70, 60],
-  "light_dir": [-40, 100, 30]
+  "hangar": {
+    "sky": [148, 166, 178],
+    "fog": [160, 172, 178],
+    "ground": [104, 100, 92],
+    "grid": [84, 80, 74],
+    "buildings": [
+      [120, 122, 124],
+      [138, 134, 126],
+      [100, 106, 112],
+      [146, 142, 136],
+      [86, 92, 98]
+    ],
+    "roof": [70, 72, 76],
+    "window": [228, 196, 128],
+    "windows": true,
+    "light_dir": [-40, 100, 30],
+    "fog_near_m": 300,
+    "fog_far_m": 1400,
+    "ground_glow_pct": 0,
+    "stars": false,
+    "structure": [90, 170, 255]
+  },
+  "hologram": [110, 220, 255],
+  "cockpit": [40, 44, 50],
+  "cockpit_light": [255, 170, 70],
+  "locked": [70, 76, 86],
+  "cleared": [150, 255, 170],
+  "plus": [255, 214, 90],
+  "open": [255, 168, 60],
+  "checkpoint": [120, 255, 200],
+  "tank": [86, 90, 70],
+  "turret": [96, 92, 100]
 }

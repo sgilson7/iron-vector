@@ -64,19 +64,12 @@ b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .build { color: var(--hud-dim); font-size: 10px; margin-top: 14px !important; }
 
 /* ---- stage B: objective, waypoint, boss, stagger ---- */
-#objective-box { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); text-align: center; }
-#objective { color: var(--glow); letter-spacing: 0.08em; }
-#objective-box .timer { font-size: 12px; margin-top: 2px; }
 #waypoint { position: absolute; left: 0; top: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid #78dcff; transform-origin: center; }
 #waypoint::after { content: ""; position: absolute; inset: 5px; background: #78dcff; }
 #waypoint .wp-label, #waypoint .wp-dist { position: absolute; left: 28px; white-space: nowrap; font-size: 11px; color: #9fe6ff; }
 #waypoint .wp-label { top: -6px; letter-spacing: 0.15em; }
 #waypoint .wp-dist { top: 8px; }
 #waypoint.edge { border-style: dashed; }
-#boss { position: absolute; top: 64px; left: 50%; width: min(520px, 70vw); transform: translateX(-50%); }
-.boss-head { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 0.12em; margin-bottom: 3px; }
-#boss-intent { color: var(--hud-dim); font-style: italic; letter-spacing: 0.04em; }
-.bar.boss-ap i { background: var(--warn); }
 .bar.stagger { margin-top: 3px; }
 .bar.stagger i { background: #ffe07a; }
 .bar.stagger.full i { background: var(--warn); }
@@ -139,3 +132,57 @@ button:hover { filter: brightness(1.1); }
 #debrief-rows td:last-child { text-align: right; }
 .rank { font-size: 34px; color: var(--glow); }
 body[data-mode="garage"] canvas#view, body[data-mode="briefing"] canvas#view { cursor: grab; }
+
+/* ---- milestone 2: mission HUD ---- */
+#mission-box { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); text-align: center; min-width: 340px; }
+.mission-name { font-size: 11px; letter-spacing: 0.25em; color: var(--hud-dim); }
+#objective { color: var(--glow); letter-spacing: 0.06em; margin: 2px 0; }
+.counters { display: flex; gap: 14px; justify-content: center; font-size: 12px; }
+#plus-track { margin-top: 4px; font-size: 11px; color: #ffd65a; }
+#plus-track.missed { color: var(--warn); text-decoration: line-through; }
+#frames { position: absolute; top: 92px; left: 50%; width: min(460px, 64vw); transform: translateX(-50%); display: grid; gap: 8px; }
+.frame-row .head { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 0.1em; margin-bottom: 3px; }
+.frame-row .intent { color: var(--hud-dim); font-style: italic; letter-spacing: 0.03em; }
+.frame-row .bar.ap i { background: var(--warn); }
+.frame-row.racer .bar.ap i { background: #78ffc8; }
+#waypoint .wp-label { color: #9fe6ff; }
+
+/* ---- garage locks ---- */
+.list li.locked { opacity: 0.5; cursor: help; }
+.list li.locked .v::before { content: "\1F512\00A0"; font-size: 10px; }
+.lock { color: var(--warn); font-size: 12px; margin: 4px 0; }
+.lock:empty { display: none; }
+
+/* ---- star map ---- */
+#select { pointer-events: none; }
+#map-top { position: absolute; top: 16px; left: 22px; pointer-events: none; text-shadow: 0 0 6px #000; }
+#map-top h1 { margin: 0; letter-spacing: 0.3em; font-size: 24px; }
+#map-top p { margin: 4px 0; }
+#map-top .hint { text-align: left; }
+#hotspots { position: absolute; inset: 0; pointer-events: none; }
+.spot { position: absolute; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 1px solid transparent; background: transparent; padding: 0; pointer-events: auto; cursor: pointer; }
+.spot:hover, .spot.selected { border-color: var(--glow); box-shadow: 0 0 10px rgba(255, 168, 60, 0.6); }
+.spot.planet { width: 54px; height: 54px; margin: -27px 0 0 -27px; }
+.spot span { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); white-space: nowrap; font-size: 11px; letter-spacing: 0.18em; color: var(--hud); text-shadow: 0 0 4px #000; pointer-events: none; }
+.spot.mission span { display: none; }
+.spot.mission:hover span { display: block; top: 26px; letter-spacing: 0.05em; }
+#map-panel { position: absolute; right: 18px; top: 18px; bottom: 18px; width: min(380px, 40vw); overflow-y: auto; pointer-events: auto; }
+#map-panel h2 { margin: 0 0 6px; letter-spacing: 0.25em; font-size: 20px; color: var(--hud); }
+.gimmick { color: #9fe6ff; font-size: 12px; }
+#mission-list { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 8px; }
+#mission-list li { border: 1px solid var(--line); padding: 8px 10px; cursor: pointer; font-size: 12px; }
+#mission-list li.selected { border-color: var(--glow); background: rgba(255, 168, 60, 0.1); }
+#mission-list li.locked { opacity: 0.55; }
+#mission-list .m-head { display: flex; justify-content: space-between; gap: 8px; }
+#mission-list .m-name { font-weight: 700; letter-spacing: 0.08em; font-size: 13px; }
+#mission-list .m-state { font-size: 10px; letter-spacing: 0.15em; color: var(--hud-dim); }
+#mission-list .open .m-state { color: var(--glow); }
+#mission-list .cleared .m-state { color: #96ffaa; }
+#mission-list .plus .m-state { color: #ffd65a; }
+#mission-list .m-scene { margin: 4px 0; color: var(--hud); }
+#mission-list .m-reward { color: var(--hud-dim); }
+#mission-list .m-plus { color: #ffd65a; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+#d-rewards { list-style: none; padding: 0; margin: 12px 0 0; }
+#d-rewards li { color: #96ffaa; letter-spacing: 0.08em; margin: 3px 0; }
+#d-rewards li.plus { color: #ffd65a; }

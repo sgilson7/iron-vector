@@ -36,6 +36,49 @@ pub struct MapSpec {
     /// width of a clear avenue down x = 0, the length of the map; 0 for none
     #[serde(default)]
     pub avenue_m: i32,
+    #[serde(default)]
+    pub style: Style,
+    /// x wraps round: the map is the unrolled inside of a ring
+    #[serde(default)]
+    pub wrap: bool,
+}
+
+/// The shape of a planet's buildings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Style {
+    /// city blocks of towers
+    #[default]
+    Towers,
+    /// broad flat-topped rock
+    Mesas,
+    /// thin tall needles
+    Spires,
+    /// separate flat-topped columns to stand on
+    Pillars,
+    /// low broken chunks with the odd tall wreck
+    Ruins,
+}
+
+/// What a planet does to the frames on it. Percentages are of the home
+/// world's: gravity pulls, traction is the grip of the ground.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Climate {
+    pub gravity_pct: i32,
+    pub traction_pct: i32,
+    /// AP a second lost while standing on the bare ground
+    pub floor_dps: i32,
+}
+
+impl Default for Climate {
+    fn default() -> Climate {
+        Climate {
+            gravity_pct: 100,
+            traction_pct: 100,
+            floor_dps: 0,
+        }
+    }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Block {
@@ -106,8 +149,10 @@ pub struct Map {
     cells_x: i32,
     cells_z: i32,
     buckets: Vec<Vec<u16>>,
+    pub climate: Climate,
+    pub wrap: bool,
+    pub style: Style,
 }
-
 impl Map {
     pub fn generate(spec: &MapSpec) -> Map {
         let mut rng = Rng::new(spec.seed);
@@ -130,15 +175,31 @@ impl Map {
                 });
                 let on_avenue =
                     spec.avenue_m > 0 && left < spec.avenue_m / 2 && left + usable > -spec.avenue_m / 2;
-                if cleared || on_avenue || rng.chance(spec.empty_pct) {
+                // a ring keeps its seam clear, so nothing straddles the wrap
+                let seam = spec.wrap && (cx == 0 || cx == cells_x - 1);
+                if cleared || on_avenue || seam || rng.chance(spec.empty_pct) {
                     continue;
                 }
                 // One building, or two side by side on a split lot.
-                let lots = if rng.chance(30) { 2 } else { 1 };
+                let split = match spec.style {
+                    Style::Towers | Style::Ruins => 30,
+                    Style::Pillars => 45,
+                    Style::Spires => 60,
+                    Style::Mesas => 0,
+                };
+                let lots = if rng.chance(split) { 2 } else { 1 };
                 let lot_w = usable / lots;
+                // footprint as a share of the lot, in percent: least and most
+                let (lo, hi) = match spec.style {
+                    Style::Towers => (50, 97),
+                    Style::Mesas => (80, 99),
+                    Style::Spires => (22, 40),
+                    Style::Pillars => (30, 60),
+                    Style::Ruins => (30, 90),
+                };
                 for k in 0..lots {
-                    let w = rng.range(lot_w / 2, lot_w - 2);
-                    let d = rng.range(usable / 2, usable - 2);
+                    let w = rng.range(lot_w * lo / 100, lot_w * hi / 100).max(4);
+                    let d = rng.range(usable * lo / 100, usable * hi / 100).max(4);
                     let ox = left + k * lot_w + rng.range(0, lot_w - w);
                     let oz = front + rng.range(0, usable - d);
                     let h = if rng.chance(spec.tall_pct) {
@@ -165,9 +226,26 @@ impl Map {
             cells_x,
             cells_z,
             buckets,
+            climate: Climate::default(),
+            wrap: spec.wrap,
+            style: spec.style,
         }
     }
 
+    /// The radius of a ring map: its width is the circumference.
+    pub fn ring_radius(&self) -> i32 {
+        // r = c / 2π, with 2π as 6 283 / 1 000
+        (self.half_x as i64 * 2 * 1000 / 6283) as i32
+    }
+
+    /// An x brought back inside the map on a ring; unchanged on flat ground.
+    pub fn wrap_x(&self, x: i32) -> i32 {
+        if !self.wrap {
+            return x;
+        }
+        let w = self.half_x as i64 * 2;
+        ((x as i64 + self.half_x as i64).rem_euclid(w) - self.half_x as i64) as i32
+    }
     /// Places one more building, for a structure a mission sets by hand. It
     /// is filed under every cell it covers, so a query may meet it twice;
     /// every query here is a min, a max or an "any", which a repeat cannot change.
@@ -205,17 +283,30 @@ impl Map {
     /// The first point a segment hits a building or the ground, as a fraction
     /// of the segment in Q16.
     pub fn segment_hit(&self, a: V3, b: V3) -> Option<i32> {
+        self.segment_hit_block(a, b).map(|(t, _)| t)
+    }
+
+    /// As `segment_hit`, and which building was hit (none for the ground).
+    pub fn segment_hit_block(&self, a: V3, b: V3) -> Option<(i32, Option<usize>)> {
         let min = v3(a.x.min(b.x), a.y.min(b.y), a.z.min(b.z));
         let max = v3(a.x.max(b.x), a.y.max(b.y), a.z.max(b.z));
-        let mut best: Option<i32> = None;
+        let mut best: Option<(i32, Option<usize>)> = None;
         if b.y < 0 && a.y >= 0 {
-            best = Some(fx::div(a.y, a.y - b.y));
+            best = Some((fx::div(a.y, a.y - b.y), None));
         }
-        self.each_near(min, max, |blk| {
-            if let Some(t) = blk.segment_hit(a, b) {
-                best = Some(best.map_or(t, |bt| bt.min(t)));
+        let (ax, az) = self.cell_of(min.x, min.z);
+        let (bx, bz) = self.cell_of(max.x, max.z);
+        for cz in az..=bz {
+            for cx in ax..=bx {
+                for &i in &self.buckets[(cz * self.cells_x + cx) as usize] {
+                    if let Some(t) = self.blocks[i as usize].segment_hit(a, b) {
+                        if best.is_none_or(|(bt, _)| t < bt) {
+                            best = Some((t, Some(i as usize)));
+                        }
+                    }
+                }
             }
-        });
+        }
         best
     }
 
@@ -271,6 +362,8 @@ mod tests {
                 r_m: 60,
             }],
             avenue_m: 0,
+            style: Style::Towers,
+            wrap: false,
         }
     }
 

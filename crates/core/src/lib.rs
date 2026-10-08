@@ -5,6 +5,7 @@
 //! browser. `tests/boundary.rs` enforces that, along with the dependency
 //! allowlist and the reference ban on floats, hash maps and clocks.
 
+pub mod campaign;
 pub mod combat;
 pub mod content;
 pub mod fx;
@@ -20,4 +21,5 @@ pub mod parts;
 pub mod pilot;
 pub mod render;
 pub mod rng;
+pub mod starmap;
 pub mod world;

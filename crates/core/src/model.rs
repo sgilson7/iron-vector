@@ -241,6 +241,11 @@ impl Rig {
         self.boxes.len()
     }
 
+    /// Where a pilot's eye sits in the head, in the mech's frame.
+    pub fn eye(&self) -> V3 {
+        v3(0, self.core_mount.y + self.head.y + cm(36), self.head.z - cm(32))
+    }
+
     /// The centre of mass the camera and the lock aim at.
     pub fn chest(&self) -> V3 {
         v3(0, self.core_mount.y + cm(150), 0)

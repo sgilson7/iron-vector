@@ -215,6 +215,8 @@ impl Body {
             used_en = true;
         }
 
+        let climate = map.climate;
+        let gravity = per_tick2(GRAVITY_MS2) * climate.gravity_pct / 100;
         // Horizontal: steer toward the wished velocity.
         let top = if self.glide { t.glide } else { t.walk };
         let desired = wish.scale(top);
@@ -225,7 +227,10 @@ impl Body {
             per_tick2(QB_DECEL_MS2)
         } else if flat.len() > top {
             per_tick2(QB_DECEL_MS2) / 2
-        } else if self.grounded || self.glide {
+        } else if self.grounded {
+            // grip: on ice a frame slides into and out of its moves
+            per_tick2(GROUND_ACCEL_MS2) * climate.traction_pct / 100
+        } else if self.glide {
             per_tick2(GROUND_ACCEL_MS2)
         } else {
             per_tick2(AIR_ACCEL_MS2)
@@ -248,9 +253,9 @@ impl Body {
             } else {
                 -per_tick(MAX_FALL_MS)
             };
-            let fallen = self.vel.y - per_tick2(GRAVITY_MS2);
+            let fallen = self.vel.y - gravity;
             self.vel.y = if self.vel.y < floor {
-                fx::approach(self.vel.y, floor, per_tick2(GRAVITY_MS2))
+                fx::approach(self.vel.y, floor, gravity)
             } else {
                 fallen.max(floor)
             };
@@ -369,7 +374,12 @@ impl Body {
         }
         let mx = map.half_x - HALF_WIDTH;
         let mz = map.half_z - HALF_WIDTH;
-        if self.pos.x.abs() > mx {
+        if map.wrap {
+            let wrapped = map.wrap_x(self.pos.x);
+            // move the last position by the same jump, so drawing does not streak
+            self.prev_pos.x += wrapped - self.pos.x;
+            self.pos.x = wrapped;
+        } else if self.pos.x.abs() > mx {
             self.pos.x = self.pos.x.clamp(-mx, mx);
             self.vel.x = 0;
         }
@@ -445,6 +455,8 @@ mod tests {
             ceiling_m: 500,
             clearings: vec![],
             avenue_m: 0,
+            style: Default::default(),
+            wrap: false,
         })
     }
 
@@ -582,6 +594,64 @@ mod tests {
         run(&mut b, Controls::default(), &t, &m, 240);
         assert_eq!(b.pos.y, 0);
         assert!(b.grounded);
+    }
+
+    #[test]
+    fn low_gravity_lets_a_jump_rise_higher() {
+        let t = tuning();
+        let mut low = open_map();
+        low.climate.gravity_pct = 35;
+        let peak = |m: &Map| {
+            let mut b = Body::new(V3::ZERO, 0, &t);
+            b.step(
+                &Controls {
+                    ascend: true,
+                    ..Controls::default()
+                },
+                &t,
+                m,
+            );
+            let mut top = 0;
+            for _ in 0..300 {
+                b.step(&Controls::default(), &t, m);
+                top = top.max(b.pos.y);
+            }
+            top
+        };
+        let (earth, moon) = (peak(&open_map()), peak(&low));
+        // a jump's height goes as 1/g: about 2.9 times higher at 35%
+        assert!(moon > earth * 5 / 2, "{earth} vs {moon}");
+    }
+
+    #[test]
+    fn on_ice_a_frame_keeps_sliding_after_it_lets_go() {
+        let t = tuning();
+        let mut ice = open_map();
+        ice.climate.traction_pct = 20;
+        let slide = |m: &Map| {
+            let mut b = Body::new(V3::ZERO, 0, &t);
+            run(&mut b, FWD, &t, m, 60);
+            let z = b.pos.z;
+            run(&mut b, Controls::default(), &t, m, 60);
+            z - b.pos.z
+        };
+        assert!(
+            slide(&ice) > slide(&open_map()) * 3,
+            "{} vs {}",
+            slide(&ice),
+            slide(&open_map())
+        );
+    }
+
+    #[test]
+    fn on_a_ring_walking_off_one_edge_comes_back_on_the_other() {
+        let t = tuning();
+        let mut m = open_map();
+        m.wrap = true;
+        let mut b = Body::new(v3(m.half_x - int(1), 0, 0), crate::fx::deg(-90), &t);
+        b.aim_yaw = crate::fx::deg(-90);
+        run(&mut b, FWD, &t, &m, 30);
+        assert!(b.pos.x < 0 && b.pos.x > -m.half_x, "wrapped to {}", b.pos.x);
     }
 
     #[test]

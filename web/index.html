@@ -16,23 +16,28 @@
   <div id="hud" hidden>
     <div id="reticle"></div>
     <div id="marks"></div>
-    <div id="waypoint" hidden><span class="wp-label" data-copy="waypoint"></span><b class="wp-dist"></b></div>
+    <div id="waypoint" hidden><span class="wp-label"></span><b class="wp-dist"></b></div>
 
-    <div id="objective-box">
-      <div><span class="label" data-copy="objective"></span> <span id="objective"></span></div>
-      <div class="timer"><span class="label" data-copy="mission_timer"></span> <b id="timer">0</b></div>
+    <div id="mission-box" hidden>
+      <div class="mission-name" id="mission-name"></div>
+      <div id="objective"></div>
+      <div class="counters">
+        <span id="c-hostiles"><span class="label" data-copy="hostiles"></span> <b></b></span>
+        <span id="c-structures" hidden><span class="label" data-copy="structures"></span> <b></b></span>
+        <span id="c-race" hidden><span class="label" data-copy="gate"></span> <b class="gate"></b> <span class="label" data-copy="place"></span> <b class="place"></b></span>
+        <span id="c-time"><span class="label" data-copy="mission_timer"></span> <b></b></span>
+        <span id="c-left" hidden><span class="label" data-copy="time_left"></span> <b></b></span>
+      </div>
+      <div id="plus-track" hidden></div>
     </div>
 
-    <div id="boss" hidden>
-      <div class="boss-head"><span id="boss-name"></span><span id="boss-intent"></span></div>
-      <div class="bar boss-ap" id="boss-ap"><i></i></div>
-      <div class="bar thin stagger" id="boss-stagger"><i></i></div>
-    </div>
+    <div id="frames"></div>
 
     <div class="readout" id="readout-left">
       <div><span class="label" data-copy="speed"></span> <b id="speed">0</b> <span class="unit" data-copy="kmh"></span></div>
       <div><span class="label" data-copy="alt"></span> <b id="alt">0</b> <span class="unit" data-copy="metres"></span></div>
       <div id="glide" class="flag" data-copy="glide_on" hidden></div>
+      <div id="burning" class="warn" data-copy="burning" hidden></div>
     </div>
     <div class="readout" id="readout-right">
       <span class="label" data-copy="kills"></span> <b id="kills">0</b>
@@ -70,6 +75,7 @@
         <div class="card-head"><b id="detail-name"></b><span id="detail-kind"></span></div>
         <div id="detail-maker" class="maker"></div>
         <p id="detail-blurb"></p>
+        <p id="detail-lock" class="lock"></p>
         <table id="detail-rows"></table>
       </div>
     </div>
@@ -81,38 +87,48 @@
       <div id="paints"></div>
       <div class="actions">
         <button id="to-test" type="button" class="secondary" data-copy="test_field"></button>
-        <button id="to-briefing" type="button" data-copy="sortie"></button>
+        <button id="to-map" type="button" data-copy="missions_button"></button>
       </div>
       <p class="build" id="build"></p>
     </div>
   </section>
 
-  <section id="briefing" class="screen panel-screen" hidden>
-    <div class="panel">
-      <h1 data-copy="briefing_title"></h1>
-      <div id="briefing-text"></div>
-      <h2 data-copy="objectives_title"></h2>
-      <ol id="objectives"></ol>
-      <div class="actions">
-        <button id="briefing-back" type="button" class="secondary" data-copy="back"></button>
-        <button id="launch" type="button" data-copy="launch"></button>
-      </div>
-      <h2 data-copy="controls_title"></h2>
-      <table class="controls"></table>
+  <section id="select" class="screen" hidden>
+    <div id="map-top">
+      <h1 data-copy="star_map_title"></h1>
+      <p id="map-progress"></p>
+      <p class="hint" data-copy="star_map_hint"></p>
     </div>
+    <div id="hotspots"></div>
+    <aside id="map-panel" class="card">
+      <h2 id="planet-name"></h2>
+      <p id="planet-blurb"></p>
+      <p id="planet-gimmick" class="gimmick"></p>
+      <p id="planet-lock" class="lock"></p>
+      <ol id="mission-list"></ol>
+      <div class="actions">
+        <button id="map-back" type="button" class="secondary" data-copy="back"></button>
+        <button id="launch" type="button" data-copy="launch" disabled></button>
+      </div>
+    </aside>
   </section>
 
   <section id="debrief" class="screen panel-screen" hidden>
     <div class="panel">
+      <p class="sub" id="debrief-mission"></p>
       <h1 id="debrief-title"></h1>
+      <p id="debrief-reason" class="lock"></p>
       <table id="debrief-rows">
         <tr><td data-copy="debrief_time"></td><td id="d-time"></td></tr>
         <tr><td data-copy="debrief_ap"></td><td id="d-ap"></td></tr>
         <tr><td data-copy="debrief_kills"></td><td id="d-kills"></td></tr>
         <tr><td data-copy="debrief_rank"></td><td id="d-rank" class="rank"></td></tr>
       </table>
+      <ul id="d-rewards"></ul>
+      <p id="d-plus" class="gimmick"></p>
       <div class="actions">
         <button id="debrief-garage" type="button" class="secondary" data-copy="to_garage"></button>
+        <button id="debrief-map" type="button" class="secondary" data-copy="to_map"></button>
         <button id="retry" type="button" data-copy="retry"></button>
       </div>
     </div>

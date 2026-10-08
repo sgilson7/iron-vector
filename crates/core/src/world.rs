@@ -1,6 +1,7 @@
-//! The world: mechs, craft, shots and effects, advanced one tick at a time.
-//! `World::tick` is the only thing that changes it.
+//! The world: mechs, craft, structures, shots and effects, advanced one tick
+//! at a time. `World::tick` is the only thing that changes it.
 
+use crate::campaign::Planet;
 use crate::combat::{
     blast_damage, segment_sphere, Craft, CraftKind, Effect, EffectKind, Shot, Target, Team, Weapon,
     WeaponState,
@@ -8,12 +9,12 @@ use crate::combat::{
 use crate::content::Proving;
 use crate::fx::{self, deg, int, ONE};
 use crate::geom::{facing, v3, Affine, V3};
-use crate::map::Map;
+use crate::map::{Block, Map};
 use crate::mech::{tuning_for, Body, Controls, Tuning, TICKS_PER_SECOND};
-use crate::mission::{heli_weapon, HeliGun, Mission, MissionSpec};
+use crate::mission::{make_unit, Gun, Mission, MissionSpec, Units};
 use crate::model::Rig;
 use crate::parts::{stats, Catalog, Loadout, Slot, Stats, WeaponKind};
-use crate::pilot::{Act, Pilot, PilotSpec, Senses};
+use crate::pilot::{Pilot, Pilots, Senses};
 use crate::rng::Rng;
 
 /// The camera sits this far behind the pivot, and this far above the line of aim.
@@ -34,12 +35,15 @@ pub const STAGGER_TICKS: i32 = 90;
 pub const STAGGER_DAMAGE_PCT: i32 = 150;
 /// Impact drains away once a frame has gone this long without a hit.
 const IMPACT_QUIET_TICKS: i32 = 60;
+/// What is left of a fallen structure.
+const RUBBLE: i32 = int(3);
 
 /// The five paints of a mech, in `Paint` order, as Q16 colours.
 pub type Paints = [[i32; 3]; 5];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Mech {
+    pub name: String,
     pub body: Body,
     pub tuning: Tuning,
     pub rig: Rig,
@@ -57,12 +61,17 @@ pub struct Mech {
     pub paint: Paints,
     pub pilot: Option<Pilot>,
     /// what the pilot is doing, for the HUD
-    pub intent: Option<Act>,
+    pub intent: Option<String>,
     /// impact taken toward a stagger, and ticks since the last hit
     pub impact: i32,
     pub impact_quiet: i32,
     /// ticks of stagger left
     pub stagger: i32,
+    /// a race's next checkpoint, and the tick the course was finished
+    pub course_next: usize,
+    pub finished_at: Option<u32>,
+    /// burning-ground damage owed, in sixtieths of a point
+    burn: i32,
 }
 
 /// Weapon slots in the order the arrays use: right hand, left hand, shoulder.
@@ -75,6 +84,7 @@ impl Mech {
         let tuning = tuning_for(&st, &rig);
         let weapons = WEAPON_SLOTS.map(|s| Weapon::from_part(l.part(s, cat)));
         Mech {
+            name: String::new(),
             body: Body::new(pos, yaw, &tuning),
             tuning,
             rig,
@@ -97,6 +107,9 @@ impl Mech {
             impact: 0,
             impact_quiet: 0,
             stagger: 0,
+            course_next: 0,
+            finished_at: None,
+            burn: 0,
         }
     }
 
@@ -124,6 +137,16 @@ impl Mech {
     }
 }
 
+/// A building a mission asks the player to protect.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Structure {
+    /// its index among the map's buildings
+    pub block: usize,
+    pub ap: i32,
+    pub max_ap: i32,
+    pub alive: bool,
+}
+
 /// Where the camera stands for a pivot and an aim, pulled in front of any
 /// building between it and the pivot.
 pub fn camera_eye(map: &Map, pivot: V3, yaw: i32, pitch: i32) -> V3 {
@@ -145,89 +168,146 @@ pub struct World {
     pub map: Map,
     pub mechs: Vec<Mech>,
     pub craft: Vec<Craft>,
+    pub structures: Vec<Structure>,
     pub shots: Vec<Shot>,
     pub effects: Vec<Effect>,
     pub rng: Rng,
     pub tick: u32,
     pub kills: u32,
     pub mission: Option<Mission>,
-    pub heli: Option<HeliGun>,
+}
+
+fn empty_world(map: Map, player: Mech, seed: u64) -> World {
+    World {
+        map,
+        mechs: vec![player],
+        craft: Vec::new(),
+        structures: Vec::new(),
+        shots: Vec::new(),
+        effects: Vec::new(),
+        rng: Rng::new(seed),
+        tick: 0,
+        kills: 0,
+        mission: None,
+    }
+}
+
+/// A box standing on the ground, centred on `at` (m).
+fn standing(at: [i32; 2], size: [i32; 3], shade: u8) -> Block {
+    let [x, z] = at;
+    let [w, d, h] = size;
+    Block {
+        min: v3(int(x) - int(w) / 2, 0, int(z) - int(d) / 2),
+        max: v3(int(x) + int(w) / 2, int(h), int(z) + int(d) / 2),
+        shade,
+    }
 }
 
 impl World {
-    pub fn proving(cat: &Catalog, l: &Loadout, p: &Proving, paint: Paints) -> World {
+    /// The test field: the first planet's city and practice drones that come back.
+    pub fn proving(cat: &Catalog, l: &Loadout, p: &Proving, paint: Paints, units: &Units) -> World {
         let map = Map::generate(&p.map);
         let spawn = v3(int(p.spawn[0]), 0, int(p.spawn[1]));
         let player = Mech::build(l, cat, spawn, deg(p.spawn_yaw_deg), Team::Player, paint);
-        let mut rng = Rng::new(p.drone_seed);
+        let mut w = empty_world(map, player, p.drone_seed);
         let respawn = p.drone_respawn_ms * TICKS_PER_SECOND / 1000;
-        let craft = (0..p.drones)
-            .map(|i| {
-                let a = fx::TURN * i / p.drones.max(1) + rng.range(0, deg(20));
-                let r = int(rng.range(140, 460));
-                let mut at = spawn.add(facing(a, 0).scale(r));
-                at.y = int(rng.range(18, 70));
-                // a drone never hovers inside a building
-                at.y = at.y.max(map.floor_under(v3(at.x, map.ceiling, at.z)) + int(12));
-                drone(at, i, respawn)
-            })
-            .collect();
-        World {
-            map,
-            mechs: vec![player],
-            craft,
-            shots: Vec::new(),
-            effects: Vec::new(),
-            rng,
-            tick: 0,
-            kills: 0,
-            mission: None,
-            heli: None,
+        for i in 0..p.drones {
+            let a = fx::TURN * i / p.drones.max(1) + w.rng.range(0, deg(20));
+            let r = int(w.rng.range(140, 460));
+            let mut at = spawn.add(facing(a, 0).scale(r));
+            at.y = int(w.rng.range(18, 70));
+            // a drone never hovers inside a building
+            at.y =
+                at.y.max(w.map.floor_under(v3(at.x, w.map.ceiling, at.z)) + int(12));
+            let mut d = make_unit("drone", &units.0["drone"], at, 0, None, 100, i);
+            d.respawn = respawn;
+            w.craft.push(d);
         }
+        w
     }
 
-    /// The mission's city, the player at its start, and the helicopters and
-    /// the enemy frame held in reserve until their phase.
+    /// A mission on its planet: the planet's map with the mission's pads and
+    /// structures set down, the player at the start, the first wave out and
+    /// the rest held in reserve.
+    #[allow(clippy::too_many_arguments)]
     pub fn mission(
         cat: &Catalog,
         l: &Loadout,
         paint: Paints,
+        planet: &Planet,
         spec: &MissionSpec,
-        pilot: &PilotSpec,
+        pilots: &Pilots,
+        units: &Units,
         enemy_paint: Paints,
     ) -> World {
-        let map = Map::generate(&spec.map);
-        let start = v3(int(spec.start[0]), 0, int(spec.start[1]));
-        let player = Mech::build(l, cat, start, deg(spec.start_yaw_deg), Team::Player, paint);
-        let enemy_loadout = Loadout::restore(
-            &serde_json::to_string(&spec.enemy.loadout).unwrap_or_default(),
-            cat,
-        );
-        let [ex, ey, ez] = spec.enemy.spawn;
-        let mut boss = Mech::build(
-            &enemy_loadout,
-            cat,
-            v3(int(ex), int(ey), int(ez)),
-            0,
-            Team::Enemy,
-            enemy_paint,
-        );
-        boss.stats.ap = boss.stats.ap * spec.enemy.ap_pct / 100;
-        boss.ap = boss.stats.ap;
-        boss.body.grounded = false;
-        boss.pilot = Some(Pilot::new(pilot.clone()));
-        World {
-            map,
-            mechs: vec![player],
-            craft: Vec::new(),
-            shots: Vec::new(),
-            effects: Vec::new(),
-            rng: Rng::new(spec.map.seed ^ 0x5eed),
-            tick: 0,
-            kills: 0,
-            mission: Some(Mission::new(spec, boss)),
-            heli: Some(spec.heli.clone()),
+        let mut map = Map::generate(&planet.map);
+        map.climate = planet.climate;
+        for pad in &spec.pads {
+            map.add_block(standing(pad.at, pad.size, 2));
         }
+        let mut structures = Vec::new();
+        for s in &spec.protect {
+            structures.push(Structure {
+                block: map.blocks.len(),
+                ap: s.ap,
+                max_ap: s.ap,
+                alive: true,
+            });
+            map.add_block(standing(s.at, s.size, 255));
+        }
+        let on_top = |m: &Map, x: i32, z: i32| m.floor_under(v3(int(x), m.ceiling, int(z)));
+        let [sx, sz, syaw] = spec.start;
+        let start = v3(int(sx), on_top(&map, sx, sz), int(sz));
+        let player = Mech::build(l, cat, start, deg(syaw), Team::Player, paint);
+        let mut w = empty_world(map, player, planet.map.seed ^ 0x5eed);
+        w.structures = structures;
+        let mut mission = Mission::new(spec);
+        for (k, u) in spec.units.iter().enumerate() {
+            let [x, z, alt] = u.at;
+            let ground = on_top(&w.map, x, z);
+            let y = if alt < 0 {
+                ground + int(2)
+            } else {
+                int(alt).max(ground)
+            };
+            let goal = u.goal.map(|[gx, gz]| v3(int(gx), 0, int(gz)));
+            let Some(us) = units.0.get(&u.unit) else { continue };
+            let c = make_unit(
+                &u.unit,
+                us,
+                v3(int(x), y, int(z)),
+                u.wave,
+                goal,
+                spec.power_pct,
+                k as i32,
+            );
+            if u.wave == 0 {
+                w.craft.push(c);
+            } else {
+                mission.reserve_craft.push(c);
+            }
+        }
+        for (k, ms) in spec.mechs.iter().enumerate() {
+            let loadout = match &ms.loadout {
+                Some(lo) => Loadout::restore(&serde_json::to_string(lo).unwrap_or_default(), cat),
+                None => l.clone(),
+            };
+            let [x, z, yaw] = ms.at;
+            let pos = v3(int(x), on_top(&w.map, x, z), int(z));
+            let team = if ms.racer { Team::Player } else { Team::Enemy };
+            let mut m = Mech::build(&loadout, cat, pos, deg(yaw), team, enemy_paint);
+            m.name = ms.name.clone();
+            m.stats.ap = m.stats.ap * ms.ap_pct / 100;
+            m.ap = m.stats.ap;
+            m.pilot = pilots.pilot(&ms.pilot, k as u64 + 1);
+            if ms.wave == 0 {
+                w.mechs.push(m);
+            } else {
+                mission.reserve_mechs.push((ms.wave, m));
+            }
+        }
+        w.mission = Some(mission);
+        w
     }
 
     /// An empty bay with the player's frame standing in it, for the garage.
@@ -246,8 +326,10 @@ impl World {
             ceiling_m: 60,
             clearings: Vec::new(),
             avenue_m: 0,
+            style: Default::default(),
+            wrap: false,
         });
-        let wall = |x0: i32, z0: i32, x1: i32, z1: i32, h: i32, shade: u8| crate::map::Block {
+        let wall = |x0: i32, z0: i32, x1: i32, z1: i32, h: i32, shade: u8| Block {
             min: v3(int(x0), 0, int(z0)),
             max: v3(int(x1), int(h), int(z1)),
             shade,
@@ -260,22 +342,17 @@ impl World {
         map.add_block(wall(-30, -40, -26, 14, 18, 0));
         map.add_block(wall(26, -40, 30, 14, 18, 0));
         let player = Mech::build(l, cat, V3::ZERO, 0, Team::Player, paint);
-        World {
-            map,
-            mechs: vec![player],
-            craft: Vec::new(),
-            shots: Vec::new(),
-            effects: Vec::new(),
-            rng: Rng::new(1),
-            tick: 0,
-            kills: 0,
-            mission: None,
-            heli: None,
-        }
+        empty_world(map, player, 1)
     }
 
     pub fn player(&self) -> &Mech {
         &self.mechs[0]
+    }
+
+    /// From `a` to `b`, the short way round on a ring.
+    pub fn map_delta(&self, a: V3, b: V3) -> V3 {
+        let d = b.sub(a);
+        v3(self.map.wrap_x(d.x), d.y, d.z)
     }
 
     /// The camera eye and the aim direction of the player, right now.
@@ -286,11 +363,25 @@ impl World {
         (eye, facing(m.body.aim_yaw, m.body.aim_pitch))
     }
 
+    pub fn structure_centre(&self, i: usize) -> V3 {
+        let b = &self.map.blocks[self.structures[i].block];
+        v3(
+            (b.min.x + b.max.x) / 2,
+            (b.min.y + b.max.y) / 2,
+            (b.min.z + b.max.z) / 2,
+        )
+    }
+
     /// The centre of a target, if it is still there.
     pub fn target_centre(&self, t: Target) -> Option<V3> {
         match t {
             Target::Mech(i) => self.mechs.get(i).filter(|m| m.alive).map(|m| m.chest()),
             Target::Craft(i) => self.craft.get(i).filter(|c| c.alive).map(|c| c.pos),
+            Target::Structure(i) => self
+                .structures
+                .get(i)
+                .filter(|s| s.alive)
+                .map(|_| self.structure_centre(i)),
         }
     }
 
@@ -298,6 +389,7 @@ impl World {
         match t {
             Target::Mech(i) => self.mechs[i].body.vel,
             Target::Craft(i) => self.craft[i].vel,
+            Target::Structure(_) => V3::ZERO,
         }
     }
 
@@ -318,11 +410,16 @@ impl World {
         mechs.chain(craft).collect()
     }
 
+    fn weapons_free(&self) -> bool {
+        self.mission.as_ref().is_none_or(|m| m.weapons)
+    }
+
     pub fn tick(&mut self, player: Controls) {
         self.tick = self.tick.wrapping_add(1);
         let (eye, dir) = self.player_view();
         self.mechs[0].aim_point = self.aim_ray(eye, dir);
         self.update_lock(eye, dir);
+        let burning = self.map.climate.floor_dps;
         for i in 0..self.mechs.len() {
             if !self.mechs[i].alive {
                 continue;
@@ -340,6 +437,14 @@ impl World {
             }
             m.body.step(&c, &m.tuning, &self.map);
             m.hit_flash = (m.hit_flash - 1).max(0);
+            if burning > 0 && m.body.grounded && m.body.pos.y == 0 {
+                m.burn += burning;
+                let owed = m.burn / TICKS_PER_SECOND;
+                m.burn %= TICKS_PER_SECOND;
+                if owed > 0 {
+                    self.hurt(Target::Mech(i), owed, 0);
+                }
+            }
             self.fire(i, &c);
         }
         self.update_craft();
@@ -348,7 +453,7 @@ impl World {
         self.update_mission();
     }
 
-    /// What enemy mech `i` can see, as its pilot is shown it.
+    /// What mech `i` can see, as its pilot is shown it.
     fn senses(&self, i: usize) -> Senses {
         let me = &self.mechs[i];
         let target = self.player();
@@ -359,19 +464,31 @@ impl World {
             .filter(|s| {
                 s.team != me.team && s.kind == WeaponKind::Missile && s.target == Some(Target::Mech(i))
             })
-            .map(|s| s.pos.dist(my_chest))
+            .map(|s| self.map_delta(my_chest, s.pos).len())
             .min();
+        let to_course = self
+            .mission
+            .as_ref()
+            .and_then(|m| m.course.get(me.course_next))
+            .map(|c| self.map_delta(my_chest, *c));
         Senses {
             me: my_chest,
             my_vel: me.body.vel,
+            alt: me.body.pos.y,
             en_pct: me.body.en_pct(&me.tuning),
             en_locked: me.body.en_locked,
+            ap_pct: me.ap * 100 / me.stats.ap.max(1),
             glide: me.body.glide,
             staggered: me.stagger > 0,
-            target: target.chest(),
+            airborne: !me.body.grounded,
+            floor_burning: self.map.climate.floor_dps > 0 && me.body.grounded && me.body.pos.y == 0,
+            to_target: self.map_delta(my_chest, target.chest()),
             target_vel: target.body.vel,
+            target_ap_pct: target.ap * 100 / target.stats.ap.max(1),
+            target_staggered: target.stagger > 0,
             can_see: target.alive && self.map.clear_line(my_chest, target.chest()),
             missile,
+            to_course,
             weapons: me
                 .weapons
                 .map(|w| (w.speed, w.range, w.kind == WeaponKind::Missile)),
@@ -389,13 +506,14 @@ impl World {
         };
         let d = pilot.think(&s);
         let m = &mut self.mechs[i];
-        m.intent = Some(d.act);
+        m.intent = Some(d.label);
         m.body.aim_yaw = d.aim_yaw & (fx::TURN - 1);
         m.body.aim_pitch = d.aim_pitch.clamp(crate::mech::PITCH_MIN, crate::mech::PITCH_MAX);
         // shots go where the pilot looks, error and all; only missiles home
         m.aim_point =
-            s.me.add(facing(m.body.aim_yaw, m.body.aim_pitch).scale(s.target.dist(s.me)));
-        m.lock = (s.can_see && s.target.dist(s.me) <= range).then_some(Target::Mech(0));
+            s.me.add(facing(m.body.aim_yaw, m.body.aim_pitch).scale(s.to_target.len()));
+        let hostile = m.team == Team::Enemy;
+        m.lock = (hostile && s.can_see && s.to_target.len() <= range).then_some(Target::Mech(0));
         d.controls
     }
 
@@ -414,10 +532,8 @@ impl World {
         let range = m.lock_range;
         let mut best: Option<(i32, Target)> = None;
         for t in self.hostiles() {
-            let Some(c) = self.target_centre(t) else {
-                continue;
-            };
-            let to = c.sub(eye);
+            let Some(c) = self.target_centre(t) else { continue };
+            let to = self.map_delta(eye, c);
             if to.len() > range {
                 continue;
             }
@@ -440,10 +556,11 @@ impl World {
     }
 
     fn fire(&mut self, i: usize, c: &Controls) {
+        let free = self.weapons_free();
         for k in 0..3 {
             let st = &mut self.mechs[i].wstate[k];
             st.cooldown = (st.cooldown - 1).max(0);
-            if !c.fire[k] || st.cooldown > 0 || st.ammo <= 0 {
+            if !free || !c.fire[k] || st.cooldown > 0 || st.ammo <= 0 {
                 continue;
             }
             let m = &self.mechs[i];
@@ -462,19 +579,28 @@ impl World {
                 (Some(c), _) => {
                     // lead the target by its velocity over the flight time
                     let flight = fx::div(c.sub(muzzle).len(), w.speed.max(1)) / ONE;
-                    c.add(self.target_vel(m.lock.unwrap()).scale(int(flight)))
+                    c.add(
+                        self.target_vel(m.lock.unwrap_or(Target::Mech(0)))
+                            .scale(int(flight)),
+                    )
                 }
                 (None, _) => m.aim_point,
             };
             let shots = Shot::fire(&w, m.team, muzzle, aim, m.lock, &mut self.rng);
-            let st = &mut self.mechs[i].wstate[k];
-            st.cooldown = w.fire_ticks;
             // a missile salvo spends a missile each; any other weapon one round a pull
-            st.ammo -= if w.kind == WeaponKind::Missile {
+            let spent = if w.kind == WeaponKind::Missile {
                 shots.len() as i32
             } else {
                 1
             };
+            let st = &mut self.mechs[i].wstate[k];
+            st.cooldown = w.fire_ticks;
+            st.ammo -= spent;
+            if i == 0 {
+                if let Some(m) = self.mission.as_mut() {
+                    m.rounds += spent;
+                }
+            }
             self.shots.extend(shots);
             self.effects.push(Effect {
                 kind: EffectKind::Flash,
@@ -487,12 +613,17 @@ impl World {
         }
     }
 
+    /// One tick of every unit that is not a mech.
     fn update_craft(&mut self) {
         let player = self.player();
         let (target, target_vel, target_alive) = (player.chest(), player.body.vel, player.alive);
-        let gun = self.heli.clone();
-        let mut volleys: Vec<(V3, V3)> = Vec::new();
-        for c in &mut self.craft {
+        let live_structures: Vec<V3> = (0..self.structures.len())
+            .filter(|i| self.structures[*i].alive)
+            .map(|i| self.structure_centre(i))
+            .collect();
+        let mut volleys: Vec<(V3, V3, Gun)> = Vec::new();
+        let mut craft = std::mem::take(&mut self.craft);
+        for c in &mut craft {
             c.prev_pos = c.pos;
             c.prev_yaw = c.yaw;
             if !c.alive {
@@ -507,66 +638,116 @@ impl World {
                 }
                 continue;
             }
-            match (c.kind, &gun) {
-                (CraftKind::Heli, Some(g)) => {
-                    // circle the anchor at about 20 m/s, and face the player when in reach
-                    let step = fx::TURN as i64 * 20 / (377 * g.orbit_m.max(1) as i64);
-                    c.phase = (c.phase + step as i32) & (fx::TURN - 1);
-                    let orbit = facing(c.phase, 0).scale(int(g.orbit_m));
-                    let bob = fx::mul(fx::sin(c.phase * 2), int(4));
-                    let next = c.anchor.add(orbit).add(v3(0, bob, 0));
-                    c.vel = next.sub(c.pos);
-                    c.pos = next;
-                    let to = target.sub(c.pos);
-                    let in_reach = target_alive && to.len() < int(g.range_m);
-                    c.yaw = if in_reach {
-                        crate::geom::yaw_pitch_of(to).0
+            // what this unit is after: its goal, a structure, or the player
+            let aim_at = match c.kind {
+                CraftKind::Tank => c
+                    .goal
+                    .or_else(|| {
+                        live_structures
+                            .iter()
+                            .min_by_key(|s| self.map_delta(c.pos, **s).len())
+                            .copied()
+                    })
+                    .unwrap_or(target),
+                _ => target,
+            };
+            match c.kind {
+                CraftKind::Heli | CraftKind::Drone => {
+                    // circle the anchor: gunships at about 20 m/s, drones slowly
+                    let step = if c.kind == CraftKind::Heli {
+                        (fx::TURN as i64 * 20 * ONE as i64 / (377 * c.orbit.max(ONE) as i64)) as i32
                     } else {
-                        c.phase + fx::QUARTER
+                        deg(1) / 3
                     };
-                    c.cooldown -= 1;
-                    if in_reach && c.cooldown <= 0 && self.map.clear_line(c.pos, target) {
-                        if c.burst <= 0 {
-                            c.burst = g.burst;
-                        }
-                        let muzzle = c.pos.add(facing(c.yaw, 0).scale(int(4))).sub(v3(0, int(2), 0));
-                        let flight =
-                            fx::div(target.dist(muzzle), fx::ratio(g.speed_ms, TICKS_PER_SECOND)) / ONE;
-                        volleys.push((muzzle, target.add(target_vel.scale(int(flight)))));
-                        c.burst -= 1;
-                        c.cooldown = if c.burst > 0 {
-                            g.burst_gap_ms * TICKS_PER_SECOND / 1000
-                        } else {
-                            g.reload_ms * TICKS_PER_SECOND / 1000
-                        };
-                    }
-                }
-                _ => {
-                    // practice drones circle their anchor slowly and bob
-                    c.phase = (c.phase + deg(1) / 3) & (fx::TURN - 1);
-                    let orbit = facing(c.phase, 0).scale(int(14));
-                    let bob = fx::mul(fx::sin(c.phase * 3), int(3));
+                    c.phase = (c.phase + step) & (fx::TURN - 1);
+                    let orbit = facing(c.phase, 0).scale(c.orbit);
+                    let bob = fx::mul(fx::sin(c.phase * 2), int(3));
                     let next = c.anchor.add(orbit).add(v3(0, bob, 0));
                     c.vel = next.sub(c.pos);
                     c.pos = next;
                     c.yaw = c.phase + fx::QUARTER;
                 }
+                CraftKind::Tank => {
+                    let to = self.map_delta(c.pos, aim_at);
+                    let flat = v3(to.x, 0, to.z);
+                    let stop = match (c.goal, c.gun) {
+                        (None, Some(g)) => int(g.range_m) * 3 / 4,
+                        _ => 0,
+                    };
+                    c.vel = V3::ZERO;
+                    if flat.len() > stop {
+                        let step = flat.norm().scale(c.speed);
+                        // drive on, sliding along whatever is in the way
+                        let r = c.radius;
+                        let blocked = |p: V3| {
+                            self.map
+                                .box_blocked(v3(p.x - r, ONE, p.z - r), v3(p.x + r, int(3), p.z + r))
+                        };
+                        for next in [
+                            c.pos.add(step),
+                            c.pos.add(v3(step.x, 0, 0)),
+                            c.pos.add(v3(0, 0, step.z)),
+                        ] {
+                            if !blocked(next) {
+                                c.vel = next.sub(c.pos);
+                                c.pos = v3(self.map.wrap_x(next.x), next.y, next.z);
+                                break;
+                            }
+                        }
+                    }
+                    c.yaw = crate::geom::yaw_pitch_of(flat).0;
+                }
+                CraftKind::Turret => {}
+            }
+            let Some(g) = c.gun else { continue };
+            // fire at the structure in reach, or at the player in sight
+            let at_structure = c.kind == CraftKind::Tank && c.goal.is_none() && aim_at != target;
+            let (shoot_at, lead) = if at_structure {
+                (aim_at, V3::ZERO)
+            } else {
+                (target, target_vel)
+            };
+            let to = self.map_delta(c.pos, shoot_at);
+            let in_reach = (at_structure || target_alive) && to.len() < int(g.range_m);
+            if c.kind != CraftKind::Tank && in_reach {
+                c.yaw = crate::geom::yaw_pitch_of(to).0;
+            }
+            c.cooldown -= 1;
+            let sight = at_structure || self.map.clear_line(c.pos, shoot_at);
+            if in_reach && c.cooldown <= 0 && sight {
+                if c.burst <= 0 {
+                    c.burst = g.burst;
+                }
+                let muzzle = c.pos.add(facing(c.yaw, 0).scale(c.radius)).add(v3(0, ONE, 0));
+                let flight = fx::div(to.len(), fx::ratio(g.speed_ms, TICKS_PER_SECOND)) / ONE;
+                volleys.push((muzzle, muzzle.add(to).add(lead.scale(int(flight))), g));
+                c.burst -= 1;
+                c.cooldown = if c.burst > 0 {
+                    g.burst_gap_ms * TICKS_PER_SECOND / 1000
+                } else {
+                    g.reload_ms * TICKS_PER_SECOND / 1000
+                };
             }
         }
-        if let Some(g) = &gun {
-            let w = heli_weapon(g);
-            for (muzzle, aim) in volleys {
-                let shots = Shot::fire(&w, Team::Enemy, muzzle, aim, None, &mut self.rng);
-                self.shots.extend(shots);
-                self.effects.push(Effect {
-                    kind: EffectKind::Flash,
-                    pos: muzzle,
-                    vel: V3::ZERO,
-                    age: 0,
-                    life: 3,
-                    size: ONE,
-                });
-            }
+        self.craft = craft;
+        for (muzzle, aim, g) in volleys {
+            let shots = Shot::fire(
+                &Weapon::from_gun(&g),
+                Team::Enemy,
+                muzzle,
+                aim,
+                None,
+                &mut self.rng,
+            );
+            self.shots.extend(shots);
+            self.effects.push(Effect {
+                kind: EffectKind::Flash,
+                pos: muzzle,
+                vel: V3::ZERO,
+                age: 0,
+                life: 3,
+                size: ONE,
+            });
         }
     }
 
@@ -578,7 +759,16 @@ impl World {
             s.steer(goal);
             s.prev_pos = s.pos;
             let next = s.pos.add(s.vel);
-            let mut hit: Option<(i32, Option<Target>)> = self.map.segment_hit(s.pos, next).map(|t| (t, None));
+            let structure_of = |b: usize| self.structures.iter().position(|st| st.block == b && st.alive);
+            let mut hit: Option<(i32, Option<Target>)> =
+                self.map.segment_hit_block(s.pos, next).map(|(t, b)| {
+                    // enemy fire breaks a protected building it strikes
+                    let who = b
+                        .and_then(structure_of)
+                        .filter(|_| s.team == Team::Enemy)
+                        .map(Target::Structure);
+                    (t, who)
+                });
             let mut consider = |t: i32, who: Target| {
                 if hit.is_none_or(|(bt, _)| t < bt) {
                     hit = Some((t, Some(who)));
@@ -596,7 +786,7 @@ impl World {
             if s.team == Team::Player {
                 for (i, c) in self.craft.iter().enumerate() {
                     if c.alive {
-                        if let Some(t) = segment_sphere(s.pos, next, c.pos, c.radius()) {
+                        if let Some(t) = segment_sphere(s.pos, next, c.pos, c.radius) {
                             consider(t, Target::Craft(i));
                         }
                     }
@@ -615,7 +805,9 @@ impl World {
                     }
                 }
                 None => {
-                    s.pos = next;
+                    let wrapped = self.map.wrap_x(next.x);
+                    s.prev_pos.x += wrapped - next.x;
+                    s.pos = v3(wrapped, next.y, next.z);
                     kept.push(s);
                 }
             }
@@ -633,12 +825,12 @@ impl World {
                 if Some(t) == who {
                     continue;
                 }
-                if let Some(c) = self.target_centre(t) {
-                    let d = blast_damage(s.damage_now(), c.dist(s.pos), s.blast);
-                    if d > 0 {
-                        let i = blast_damage(s.impact, c.dist(s.pos), s.blast);
-                        self.hurt(t, d, i);
-                    }
+                let Some(c) = self.target_centre(t) else { continue };
+                let dist = self.map_delta(s.pos, c).len();
+                let d = blast_damage(s.damage_now(), dist, s.blast);
+                if d > 0 {
+                    let i = blast_damage(s.impact, dist, s.blast);
+                    self.hurt(t, d, i);
                 }
             }
             self.effects.push(Effect {
@@ -673,7 +865,7 @@ impl World {
             .enumerate()
             .filter(|(_, m)| m.alive && m.team != team)
             .map(|(i, _)| Target::Mech(i));
-        let craft: Vec<Target> = if team == Team::Player {
+        let others: Vec<Target> = if team == Team::Player {
             self.craft
                 .iter()
                 .enumerate()
@@ -681,9 +873,14 @@ impl World {
                 .map(|(i, _)| Target::Craft(i))
                 .collect()
         } else {
-            Vec::new()
+            self.structures
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| s.alive)
+                .map(|(i, _)| Target::Structure(i))
+                .collect()
         };
-        mechs.chain(craft).collect()
+        mechs.chain(others).collect()
     }
 
     /// Damage and impact to a target. A staggered mech takes extra damage, and
@@ -698,8 +895,10 @@ impl World {
                     dmg
                 };
                 m.ap -= dmg;
-                m.hit_flash = 4;
-                m.impact_quiet = 0;
+                if impact > 0 {
+                    m.hit_flash = 4;
+                    m.impact_quiet = 0;
+                }
                 if m.stagger == 0 {
                     m.impact += impact;
                     if m.impact >= m.stats.stability {
@@ -725,11 +924,26 @@ impl World {
                 }
                 (c.pos, gone)
             }
+            Target::Structure(i) => {
+                let centre = self.structure_centre(i);
+                let s = &mut self.structures[i];
+                s.ap -= dmg;
+                let gone = s.alive && s.ap <= 0;
+                if gone {
+                    s.ap = 0;
+                    s.alive = false;
+                    // it falls to rubble, which still stands in the way
+                    let b = &mut self.map.blocks[s.block];
+                    b.max.y = b.max.y.min(RUBBLE);
+                }
+                (centre, gone)
+            }
         };
         if destroyed {
             let hostile = match t {
                 Target::Craft(_) => true,
                 Target::Mech(i) => self.mechs[i].team == Team::Enemy,
+                Target::Structure(_) => false,
             };
             if hostile {
                 self.kills += 1;
@@ -777,31 +991,16 @@ impl World {
     }
 }
 
-fn drone(at: V3, i: i32, respawn: i32) -> Craft {
-    Craft {
-        kind: CraftKind::Drone,
-        pos: at,
-        prev_pos: at,
-        vel: V3::ZERO,
-        yaw: 0,
-        prev_yaw: 0,
-        ap: 700,
-        max_ap: 700,
-        alive: true,
-        anchor: at,
-        phase: deg(37) * i,
-        cooldown: 0,
-        burst: 0,
-        respawn,
-        down_ticks: 0,
-    }
-}
-
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use crate::combat::Shot;
     use crate::content::tests::{missions, palette};
     use crate::parts::tests::catalog;
+
+    pub fn units() -> Units {
+        Units::parse(include_str!("../../../data/units.json")).unwrap()
+    }
 
     pub fn world() -> World {
         let c = catalog();
@@ -810,6 +1009,25 @@ pub(crate) mod tests {
             &c.default_loadout(),
             &missions().proving,
             palette().scheme(0).paints(),
+            &units(),
+        )
+    }
+
+    /// The world of a campaign mission, with the default loadout.
+    pub fn mission_world(id: &str) -> World {
+        let c = catalog();
+        let camp = crate::campaign::tests::campaign();
+        let (p, i) = camp.find(id).unwrap();
+        let pal = palette();
+        World::mission(
+            &c,
+            &c.default_loadout(),
+            pal.scheme(0).paints(),
+            &camp.planets[p],
+            &camp.planets[p].missions[i],
+            &crate::pilot::tests::pilots(),
+            &units(),
+            pal.enemy.paints(),
         )
     }
 
@@ -818,7 +1036,7 @@ pub(crate) mod tests {
         let w = world();
         assert_eq!(w.craft.len(), 12);
         for c in &w.craft {
-            let r = c.radius();
+            let r = c.radius;
             assert!(
                 !w.map.box_blocked(c.pos.sub(v3(r, r, r)), c.pos.add(v3(r, r, r))),
                 "drone at {:?}",
@@ -834,8 +1052,8 @@ pub(crate) mod tests {
 
     #[test]
     fn the_same_inputs_give_the_same_world() {
-        let mut a = world();
-        let mut b = world();
+        let mut a = mission_world("halden-4");
+        let mut b = mission_world("halden-4");
         let script = |n: u32| Controls {
             move_z: ONE,
             move_x: if n % 90 < 45 { ONE } else { -ONE },
@@ -851,7 +1069,6 @@ pub(crate) mod tests {
             b.tick(script(n));
         }
         assert_eq!(a, b);
-        assert!(a.mechs[0].body.pos != V3::ZERO);
     }
 
     fn aim_at(w: &mut World, p: V3) {
@@ -866,17 +1083,16 @@ pub(crate) mod tests {
     #[test]
     fn looking_at_a_drone_locks_it_and_rifle_fire_destroys_it() {
         let mut w = world();
-        // put drone 0 in open air straight ahead and hold it still
         let at = w.mechs[0].body.pos.add(v3(0, int(30), -int(60)));
         w.craft[0].anchor = at;
         w.craft[0].pos = at;
+        w.craft[0].orbit = 0;
         for _ in 0..3 {
             let p = w.craft[0].pos;
             aim_at(&mut w, p);
             w.tick(Controls::default());
         }
         assert_eq!(w.mechs[0].lock, Some(Target::Craft(0)));
-        let ap = w.craft[0].ap;
         let rifle = Controls {
             fire: [false, true, false],
             ..Controls::default()
@@ -889,11 +1105,7 @@ pub(crate) mod tests {
                 break;
             }
         }
-        assert!(
-            !w.craft[0].alive,
-            "the drone went from {ap} to {} AP",
-            w.craft[0].ap
-        );
+        assert!(!w.craft[0].alive, "{} AP left", w.craft[0].ap);
         assert_eq!(w.kills, 1);
     }
 
@@ -903,7 +1115,8 @@ pub(crate) mod tests {
         let at = w.mechs[0].body.pos.add(v3(0, int(10), -int(80)));
         w.craft[0].anchor = at;
         w.craft[0].pos = at;
-        w.map.add_block(crate::map::Block {
+        w.craft[0].orbit = 0;
+        w.map.add_block(Block {
             min: v3(-int(15), 0, -int(50)),
             max: v3(int(15), int(40), -int(40)),
             shade: 0,
@@ -930,13 +1143,15 @@ pub(crate) mod tests {
         assert_eq!(ap - ap2, 100);
         w.hurt(Target::Mech(0), 100, 0);
         assert_eq!(ap2 - w.mechs[0].ap, 150);
-        // a staggered frame ignores its controls
         let before = w.mechs[0].body.pos;
         w.tick(Controls {
             move_z: ONE,
             ..Controls::default()
         });
-        assert_eq!(w.mechs[0].body.pos.z, before.z);
+        assert_eq!(
+            w.mechs[0].body.pos.z, before.z,
+            "a staggered frame ignores its controls"
+        );
     }
 
     #[test]
@@ -998,7 +1213,7 @@ pub(crate) mod tests {
     #[test]
     fn the_camera_is_pulled_in_front_of_a_wall_behind_the_mech() {
         let mut w = world();
-        let blk = crate::map::Block {
+        let blk = Block {
             min: v3(-int(20), 0, int(6)),
             max: v3(int(20), int(60), int(30)),
             shade: 0,
@@ -1006,5 +1221,73 @@ pub(crate) mod tests {
         w.map.add_block(blk);
         let (eye, _) = w.player_view();
         assert!(eye.z < blk.min.z, "eye at {:?}", eye);
+    }
+
+    #[test]
+    fn tanks_drive_at_the_structures_and_damage_them() {
+        let mut w = mission_world("halden-3");
+        let ap: i32 = w.structures.iter().map(|s| s.ap).sum();
+        // keep the player out of it: far off and high up
+        w.mechs[0].body.pos = v3(int(600), int(300), int(1100));
+        for _ in 0..60 * 60 {
+            w.tick(Controls::default());
+        }
+        let now: i32 = w.structures.iter().map(|s| s.ap).sum();
+        assert!(now < ap, "the tanks did no damage in a minute");
+    }
+
+    #[test]
+    fn a_fallen_structure_drops_to_rubble() {
+        let mut w = mission_world("halden-3");
+        let b = w.structures[0].block;
+        w.hurt(Target::Structure(0), 1_000_000, 0);
+        assert!(!w.structures[0].alive);
+        assert_eq!(w.map.blocks[b].max.y, RUBBLE);
+        assert_eq!(w.structures_lost(), 1);
+        assert_eq!(w.kills, 0, "a lost structure is not a kill");
+    }
+
+    #[test]
+    fn a_turret_fires_at_a_player_in_reach() {
+        let mut w = mission_world("sere-2");
+        let t = w.craft.iter().position(|c| c.kind == CraftKind::Turret).unwrap();
+        let at = w.craft[t].pos;
+        // hover in the open beside it
+        w.mechs[0].body.pos = v3(at.x + int(40), at.y + int(10), at.z);
+        w.mechs[0].body.grounded = false;
+        let ap = w.mechs[0].ap;
+        for _ in 0..600 {
+            w.tick(Controls {
+                ascend: true,
+                ..Controls::default()
+            });
+        }
+        assert!(w.mechs[0].ap < ap, "ten seconds beside the turrets did no damage");
+    }
+
+    #[test]
+    fn burning_ground_costs_ap_and_a_pad_does_not() {
+        let mut w = mission_world("cinder-1");
+        let ap = w.mechs[0].ap;
+        for _ in 0..60 {
+            w.tick(Controls::default());
+        }
+        assert_eq!(w.mechs[0].ap, ap, "the start is on a pad");
+        // find bare ground and stand on it
+        let mut x = int(300);
+        while w
+            .map
+            .box_blocked(v3(x - int(3), 0, int(697)), v3(x + int(3), int(8), int(703)))
+        {
+            x += int(10);
+        }
+        w.mechs[0].body.pos = v3(x, 0, int(700));
+        let ap = w.mechs[0].ap;
+        for _ in 0..60 {
+            w.tick(Controls::default());
+        }
+        // 240 AP a second
+        let lost = ap - w.mechs[0].ap;
+        assert!((230..=250).contains(&lost), "lost {lost}");
     }
 }

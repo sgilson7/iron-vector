@@ -547,6 +547,349 @@
         {"mesh": "cube", "at": [10, 44, -110], "size": [64, 64, 10], "paint": "glow"},
         {"mesh": "cube", "at": [10, 44, -60], "size": [64, 64, 10], "paint": "glow"}
       ]
+    },
+    {
+      "id": "hd-osprey",
+      "slot": "head",
+      "name": "HD-09 OSPREY",
+      "maker": "Okabe Thrust",
+      "blurb": "A scout head. The longest lock in the catalogue.",
+      "like": "hd-kestrel",
+      "scale_pct": 108,
+      "stats": {"ap": 720, "weight": 2300, "en_load": 190, "lock_range_m": 500, "stability": 110}
+    },
+    {
+      "id": "hd-bastille",
+      "slot": "head",
+      "name": "HD-16 BASTILLE",
+      "maker": "Rook Heavy",
+      "blurb": "Armour first, sight second.",
+      "like": "hd-mantle",
+      "scale_pct": 110,
+      "stats": {"ap": 1550, "weight": 5200, "en_load": 120, "lock_range_m": 320, "stability": 360}
+    },
+    {
+      "id": "hd-sentinel",
+      "slot": "head",
+      "name": "HD-21 SENTINEL",
+      "maker": "Calder Works",
+      "blurb": "A refined Warden: more of everything.",
+      "like": "hd-warden",
+      "scale_pct": 104,
+      "stats": {"ap": 1150, "weight": 3300, "en_load": 140, "lock_range_m": 420, "stability": 230}
+    },
+    {
+      "id": "cr-spire",
+      "slot": "core",
+      "name": "CR-07 SPIRE",
+      "maker": "Okabe Thrust",
+      "blurb": "A light core with a heavier spine.",
+      "like": "cr-vane",
+      "scale_pct": 106,
+      "stats": {"ap": 2800, "weight": 15500, "en_load": 250, "stability": 520}
+    },
+    {
+      "id": "cr-anvil",
+      "slot": "core",
+      "name": "CR-24 ANVIL",
+      "maker": "Rook Heavy",
+      "blurb": "The heaviest chest made. It barely notices impact.",
+      "like": "cr-citadel",
+      "scale_pct": 106,
+      "stats": {"ap": 5200, "weight": 33000, "en_load": 420, "stability": 1050}
+    },
+    {
+      "id": "cr-lattice",
+      "slot": "core",
+      "name": "CR-30 LATTICE",
+      "maker": "Calder Works",
+      "blurb": "A balanced core, braced throughout.",
+      "like": "cr-bulwark",
+      "scale_pct": 103,
+      "stats": {"ap": 4000, "weight": 22000, "en_load": 320, "stability": 760}
+    },
+    {
+      "id": "ar-heron",
+      "slot": "arms",
+      "name": "AR-05 HERON",
+      "maker": "Okabe Thrust",
+      "blurb": "Light arms with a better grip than they look.",
+      "like": "ar-reed",
+      "scale_pct": 105,
+      "stats": {"ap": 1500, "weight": 8000, "en_load": 150, "arms_limit": 12500}
+    },
+    {
+      "id": "ar-grip",
+      "slot": "arms",
+      "name": "AR-12 GRIP",
+      "maker": "Calder Works",
+      "blurb": "All-round arms that carry most guns.",
+      "like": "ar-lancer",
+      "scale_pct": 104,
+      "stats": {"ap": 2100, "weight": 11500, "en_load": 190, "arms_limit": 17000}
+    },
+    {
+      "id": "ar-titan",
+      "slot": "arms",
+      "name": "AR-19 TITAN",
+      "maker": "Rook Heavy",
+      "blurb": "Arms for the heaviest weapons there are.",
+      "like": "ar-bastion",
+      "scale_pct": 108,
+      "stats": {"ap": 2900, "weight": 17000, "en_load": 240, "arms_limit": 26000}
+    },
+    {
+      "id": "lg-gale",
+      "slot": "legs",
+      "name": "LG-10 GALE",
+      "maker": "Okabe Thrust",
+      "blurb": "The fastest legs made.",
+      "like": "lg-wisp",
+      "scale_pct": 104,
+      "stats": {
+        "ap": 2700,
+        "weight": 13500,
+        "en_load": 340,
+        "load_limit": 50000,
+        "walk_kmh": 135,
+        "jump_ms": 22,
+        "stability": 480
+      }
+    },
+    {
+      "id": "rj-lynx",
+      "slot": "legs",
+      "name": "RJ-09 LYNX",
+      "maker": "Okabe Thrust",
+      "blurb": "Reverse joints that throw the frame skyward.",
+      "like": "rj-hare",
+      "scale_pct": 105,
+      "stats": {
+        "ap": 3400,
+        "weight": 18500,
+        "en_load": 390,
+        "load_limit": 58000,
+        "walk_kmh": 108,
+        "jump_ms": 36,
+        "stability": 600
+      }
+    },
+    {
+      "id": "lg-monolith",
+      "slot": "legs",
+      "name": "LG-60 MONOLITH",
+      "maker": "Rook Heavy",
+      "blurb": "Legs that carry a fortress.",
+      "like": "lg-bastion",
+      "scale_pct": 108,
+      "stats": {
+        "ap": 6200,
+        "weight": 36000,
+        "en_load": 560,
+        "load_limit": 98000,
+        "walk_kmh": 68,
+        "jump_ms": 11,
+        "stability": 1200
+      }
+    },
+    {
+      "id": "bt-flare",
+      "slot": "booster",
+      "name": "BT-8 FLARE",
+      "maker": "Okabe Thrust",
+      "blurb": "A racing booster. The fastest glide made.",
+      "like": "bt-comet",
+      "scale_pct": 110,
+      "stats": {
+        "weight": 2000,
+        "en_load": 360,
+        "glide_kmh": 305,
+        "qb_kmh": 430,
+        "qb_en": 320,
+        "ascend_ms2": 56,
+        "ascend_en": 470
+      }
+    },
+    {
+      "id": "bt-ram",
+      "slot": "booster",
+      "name": "BT-12 RAM",
+      "maker": "Rook Heavy",
+      "blurb": "Brutal quick boosts.",
+      "like": "bt-titan",
+      "scale_pct": 106,
+      "stats": {
+        "weight": 2600,
+        "en_load": 330,
+        "glide_kmh": 215,
+        "qb_kmh": 610,
+        "qb_en": 560,
+        "ascend_ms2": 80,
+        "ascend_en": 660
+      }
+    },
+    {
+      "id": "bt-wisp",
+      "slot": "booster",
+      "name": "BT-5 WISP",
+      "maker": "Calder Works",
+      "blurb": "Light on EN in every way.",
+      "like": "bt-surge",
+      "scale_pct": 96,
+      "stats": {
+        "weight": 1500,
+        "en_load": 220,
+        "glide_kmh": 250,
+        "qb_kmh": 470,
+        "qb_en": 280,
+        "ascend_ms2": 64,
+        "ascend_en": 420
+      }
+    },
+    {
+      "id": "gn-corona",
+      "slot": "generator",
+      "name": "GN-4 CORONA",
+      "maker": "Okabe Thrust",
+      "blurb": "A large reserve that refills quickly.",
+      "stats": {"weight": 6200, "en_capacity": 3200, "en_recovery": 1800, "en_output": 3300, "supply_delay_ms": 750}
+    },
+    {
+      "id": "gn-reactor",
+      "slot": "generator",
+      "name": "GN-8 REACTOR",
+      "maker": "Rook Heavy",
+      "blurb": "The most output of any generator.",
+      "stats": {"weight": 9000, "en_capacity": 4000, "en_recovery": 1350, "en_output": 4300, "supply_delay_ms": 1100}
+    },
+    {
+      "id": "rf-gatling",
+      "slot": "right_weapon",
+      "name": "GT-30 THRESHER",
+      "maker": "Vesk Arms",
+      "blurb": "A spinning gun: light rounds, very many of them.",
+      "kind": "rifle",
+      "like": "rf-marrow",
+      "scale_pct": 125,
+      "stats": {
+        "weight": 6400,
+        "en_load": 150,
+        "damage": 58,
+        "impact": 40,
+        "fire_ms": 60,
+        "speed_ms": 650,
+        "ammo": 1200,
+        "range_m": 220,
+        "spread_deg": 2
+      }
+    },
+    {
+      "id": "bz-maul",
+      "slot": "right_weapon",
+      "name": "BZ-3 MAUL",
+      "maker": "Rook Heavy",
+      "blurb": "A hand-held cannon. Slow shells that burst.",
+      "kind": "grenade",
+      "like": "sg-brand",
+      "scale_pct": 130,
+      "stats": {
+        "weight": 7200,
+        "en_load": 200,
+        "damage": 720,
+        "impact": 700,
+        "fire_ms": 1900,
+        "speed_ms": 240,
+        "ammo": 36,
+        "range_m": 320,
+        "blast_m": 12
+      }
+    },
+    {
+      "id": "lr-spear",
+      "slot": "right_weapon",
+      "name": "LR-9 SPEAR",
+      "maker": "Calder Works",
+      "blurb": "A heavy laser rifle. Few shots, each one tells.",
+      "kind": "laser",
+      "like": "lr-glint",
+      "scale_pct": 115,
+      "stats": {
+        "weight": 5600,
+        "en_load": 460,
+        "damage": 420,
+        "impact": 300,
+        "fire_ms": 1000,
+        "speed_ms": 1600,
+        "ammo": 70,
+        "range_m": 340,
+        "spread_deg": 0
+      }
+    },
+    {
+      "id": "sg-thunder",
+      "slot": "right_weapon",
+      "name": "SG-12 THUNDER",
+      "maker": "Rook Heavy",
+      "blurb": "Ten heavy pellets a shot.",
+      "kind": "shotgun",
+      "like": "sg-brand",
+      "scale_pct": 112,
+      "stats": {
+        "weight": 6000,
+        "en_load": 160,
+        "damage": 95,
+        "impact": 130,
+        "fire_ms": 1000,
+        "speed_ms": 440,
+        "ammo": 56,
+        "range_m": 100,
+        "salvo": 10,
+        "spread_deg": 6
+      }
+    },
+    {
+      "id": "mp-hydra",
+      "slot": "shoulder_weapon",
+      "name": "MP-20 HYDRA",
+      "maker": "Vesk Arms",
+      "blurb": "Ten homing missiles a salvo.",
+      "kind": "missile",
+      "like": "mp-swarm",
+      "scale_pct": 118,
+      "stats": {
+        "weight": 7400,
+        "en_load": 240,
+        "damage": 160,
+        "impact": 130,
+        "fire_ms": 3800,
+        "speed_ms": 170,
+        "ammo": 200,
+        "range_m": 400,
+        "homing_dps": 130,
+        "salvo": 10,
+        "spread_deg": 30
+      }
+    },
+    {
+      "id": "gc-quake",
+      "slot": "shoulder_weapon",
+      "name": "GC-5 QUAKE",
+      "maker": "Rook Heavy",
+      "blurb": "A siege cannon with an enormous burst.",
+      "kind": "grenade",
+      "like": "gc-anvil",
+      "scale_pct": 118,
+      "stats": {
+        "weight": 9600,
+        "en_load": 300,
+        "damage": 1400,
+        "impact": 1100,
+        "fire_ms": 3600,
+        "speed_ms": 230,
+        "ammo": 14,
+        "range_m": 420,
+        "blast_m": 26
+      }
     }
   ]
 }

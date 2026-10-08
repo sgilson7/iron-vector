@@ -2,9 +2,11 @@
 //! against what is fitted, fit it, and pick a paint scheme. Everything the
 //! garage screen shows is built here; the page lays it out.
 
+use crate::campaign::{Campaign, Progress};
 use crate::content::{hex, Palette};
 use crate::parts::{stats, Catalog, Loadout, Part, Slot, Stats, WeaponKind};
 use serde::Serialize;
+use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Garage {
@@ -27,6 +29,9 @@ pub struct PartRow {
     pub maker: String,
     pub equipped: bool,
     pub hovered: bool,
+    /// not yet won; `hint` names the mission that gives it, and whether by its plus
+    pub locked: bool,
+    pub hint: Option<(String, bool)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -181,7 +186,15 @@ impl Garage {
         c
     }
 
-    pub fn view(&self, l: &Loadout, paint: usize, cat: &Catalog, pal: &Palette) -> GarageView {
+    pub fn view(
+        &self,
+        l: &Loadout,
+        paint: usize,
+        cat: &Catalog,
+        pal: &Palette,
+        unlocked: &BTreeSet<String>,
+        camp: &Campaign,
+    ) -> GarageView {
         let slot = self.slot();
         let choices = cat.for_slot(slot);
         let fitted = l.part(slot, cat);
@@ -212,6 +225,10 @@ impl Garage {
                     maker: p.maker.clone(),
                     equipped: p.id == fitted.id,
                     hovered: Some(i) == self.hover,
+                    locked: !unlocked.contains(&p.id),
+                    hint: (!unlocked.contains(&p.id))
+                        .then(|| Progress::source(camp, &p.id).map(|(m, plus)| (m.name.clone(), plus)))
+                        .flatten(),
                 })
                 .collect(),
             detail: Detail {
@@ -239,11 +256,15 @@ impl Garage {
         }
     }
 
-    /// Fits a part from the current slot's list. An index past the list does nothing.
-    pub fn equip(&mut self, i: usize, l: &mut Loadout, cat: &Catalog) -> bool {
+    /// Fits a part from the current slot's list. An index past the list, or
+    /// a part not yet won, does nothing.
+    pub fn equip(&mut self, i: usize, l: &mut Loadout, cat: &Catalog, unlocked: &BTreeSet<String>) -> bool {
         let Some(p) = cat.for_slot(self.slot()).get(i).copied() else {
             return false;
         };
+        if !unlocked.contains(&p.id) {
+            return false;
+        }
         l.0.insert(self.slot(), p.id.clone());
         true
     }
@@ -257,30 +278,42 @@ impl Garage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::campaign::tests::campaign;
     use crate::content::tests::palette;
     use crate::parts::tests::catalog;
+
+    fn everything(c: &Catalog) -> BTreeSet<String> {
+        c.parts.iter().map(|p| p.id.clone()).collect()
+    }
+
+    fn slot_index(s: Slot) -> usize {
+        Slot::ALL.iter().position(|x| *x == s).unwrap()
+    }
 
     #[test]
     fn hovering_a_lighter_head_shows_less_weight_as_better() {
         let c = catalog();
         let l = c.default_loadout();
         let mut g = Garage::default();
-        g.select(Slot::ALL.iter().position(|s| *s == Slot::Head).unwrap());
-        let i = c
-            .for_slot(Slot::Head)
-            .iter()
-            .position(|p| p.id == "hd-kestrel")
-            .unwrap();
-        g.hover = Some(i);
-        let v = g.view(&l, 0, &c, &palette());
+        g.select(slot_index(Slot::Head));
+        g.hover = Some(
+            c.for_slot(Slot::Head)
+                .iter()
+                .position(|p| p.id == "hd-kestrel")
+                .unwrap(),
+        );
+        let v = g.view(&l, 0, &c, &palette(), &everything(&c), &campaign());
         let w = v.stats.iter().find(|r| r.key == "stat_weight").unwrap();
         // warden 3000 kg → kestrel 2200 kg
         assert_eq!(w.next - w.value, -800);
         assert_eq!(w.better, 1);
         let lock = v.stats.iter().find(|r| r.key == "stat_lock_range_m").unwrap();
         assert_eq!((lock.value, lock.next, lock.better), (360, 440, 1));
-        let ap = v.stats.iter().find(|r| r.key == "stat_ap").unwrap();
-        assert_eq!(ap.better, -1, "the light head has less AP");
+        assert_eq!(
+            v.stats.iter().find(|r| r.key == "stat_ap").unwrap().better,
+            -1,
+            "the light head has less AP"
+        );
         assert_eq!(v.detail.name, "HD-07 KESTREL");
     }
 
@@ -296,7 +329,7 @@ mod tests {
         ] {
             l.0.insert(slot, id.to_string());
         }
-        let v = Garage::default().view(&l, 0, &c, &palette());
+        let v = Garage::default().view(&l, 0, &c, &palette(), &everything(&c), &campaign());
         assert!(
             v.warnings.contains(&"warn_overweight".to_string()),
             "{:?}",
@@ -305,23 +338,49 @@ mod tests {
     }
 
     #[test]
+    fn a_locked_part_shows_where_it_is_won_and_cannot_be_fitted() {
+        let c = catalog();
+        let camp = campaign();
+        let starters = crate::campaign::starters(&c);
+        let mut l = c.default_loadout();
+        let mut g = Garage::default();
+        g.select(slot_index(Slot::Head));
+        let kestrel = c
+            .for_slot(Slot::Head)
+            .iter()
+            .position(|p| p.id == "hd-kestrel")
+            .unwrap();
+        let v = g.view(&l, 0, &c, &palette(), &starters, &camp);
+        let row = &v.parts[kestrel];
+        assert!(row.locked);
+        assert_eq!(row.hint, Some(("GUNSHIP SWEEP".to_string(), false)));
+        assert!(!g.equip(kestrel, &mut l, &c, &starters));
+        assert_eq!(l, c.default_loadout());
+        assert!(g.equip(kestrel, &mut l, &c, &everything(&c)));
+    }
+
+    #[test]
     fn fitting_a_part_changes_only_its_slot() {
         let c = catalog();
         let mut l = c.default_loadout();
         let before = l.clone();
         let mut g = Garage::default();
-        g.select(Slot::ALL.iter().position(|s| *s == Slot::Legs).unwrap());
-        assert!(g.equip(1, &mut l, &c));
+        g.select(slot_index(Slot::Legs));
+        assert!(g.equip(1, &mut l, &c, &everything(&c)));
         let changed: Vec<_> = Slot::ALL.iter().filter(|s| l.0[s] != before.0[s]).collect();
         assert_eq!(changed, vec![&Slot::Legs]);
-        assert!(!g.equip(99, &mut l, &c), "an index past the list does nothing");
+        assert!(
+            !g.equip(99, &mut l, &c, &everything(&c)),
+            "an index past the list does nothing"
+        );
     }
 
     #[test]
     fn both_hands_offer_every_arm_weapon() {
         let c = catalog();
         assert_eq!(c.for_slot(Slot::RightWeapon), c.for_slot(Slot::LeftWeapon));
-        assert_eq!(c.for_slot(Slot::RightWeapon).len(), 4);
+        let arm_weapons = c.parts.iter().filter(|p| p.slot == Slot::RightWeapon).count();
+        assert_eq!(c.for_slot(Slot::RightWeapon).len(), arm_weapons);
     }
 
     #[test]
@@ -340,7 +399,14 @@ mod tests {
     fn every_slot_label_has_a_copy_string() {
         let copy: serde_json::Value = serde_json::from_str(include_str!("../../../data/copy.json")).unwrap();
         let c = catalog();
-        let v = Garage::default().view(&c.default_loadout(), 0, &c, &palette());
+        let v = Garage::default().view(
+            &c.default_loadout(),
+            0,
+            &c,
+            &palette(),
+            &everything(&c),
+            &campaign(),
+        );
         for s in &v.slots {
             assert!(copy[&s.key].is_string(), "{} has no copy", s.key);
         }

@@ -17,6 +17,8 @@ pub enum Team {
 pub enum Target {
     Mech(usize),
     Craft(usize),
+    /// a building a mission asks the player to protect
+    Structure(usize),
 }
 
 /// A weapon's numbers, per tick and in Q16, read from its part.
@@ -214,6 +216,10 @@ pub struct Effect {
 pub enum CraftKind {
     Drone,
     Heli,
+    /// drives on the ground at a structure, or at the player
+    Tank,
+    /// stands where it was put and fires at the player
+    Turret,
 }
 
 /// A flying target that is not a mech: practice drones and helicopters.
@@ -236,13 +242,32 @@ pub struct Craft {
     /// ticks until a destroyed drone returns; 0 means it stays down
     pub respawn: i32,
     pub down_ticks: i32,
+    pub radius: i32,
+    /// ground speed per tick, for a tank
+    pub speed: i32,
+    /// circling radius, for a gunship or a drone
+    pub orbit: i32,
+    pub gun: Option<crate::mission::Gun>,
+    /// where a fleeing unit is driving
+    pub goal: Option<V3>,
+    pub wave: u32,
 }
 
-impl Craft {
-    pub fn radius(&self) -> i32 {
-        match self.kind {
-            CraftKind::Drone => int(3),
-            CraftKind::Heli => int(5),
+impl Weapon {
+    /// A unit's gun, as a weapon the shot rule understands.
+    pub fn from_gun(g: &crate::mission::Gun) -> Weapon {
+        Weapon {
+            kind: WeaponKind::Rifle,
+            damage: g.damage,
+            impact: g.damage / 2,
+            fire_ticks: (g.burst_gap_ms * TICKS_PER_SECOND / 1000).max(1),
+            speed: fx::ratio(g.speed_ms, TICKS_PER_SECOND),
+            ammo: i32::MAX,
+            range: int(g.range_m),
+            turn: 0,
+            salvo: 1,
+            spread: deg(g.spread_deg),
+            blast: int(g.blast_m),
         }
     }
 }
