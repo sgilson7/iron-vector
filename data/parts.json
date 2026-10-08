@@ -1,0 +1,120 @@
+{
+  "default_loadout": {
+    "head": "hd-warden",
+    "core": "cr-bulwark",
+    "arms": "ar-lancer",
+    "legs": "lg-stride",
+    "booster": "bt-surge",
+    "generator": "gn-kiln",
+    "right_weapon": "ml-hornet",
+    "left_weapon": "rf-marrow",
+    "shoulder_weapon": "gc-anvil"
+  },
+  "parts": [
+    {
+      "id": "hd-warden", "slot": "head", "name": "HD-04 WARDEN", "maker": "Calder Works",
+      "blurb": "A balanced head with a long lock range.",
+      "stats": { "ap": 900, "weight": 3000, "en_load": 120, "lock_range_m": 360 },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 30, 0], "size": [70, 55, 80], "paint": "primary" },
+        { "mesh": "wedge", "at": [0, 20, -50], "size": [64, 34, 24], "paint": "secondary" },
+        { "mesh": "cube", "at": [0, 36, -41], "size": [56, 10, 4], "paint": "glow" },
+        { "mesh": "cube", "at": [24, 72, 14], "size": [6, 44, 6], "rot": [-15, 0, 0], "paint": "dark" }
+      ]
+    },
+    {
+      "id": "cr-bulwark", "slot": "core", "name": "CR-11 BULWARK", "maker": "Calder Works",
+      "blurb": "A broad chest that carries heavy arms well.",
+      "stats": { "ap": 3200, "weight": 21000, "en_load": 300 },
+      "mounts": { "head": [0, 232, -10], "arm": [122, 178, 0], "back": [62, 214, 52], "booster": [0, 140, 74] },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 150, 0], "size": [190, 130, 130], "paint": "primary" },
+        { "mesh": "wedge", "at": [0, 168, -78], "size": [170, 92, 30], "paint": "secondary" },
+        { "mesh": "cube", "at": [0, 60, 0], "size": [110, 70, 90], "paint": "dark" },
+        { "mesh": "cube", "at": [0, 222, 10], "size": [120, 24, 92], "paint": "secondary" },
+        { "mesh": "cube", "at": [0, 132, -68], "size": [96, 10, 6], "paint": "glow" }
+      ]
+    },
+    {
+      "id": "ar-lancer", "slot": "arms", "name": "AR-09 LANCER", "maker": "Calder Works",
+      "blurb": "Steady arms. The right arm is drawn; the left is its mirror.",
+      "stats": { "ap": 1800, "weight": 11000, "en_load": 180, "arms_limit": 14000 },
+      "mounts": { "hand": [12, -146, -112] },
+      "boxes": [
+        { "mesh": "cube", "at": [28, 12, 0], "size": [84, 72, 104], "paint": "primary" },
+        { "mesh": "wedge", "at": [28, 58, 0], "size": [80, 24, 100], "rot": [0, 0, -12], "paint": "secondary" },
+        { "mesh": "cube", "at": [20, -60, 0], "size": [50, 100, 56], "paint": "dark" },
+        { "mesh": "cube", "at": [14, -126, -48], "size": [62, 56, 140], "paint": "secondary" },
+        { "mesh": "cube", "at": [14, -146, -112], "size": [40, 40, 26], "paint": "dark" }
+      ]
+    },
+    {
+      "id": "lg-stride", "slot": "legs", "name": "LG-20 STRIDE", "maker": "Calder Works",
+      "blurb": "Two legs that walk, jump and carry a fair load.",
+      "stats": { "ap": 3600, "weight": 20000, "en_load": 400, "load_limit": 60000, "walk_kmh": 95, "jump_ms": 17 },
+      "mounts": { "core": [0, 400, 0] },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 392, 0], "size": [150, 50, 92], "paint": "dark" },
+        { "mesh": "cube", "at": [-58, 304, 0], "size": [56, 150, 66], "paint": "secondary", "anim": "leg_l" },
+        { "mesh": "wedge", "at": [-58, 222, -44], "size": [62, 62, 40], "paint": "primary", "anim": "leg_l" },
+        { "mesh": "cube", "at": [-58, 132, 10], "size": [62, 170, 78], "paint": "primary", "anim": "leg_l" },
+        { "mesh": "cube", "at": [-58, 22, -20], "size": [72, 44, 132], "paint": "dark", "anim": "leg_l" },
+        { "mesh": "cube", "at": [58, 304, 0], "size": [56, 150, 66], "paint": "secondary", "anim": "leg_r" },
+        { "mesh": "wedge", "at": [58, 222, -44], "size": [62, 62, 40], "paint": "primary", "anim": "leg_r" },
+        { "mesh": "cube", "at": [58, 132, 10], "size": [62, 170, 78], "paint": "primary", "anim": "leg_r" },
+        { "mesh": "cube", "at": [58, 22, -20], "size": [72, 44, 132], "paint": "dark", "anim": "leg_r" }
+      ]
+    },
+    {
+      "id": "bt-surge", "slot": "booster", "name": "BT-3 SURGE", "maker": "Okabe Thrust",
+      "blurb": "A quick-boost booster that is easy on EN.",
+      "stats": { "weight": 1600, "en_load": 260, "glide_kmh": 230, "qb_kmh": 450, "qb_en": 380, "ascend_ms2": 60, "ascend_en": 520 },
+      "mounts": { "flame_l": [-42, -8, 62], "flame_r": [42, -8, 62] },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 0, 10], "size": [140, 80, 50], "paint": "dark" },
+        { "mesh": "cube", "at": [-42, -8, 42], "size": [42, 42, 30], "paint": "secondary" },
+        { "mesh": "cube", "at": [42, -8, 42], "size": [42, 42, 30], "paint": "secondary" }
+      ]
+    },
+    {
+      "id": "gn-kiln", "slot": "generator", "name": "GN-2 KILN", "maker": "Okabe Thrust",
+      "blurb": "A steady generator with a short supply delay.",
+      "stats": { "weight": 5500, "en_capacity": 2600, "en_recovery": 1400, "en_output": 2900, "supply_delay_ms": 900 }
+    },
+    {
+      "id": "rf-marrow", "slot": "right_weapon", "kind": "rifle", "name": "RF-25 MARROW", "maker": "Vesk Arms",
+      "blurb": "A fast-firing rifle with a deep magazine.",
+      "stats": { "weight": 4200, "en_load": 120, "damage": 95, "impact": 60, "fire_ms": 120, "speed_ms": 700, "ammo": 600, "range_m": 260, "spread_deg": 1 },
+      "mounts": { "muzzle": [0, 8, -170] },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 0, -30], "size": [26, 40, 120], "paint": "dark" },
+        { "mesh": "cube", "at": [0, 8, -122], "size": [12, 12, 90], "paint": "dark" },
+        { "mesh": "cube", "at": [0, -30, -18], "size": [18, 30, 22], "paint": "secondary" },
+        { "mesh": "cube", "at": [0, 26, -32], "size": [10, 10, 30], "paint": "glow" }
+      ]
+    },
+    {
+      "id": "ml-hornet", "slot": "right_weapon", "kind": "missile", "name": "ML-6 HORNET", "maker": "Vesk Arms",
+      "blurb": "Four homing missiles a salvo. Needs a lock to track.",
+      "stats": { "weight": 5000, "en_load": 160, "damage": 260, "impact": 200, "fire_ms": 1500, "speed_ms": 180, "ammo": 120, "range_m": 360, "homing_dps": 150, "salvo": 4, "spread_deg": 14 },
+      "mounts": { "muzzle": [0, 10, -82] },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 10, -20], "size": [52, 52, 110], "paint": "secondary" },
+        { "mesh": "cube", "at": [0, 10, -78], "size": [44, 44, 8], "paint": "dark" },
+        { "mesh": "cube", "at": [0, 40, -20], "size": [30, 10, 80], "paint": "primary" }
+      ]
+    },
+    {
+      "id": "gc-anvil", "slot": "shoulder_weapon", "kind": "grenade", "name": "GC-1 ANVIL", "maker": "Vesk Arms",
+      "blurb": "A shoulder cannon whose shell bursts on contact.",
+      "stats": { "weight": 7800, "en_load": 250, "damage": 900, "impact": 800, "fire_ms": 2600, "speed_ms": 260, "ammo": 20, "range_m": 400, "blast_m": 18 },
+      "mounts": { "muzzle": [10, 40, -140] },
+      "boxes": [
+        { "mesh": "cube", "at": [0, 0, 0], "size": [24, 44, 44], "paint": "dark" },
+        { "mesh": "cube", "at": [10, 40, -40], "size": [56, 56, 170], "paint": "primary" },
+        { "mesh": "cube", "at": [10, 40, -128], "size": [42, 42, 12], "paint": "dark" },
+        { "mesh": "cube", "at": [10, 72, -30], "size": [30, 10, 60], "paint": "secondary" }
+      ]
+    }
+  ]
+}

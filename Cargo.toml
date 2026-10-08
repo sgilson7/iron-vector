@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["crates/core", "crates/shim"]
+
+# Speed over size: the frame loop runs in this module sixty times a second.
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+# The core's tests run collision and a minute of simulated play; unoptimised
+# integer maths makes them slow enough to stop being run.
+[profile.test]
+opt-level = 2

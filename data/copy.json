@@ -1,0 +1,33 @@
+{
+  "title": "IRON VECTOR",
+  "tagline": "Proving ground. Take the frame out and see how it moves.",
+  "loading": "Loading the frame…",
+  "start": "Click to take control",
+  "resume": "Click to resume",
+  "paused": "PAUSED",
+  "esc_hint": "Esc releases the mouse.",
+  "no_webgl": "This browser could not start WebGL 2, so the 3D view cannot be drawn. The simulation still runs; try a current Chrome, Firefox or Safari.",
+  "controls_title": "Controls",
+  "controls": [
+    ["W A S D", "Move"],
+    ["Mouse", "Look and aim"],
+    ["Space (hold)", "Jump, then ascend. Uses EN."],
+    ["Shift", "Quick boost. Uses EN."],
+    ["C", "Glide boost on or off"],
+    ["Left button", "Left-hand weapon"],
+    ["Right button", "Right-hand weapon"],
+    ["E or F", "Shoulder weapon"]
+  ],
+  "ap": "AP",
+  "en": "EN",
+  "en_out": "EN OUT",
+  "kmh": "km/h",
+  "metres": "m",
+  "alt": "ALT",
+  "speed": "SPD",
+  "glide_on": "GLIDE",
+  "qb": "QB",
+  "kills": "DOWNED",
+  "ammo_empty": "EMPTY",
+  "build": "build {hash}"
+}

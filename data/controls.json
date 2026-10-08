@@ -1,0 +1,13 @@
+{
+  "_note": "Key codes (KeyboardEvent.code, or Mouse + button number) to action names. The bits for each action come from the core.",
+  "KeyW": "forward", "ArrowUp": "forward",
+  "KeyS": "back", "ArrowDown": "back",
+  "KeyA": "left", "ArrowLeft": "left",
+  "KeyD": "right", "ArrowRight": "right",
+  "Space": "ascend",
+  "ShiftLeft": "quick_boost", "ShiftRight": "quick_boost",
+  "KeyC": "glide",
+  "Mouse0": "fire_l",
+  "Mouse2": "fire_r",
+  "KeyE": "fire_s", "KeyF": "fire_s"
+}

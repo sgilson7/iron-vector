@@ -1,0 +1,64 @@
+name: Check, then deploy to Pages
+
+# The check is the same file a person runs locally (Builder R8). A push to
+# main deploys only after it passes; Sam approved Pages deploys for this
+# project in advance (BRIEF.md, Autonomy), as Slushline's workflow does.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy,rustfmt
+          rustup target add wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: wasm-bindgen CLI (pinned) and wasm-tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@0.2.127,wasm-tools
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Playwright and three browser engines
+        run: PLAYWRIGHT_WITH_DEPS=1 ./scripts/setup.sh
+
+      - name: ./scripts/check.sh
+        run: ./scripts/check.sh
+
+      - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
+        with:
+          path: dist
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: check
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

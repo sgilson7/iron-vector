@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Reference default. connect-src 'self' keeps fetches on this origin;
+       'wasm-unsafe-eval' lets the page compile its own WebAssembly module;
+       form-action 'none' blocks form posts. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Iron Vector</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-ready="false">
+  <canvas id="view"></canvas>
+
+  <div id="hud" hidden>
+    <div id="reticle"></div>
+    <div id="marks"></div>
+
+    <div class="readout" id="readout-left">
+      <div><span class="label" data-copy="speed"></span> <b id="speed">0</b> <span class="unit" data-copy="kmh"></span></div>
+      <div><span class="label" data-copy="alt"></span> <b id="alt">0</b> <span class="unit" data-copy="metres"></span></div>
+      <div id="glide" class="flag" data-copy="glide_on" hidden></div>
+    </div>
+    <div class="readout" id="readout-right">
+      <span class="label" data-copy="kills"></span> <b id="kills">0</b>
+    </div>
+
+    <div id="gauges">
+      <div class="ap-row"><span class="label" data-copy="ap"></span> <b id="ap">0</b></div>
+      <div class="bar" id="ap-bar"><i></i></div>
+      <div class="en-row"><span class="label" data-copy="en"></span><span id="en-out" class="warn" data-copy="en_out" hidden></span><span id="qb" class="flag" data-copy="qb"></span></div>
+      <div class="bar en" id="en-bar"><i></i></div>
+    </div>
+
+    <div id="weapons">
+      <div class="weapon" id="w0"><span class="wname"></span><b class="ammo"></b><div class="bar thin"><i></i></div></div>
+      <div class="weapon" id="w1"><span class="wname"></span><b class="ammo"></b><div class="bar thin"><i></i></div></div>
+      <div class="weapon" id="w2"><span class="wname"></span><b class="ammo"></b><div class="bar thin"><i></i></div></div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div class="panel">
+      <h1 data-copy="title"></h1>
+      <p data-copy="tagline"></p>
+      <p id="status" data-copy="loading"></p>
+      <p id="message" role="status"></p>
+      <button id="start" type="button" data-copy="start" hidden></button>
+      <h2 data-copy="controls_title"></h2>
+      <table id="controls"></table>
+      <p class="hint" data-copy="esc_hint"></p>
+      <p class="build" id="build"></p>
+    </div>
+  </div>
+
+  <noscript><p>This page needs JavaScript and WebAssembly.</p></noscript>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
