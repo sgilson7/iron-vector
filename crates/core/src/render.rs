@@ -230,9 +230,9 @@ fn ring_floor(b: &mut Batch, m: &Map, ground: [i32; 3], grid: [i32; 3]) {
         if i % 6 == 0 {
             b.push(
                 Mesh::Cube,
-                &boxed(v3(x - w / 2, ONE / 8, 0), v3(ONE, ONE / 4, m.half_z * 2)),
-                grid,
-                ONE * 3 / 5,
+                &boxed(v3(x - w / 2, ONE / 8, 0), v3(ONE / 2, ONE / 4, m.half_z * 2)),
+                shade(grid, 70),
+                ONE / 3,
             );
         }
         for end in [-m.half_z, m.half_z] {

@@ -4,9 +4,11 @@ A single-player 3D mech game that runs in the browser. Build a frame from parts,
 
 **Play:** https://sgilson7.github.io/iron-vector/
 
-- **Garage.** Nine slots (head, core, arms, legs, booster, generator, two arm weapons and a shoulder weapon) and 26 parts. Hover a part to compare every stat before you fit it. Overweight frames slow down, and EN load over output slows recovery. Six paint schemes. Your build is remembered in this browser.
-- **Test field.** A seeded city with practice drones, for trying a build.
-- **Operation Saltline.** Cross the city to the relay plaza, destroy four gunships, then fight one enemy frame. Its pilot is a small behaviour tree, and the HUD shows what it is doing. Heavy hits build impact, and a frame that takes more than its stability staggers and takes extra damage. The debrief ranks you on AP kept and time.
+- **Garage.** Nine slots and 49 parts. You start with nine; the rest are won on missions. Hover any part to see it on your frame and compare every stat; locked parts say which mission wins them.
+- **Star map.** The camera sweeps into the cockpit, the lights come up, and a hologram of five planets and their missions grows over the console, laid out as a Hasse diagram by requirement.
+- **Five planets, twenty missions.** Halden (industrial city), Sere (desert mesas in a sandstorm), Spindle (a ring world: gravity throws you outward and the floor curves up overhead), Rime (an ice moon: low gravity, no grip) and Cinder (the floor is lava). Each mission gives a part, and reveals a + challenge after the first clear that gives another. Planets open at 2, 5, 8 and 11 clears.
+- **Enemy frames** fly behaviour trees after vagrancy's: rules of conditions and moves made of key beats, committed to and interruptible, seen through a reaction delay. The HUD shows what each is doing.
+- **Test field.** Practice drones on Halden.
 
 ## Controls
 

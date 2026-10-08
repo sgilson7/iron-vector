@@ -806,7 +806,7 @@
      "start": [
       -450,
       260,
-      180
+      0
      ],
      "reward": "hd-mantle",
      "plus": {
@@ -2972,7 +2972,7 @@
         "booster": "bt-ram",
         "generator": "gn-reactor",
         "right_weapon": "lr-spear",
-        "left_weapon": "rf-gatling",
+        "left_weapon": "rf-marrow",
         "shoulder_weapon": "mp-hydra"
        }
       }

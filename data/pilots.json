@@ -885,8 +885,8 @@
    ]
   },
   "ace": {
-   "reaction_ms": 150,
-   "aim_error_deg": 4,
+   "reaction_ms": 170,
+   "aim_error_deg": 5,
    "salt": 25,
    "rules": [
     {
