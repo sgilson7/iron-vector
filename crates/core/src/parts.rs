@@ -43,10 +43,7 @@ impl Slot {
     }
 
     pub fn is_weapon(self) -> bool {
-        matches!(
-            self,
-            Slot::RightWeapon | Slot::LeftWeapon | Slot::ShoulderWeapon
-        )
+        matches!(self, Slot::RightWeapon | Slot::LeftWeapon | Slot::ShoulderWeapon)
     }
 }
 
@@ -85,6 +82,8 @@ pub struct PartStats {
     pub ap: i32,
     pub weight: i32,
     pub en_load: i32,
+    /// head, core, legs: how much impact the frame takes before it staggers
+    pub stability: i32,
     // legs
     pub load_limit: i32,
     pub walk_kmh: i32,
@@ -276,6 +275,7 @@ pub struct Stats {
     pub ascend_en: i32,
     pub jump_ms: i32,
     pub lock_range_m: i32,
+    pub stability: i32,
     /// percent of speed kept after the overweight penalty
     pub mobility_pct: i32,
     /// percent of EN recovery kept after the EN-load penalty
@@ -298,6 +298,7 @@ pub fn stats(l: &Loadout, cat: &Catalog) -> Stats {
         let p = l.part(slot, cat).stats;
         s.ap += p.ap;
         s.en_load += p.en_load;
+        s.stability += p.stability;
         if !matches!(slot, Slot::Legs) {
             s.weight += p.weight;
         }
@@ -363,12 +364,8 @@ pub(crate) mod tests {
         let c = catalog();
         let l = c.default_loadout();
         let s = stats(&l, &c);
-        let sum = |f: fn(&PartStats) -> i32| {
-            Slot::ALL
-                .iter()
-                .map(|sl| f(&l.part(*sl, &c).stats))
-                .sum::<i32>()
-        };
+        let sum =
+            |f: fn(&PartStats) -> i32| Slot::ALL.iter().map(|sl| f(&l.part(*sl, &c).stats)).sum::<i32>();
         assert_eq!(s.ap, sum(|p| p.ap));
         assert_eq!(s.weight, sum(|p| p.weight));
         assert_eq!(s.en_load, sum(|p| p.en_load));

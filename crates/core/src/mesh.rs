@@ -50,42 +50,18 @@ pub fn vertices(mesh: Mesh) -> Vec<i32> {
         Mesh::Cube => {
             let p = |x: i32, y: i32, z: i32| v3(x * H, y * H, z * H);
             push_quad(&mut o, p(1, -1, 1), p(1, -1, -1), p(1, 1, -1), p(1, 1, 1));
-            push_quad(
-                &mut o,
-                p(-1, -1, -1),
-                p(-1, -1, 1),
-                p(-1, 1, 1),
-                p(-1, 1, -1),
-            );
+            push_quad(&mut o, p(-1, -1, -1), p(-1, -1, 1), p(-1, 1, 1), p(-1, 1, -1));
             push_quad(&mut o, p(-1, 1, 1), p(1, 1, 1), p(1, 1, -1), p(-1, 1, -1));
-            push_quad(
-                &mut o,
-                p(-1, -1, -1),
-                p(1, -1, -1),
-                p(1, -1, 1),
-                p(-1, -1, 1),
-            );
+            push_quad(&mut o, p(-1, -1, -1), p(1, -1, -1), p(1, -1, 1), p(-1, -1, 1));
             push_quad(&mut o, p(-1, -1, 1), p(1, -1, 1), p(1, 1, 1), p(-1, 1, 1));
-            push_quad(
-                &mut o,
-                p(1, -1, -1),
-                p(-1, -1, -1),
-                p(-1, 1, -1),
-                p(1, 1, -1),
-            );
+            push_quad(&mut o, p(1, -1, -1), p(-1, -1, -1), p(-1, 1, -1), p(1, 1, -1));
         }
         Mesh::Wedge => {
             // Full at the back (+z) and bottom; the top slopes down to the
             // front (−z) edge, like an armour plate or a nose.
             let p = |x: i32, y: i32, z: i32| v3(x * H, y * H, z * H);
             push_quad(&mut o, p(-1, -1, 1), p(1, -1, 1), p(1, 1, 1), p(-1, 1, 1));
-            push_quad(
-                &mut o,
-                p(-1, -1, -1),
-                p(1, -1, -1),
-                p(1, -1, 1),
-                p(-1, -1, 1),
-            );
+            push_quad(&mut o, p(-1, -1, -1), p(1, -1, -1), p(1, -1, 1), p(-1, -1, 1));
             push_quad(&mut o, p(-1, 1, 1), p(1, 1, 1), p(1, -1, -1), p(-1, -1, -1));
             push_tri(&mut o, p(1, -1, 1), p(1, -1, -1), p(1, 1, 1));
             push_tri(&mut o, p(-1, -1, -1), p(-1, -1, 1), p(-1, 1, 1));

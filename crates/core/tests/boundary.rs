@@ -95,22 +95,13 @@ const PAGE_FORBIDDEN_IDENTIFIERS: &[(&str, &str)] = &[
         "XMLHttpRequest",
         "no network requests beyond the page's own files",
     ),
-    (
-        "WebSocket",
-        "no network requests beyond the page's own files",
-    ),
-    (
-        "EventSource",
-        "no network requests beyond the page's own files",
-    ),
+    ("WebSocket", "no network requests beyond the page's own files"),
+    ("EventSource", "no network requests beyond the page's own files"),
     (
         "RTCPeerConnection",
         "no network requests beyond the page's own files",
     ),
-    (
-        "sendBeacon",
-        "no network requests beyond the page's own files",
-    ),
+    ("sendBeacon", "no network requests beyond the page's own files"),
     ("importScripts", "no code from another file at run time"),
     ("eval", "no code from strings"),
     ("Function", "no code from strings"),
@@ -508,8 +499,7 @@ fn scan_page_js(src: &str) -> Vec<Violation> {
                     i += 1;
                 }
                 let token: String = chars[start..i].iter().collect();
-                if let Some((_, why)) = PAGE_FORBIDDEN_IDENTIFIERS.iter().find(|(w, _)| *w == token)
-                {
+                if let Some((_, why)) = PAGE_FORBIDDEN_IDENTIFIERS.iter().find(|(w, _)| *w == token) {
                     found.push(Violation {
                         line: n + 1,
                         token,
@@ -616,11 +606,7 @@ fn page_keeps_no_rule_and_names_no_other_origin() {
         }
     }
     assert!(js_files > 0, "no page JavaScript found in web/");
-    assert!(
-        problems.is_empty(),
-        "page problems:\n{}",
-        problems.join("\n")
-    );
+    assert!(problems.is_empty(), "page problems:\n{}", problems.join("\n"));
 }
 
 /// Reference default: every HTML page carries a Content-Security-Policy that
@@ -632,12 +618,8 @@ fn every_page_sets_the_content_security_policy() {
         if path.extension().map(|x| x == "html").unwrap_or(false) {
             pages += 1;
             let text = fs::read_to_string(&path).expect("read html");
-            let csp = csp_of(&text).unwrap_or_else(|| {
-                panic!(
-                    "{}: no Content-Security-Policy meta element",
-                    path.display()
-                )
-            });
+            let csp = csp_of(&text)
+                .unwrap_or_else(|| panic!("{}: no Content-Security-Policy meta element", path.display()));
             for needed in [
                 "default-src 'self'",
                 "connect-src 'self'",
@@ -672,10 +654,7 @@ fn csp_of(html: &str) -> Option<String> {
 #[test]
 fn dependency_reader_sees_every_form() {
     let toml = "[package]\nname = \"x\"\n\n[dependencies]\nserde = \"1\"\n\n[dev-dependencies]\nregex = \"1\"\n\n[build-dependencies.cc]\nversion = \"1\"\n\n[target.'cfg(unix)'.dependencies]\nlibc = \"0.2\"\n";
-    assert_eq!(
-        declared_dependencies(toml),
-        vec!["serde", "regex", "cc", "libc"]
-    );
+    assert_eq!(declared_dependencies(toml), vec!["serde", "regex", "cc", "libc"]);
 }
 
 #[test]
@@ -724,16 +703,15 @@ let h = 100u32 * 7;
 
 #[test]
 fn shim_scanner_catches_decisions() {
-    assert!(!scan_shim_code(
-        "pub fn f(x: &str) -> String { if x.is_empty() { a() } else { b() } }"
-    )
-    .is_empty());
+    assert!(
+        !scan_shim_code("pub fn f(x: &str) -> String { if x.is_empty() { a() } else { b() } }").is_empty()
+    );
     assert!(!scan_shim_code("pub fn f(x: &str) -> Result<String, E> { Ok(g(x)?) }").is_empty());
     assert!(!scan_shim_code("pub fn f(x: u32) -> u32 { match x { 0 => 1, _ => x } }").is_empty());
-    assert!(scan_shim_code(
-        "// if this were a decision\npub fn f(x: &str) -> String { core::api::f(x) }"
-    )
-    .is_empty());
+    assert!(
+        scan_shim_code("// if this were a decision\npub fn f(x: &str) -> String { core::api::f(x) }")
+            .is_empty()
+    );
 }
 
 #[test]

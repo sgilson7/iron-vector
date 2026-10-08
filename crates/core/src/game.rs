@@ -2,19 +2,27 @@
 //! each display frame hand it the clock, the held keys and the mouse movement,
 //! and read back what to draw.
 //!
-//! The simulation runs at a fixed 60 ticks a second. The page's frame rate is
-//! whatever the display gives; `advance` runs as many ticks as the elapsed
-//! time owes, and the drawing is placed between the last two ticks. Mouse look
-//! is applied on every frame, before any tick, so the view never waits for one.
+//! The game is in one mode at a time: the garage, the briefing, a sortie, the
+//! test field, or the debrief. Only a sortie and the test field run the
+//! simulation, at a fixed 60 ticks a second; `advance` runs as many ticks as
+//! the elapsed time owes, and the drawing is placed between the last two
+//! ticks. Mouse look is applied on every frame, before any tick, so the view
+//! never waits for one.
 
 use crate::content::{Missions, Palette};
-use crate::fx::{self, ONE};
+use crate::fx::{self, deg, int, ONE};
+use crate::garage::{Garage, GarageView};
+use crate::geom::{facing, v3};
 use crate::mech::{Controls, TICKS_PER_SECOND};
 use crate::mesh::{self, Mesh};
+use crate::mission::Debrief;
 use crate::parts::{Catalog, Loadout};
-use crate::render::{self, Hud};
+use crate::pilot::Pilots;
+use crate::render::{self, Camera, Hud};
 use crate::world::{World, WEAPON_SLOTS};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::collections::BTreeMap;
 
 /// The actions a key or button can hold, and the bit each sets.
 pub const ACTIONS: &[(&str, u32)] = &[
@@ -30,6 +38,8 @@ pub const ACTIONS: &[(&str, u32)] = &[
     ("fire_s", 1 << 9),
     // set while the pointer is captured; without it the simulation holds still
     ("focus", 1 << 10),
+    // set while the mouse is dragged over the view outside a sortie
+    ("drag", 1 << 11),
 ];
 
 fn bit(name: &str) -> u32 {
@@ -52,10 +62,42 @@ pub const MAX_TICKS_PER_FRAME: u32 = 6;
 const MAX_FRAME_US: i64 = 250_000;
 /// The largest drawing buffer, in pixels, before the resolution is scaled down.
 const MAX_PIXELS: i64 = 2560 * 1440;
+/// The garage camera turns this much a second on its own.
+const ORBIT_PER_SECOND: i32 = deg(8);
+const ORBIT_DISTANCE: i32 = int(15);
+const ORBIT_PITCH: i32 = -deg(10);
+const ORBIT_PIVOT_Y: i32 = int(4);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Mode {
+    Garage,
+    Briefing,
+    Sortie,
+    Test,
+    Debrief,
+}
+
+/// What is saved between visits: the loadout and the paint scheme.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct Saved {
+    loadout: BTreeMap<crate::parts::Slot, String>,
+    paint: usize,
+}
 
 pub struct Game {
+    cat: Catalog,
     pal: Palette,
+    missions: Missions,
+    pilots: Pilots,
+    loadout: Loadout,
+    paint: usize,
+    mode: Mode,
     world: World,
+    garage: Garage,
+    debrief: Option<Debrief>,
+    orbit: i32,
+    scene_version: u32,
     names: [String; 3],
     prev_bits: u32,
     latched: u32,
@@ -78,19 +120,41 @@ impl Game {
         parts_json: &str,
         palette_json: &str,
         missions_json: &str,
-        saved_loadout: &str,
+        pilots_json: &str,
+        saved: &str,
     ) -> Result<Game, String> {
         let cat = Catalog::parse(parts_json).map_err(|e| format!("parts: {}", e.0))?;
         let pal = Palette::parse(palette_json)?;
         let missions = Missions::parse(missions_json)?;
-        let loadout = Loadout::restore(saved_loadout, &cat);
-        let world = World::proving(&cat, &loadout, &missions.proving);
-        let names = WEAPON_SLOTS.map(|s| loadout.part(s, &cat).name.clone());
-        let (static_values, static_draws) = render::scene(&world, &pal);
+        let pilots = Pilots::parse(pilots_json)?;
+        if !pilots.0.contains_key(&missions.mission.enemy.pilot) {
+            return Err(format!(
+                "missions: no pilot called {}",
+                missions.mission.enemy.pilot
+            ));
+        }
+        let (loadout, paint) = match serde_json::from_str::<Saved>(saved) {
+            Ok(s) => (
+                Loadout::restore(&serde_json::to_string(&s.loadout).unwrap_or_default(), &cat),
+                s.paint.min(pal.schemes.len() - 1),
+            ),
+            Err(_) => (cat.default_loadout(), 0),
+        };
+        let world = World::hangar(&cat, &loadout, pal.scheme(paint).paints());
         let mut g = Game {
+            cat,
             pal,
+            missions,
+            pilots,
+            loadout,
+            paint,
+            mode: Mode::Garage,
             world,
-            names,
+            garage: Garage::default(),
+            debrief: None,
+            orbit: fx::HALF + deg(30),
+            scene_version: 0,
+            names: Default::default(),
             prev_bits: 0,
             latched: 0,
             last_us: None,
@@ -99,15 +163,59 @@ impl Game {
             css: (1, 1),
             pixels: (1, 1),
             paused: true,
-            static_values,
-            static_draws,
+            static_values: Vec::new(),
+            static_draws: Vec::new(),
             values: Vec::new(),
             draws: Vec::new(),
             view: Vec::new(),
             hud: None,
         };
-        g.draw();
+        g.enter(Mode::Garage);
         Ok(g)
+    }
+
+    /// Switches mode, building the world that mode shows.
+    fn enter(&mut self, mode: Mode) {
+        let paint = self.pal.scheme(self.paint).paints();
+        match mode {
+            Mode::Garage | Mode::Briefing => {
+                self.world = World::hangar(&self.cat, &self.loadout, paint);
+            }
+            Mode::Sortie => {
+                let spec = &self.missions.mission;
+                let pilot = &self.pilots.0[&spec.enemy.pilot];
+                self.world = World::mission(
+                    &self.cat,
+                    &self.loadout,
+                    paint,
+                    spec,
+                    pilot,
+                    self.pal.enemy.paints(),
+                );
+            }
+            Mode::Test => {
+                self.world = World::proving(&self.cat, &self.loadout, &self.missions.proving, paint);
+            }
+            Mode::Debrief => {}
+        }
+        if mode != Mode::Debrief {
+            self.debrief = None;
+            let (values, draws) = render::scene(&self.world, &self.pal);
+            self.static_values = values;
+            self.static_draws = draws;
+            self.scene_version += 1;
+        }
+        self.names = WEAPON_SLOTS.map(|s| self.loadout.part(s, &self.cat).name.clone());
+        self.mode = mode;
+        self.last_us = None;
+        self.acc = 0;
+        self.latched = 0;
+        self.alpha = ONE;
+        self.draw();
+    }
+
+    fn running(&self) -> bool {
+        matches!(self.mode, Mode::Sortie | Mode::Test)
     }
 
     /// Sets the canvas size in CSS pixels and the device pixel ratio in
@@ -132,6 +240,23 @@ impl Game {
     /// `bits` the held actions, `dx`/`dy` the mouse movement since last frame
     /// in hundredths of a CSS pixel.
     pub fn advance(&mut self, now_us: i64, bits: u32, dx: i32, dy: i32) {
+        let dt = match self.last_us {
+            Some(last) => (now_us - last).clamp(0, MAX_FRAME_US),
+            None => 0,
+        };
+        self.last_us = Some(now_us);
+        if !self.running() {
+            self.paused = false;
+            let drag = if bits & bit("drag") != 0 {
+                dx * LOOK_PER_PIXEL / HUNDREDTHS
+            } else {
+                0
+            };
+            let spin = (dt * ORBIT_PER_SECOND as i64 / 1_000_000) as i32;
+            self.orbit = (self.orbit + spin - drag) & (fx::TURN - 1);
+            self.draw();
+            return;
+        }
         let focused = bits & bit("focus") != 0;
         self.latched |= bits & !self.prev_bits;
         self.prev_bits = bits;
@@ -146,11 +271,6 @@ impl Game {
             -dx * LOOK_PER_PIXEL / HUNDREDTHS,
             -dy * LOOK_PER_PIXEL / HUNDREDTHS,
         );
-        let dt = match self.last_us {
-            Some(last) => (now_us - last).clamp(0, MAX_FRAME_US),
-            None => 0,
-        };
-        self.last_us = Some(now_us);
         self.acc += dt * TICKS_PER_SECOND as i64;
         let mut ran = 0;
         while self.acc >= TICK_UNITS && ran < MAX_TICKS_PER_FRAME {
@@ -164,6 +284,11 @@ impl Game {
             self.acc = self.acc.min(TICK_UNITS - 1);
         }
         self.alpha = (self.acc * ONE as i64 / TICK_UNITS) as i32;
+        if let Some(m) = self.world.mission.as_ref().filter(|m| m.finished()) {
+            self.debrief = Some(m.debrief(&self.world));
+            self.mode = Mode::Debrief;
+            self.paused = false;
+        }
         self.draw();
     }
 
@@ -186,23 +311,91 @@ impl Game {
         }
     }
 
+    fn camera(&self) -> Camera {
+        match self.mode {
+            Mode::Garage | Mode::Briefing => {
+                let pivot = v3(0, ORBIT_PIVOT_Y, 0);
+                let eye = pivot.sub(facing(self.orbit, ORBIT_PITCH).scale(ORBIT_DISTANCE));
+                Camera {
+                    eye,
+                    yaw: self.orbit,
+                    pitch: ORBIT_PITCH,
+                }
+            }
+            _ => render::player_camera(&self.world, self.alpha),
+        }
+    }
+
     fn draw(&mut self) {
         let aspect = fx::div(self.css.0, self.css.1).max(1);
-        let (vp, eye) = render::view_projection(&self.world, self.alpha, aspect);
+        let cam = self.camera();
+        let vp = render::view_projection(&cam, aspect);
         let mut view = vp.0.to_vec();
-        view.extend([eye.x, eye.y, eye.z]);
+        view.extend([cam.eye.x, cam.eye.y, cam.eye.z]);
         self.view = view;
         let (values, draws) = render::frame(&self.world, &self.pal, self.alpha);
         self.values = values;
         self.draws = draws;
-        self.hud = Some(render::hud(
-            &self.world,
-            &vp,
-            self.css.0,
-            self.css.1,
-            &self.names,
-            self.paused,
-        ));
+        let mut hud = render::hud(&self.world, &vp, self.css.0, self.css.1, &self.names, self.paused);
+        hud.mode = self.mode;
+        hud.debrief = self.debrief.clone();
+        self.hud = Some(hud);
+    }
+
+    // ---- garage and mode commands ----
+
+    pub fn garage_select(&mut self, slot: usize) {
+        self.garage.select(slot);
+    }
+
+    pub fn garage_hover(&mut self, part: i32) {
+        self.garage.hover = usize::try_from(part).ok();
+    }
+
+    pub fn garage_equip(&mut self, part: usize) {
+        if self.garage.equip(part, &mut self.loadout, &self.cat) {
+            self.enter(Mode::Garage);
+        }
+    }
+
+    pub fn garage_paint(&mut self, scheme: usize) {
+        self.paint = scheme.min(self.pal.schemes.len() - 1);
+        self.enter(Mode::Garage);
+    }
+
+    pub fn garage_json(&self) -> String {
+        let v: GarageView = self.garage.view(&self.loadout, self.paint, &self.cat, &self.pal);
+        serde_json::to_string(&v).unwrap_or_default()
+    }
+
+    /// The loadout and paint as a string for the page to keep between visits.
+    pub fn saved(&self) -> String {
+        serde_json::to_string(&Saved {
+            loadout: self.loadout.0.clone(),
+            paint: self.paint,
+        })
+        .unwrap_or_default()
+    }
+
+    pub fn briefing(&mut self) {
+        self.enter(Mode::Briefing);
+    }
+
+    pub fn launch(&mut self) {
+        self.enter(Mode::Sortie);
+    }
+
+    pub fn test_field(&mut self) {
+        self.enter(Mode::Test);
+    }
+
+    pub fn to_garage(&mut self) {
+        self.enter(Mode::Garage);
+    }
+
+    /// Bumped whenever the static scene changes, so the page re-uploads it.
+    pub fn scene_version(&self) -> u32 {
+        self.scene_version
     }
 
     /// The view-projection matrix (16, column-major) then the eye (3).
@@ -240,6 +433,10 @@ impl Game {
 
     pub fn world(&self) -> &World {
         &self.world
+    }
+
+    pub fn mode(&self) -> Mode {
+        self.mode
     }
 }
 
@@ -281,26 +478,43 @@ pub fn numbers() -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
-    fn game() -> Game {
+    pub fn game() -> Game {
         Game::new(
             include_str!("../../../data/parts.json"),
             include_str!("../../../data/palette.json"),
             include_str!("../../../data/missions.json"),
+            include_str!("../../../data/pilots.json"),
             "",
         )
         .unwrap()
+    }
+
+    fn test_game() -> Game {
+        let mut g = game();
+        g.test_field();
+        g
     }
 
     const FOCUS: u32 = 1 << 10;
     const FRAME_60: i64 = 16_667;
 
     #[test]
+    fn a_new_game_opens_in_the_garage_and_runs_no_ticks() {
+        let mut g = game();
+        assert_eq!(g.mode(), Mode::Garage);
+        for k in 0..60 {
+            g.advance(k * FRAME_60, FOCUS | bit("forward"), 0, 0);
+        }
+        assert_eq!(g.world().tick, 0);
+    }
+
+    #[test]
     fn one_second_of_frames_runs_sixty_ticks_at_any_frame_rate() {
         for fps in [30i64, 60, 144, 240] {
-            let mut g = game();
+            let mut g = test_game();
             let step = 1_000_000 / fps;
             for k in 0..=fps {
                 g.advance(k * step, FOCUS, 0, 0);
@@ -312,7 +526,7 @@ mod tests {
 
     #[test]
     fn a_long_stall_runs_at_most_the_cap_and_alpha_stays_in_range() {
-        let mut g = game();
+        let mut g = test_game();
         g.advance(0, FOCUS, 0, 0);
         g.advance(2_000_000, FOCUS, 0, 0);
         assert!(g.world().tick <= MAX_TICKS_PER_FRAME);
@@ -321,7 +535,7 @@ mod tests {
 
     #[test]
     fn mouse_look_turns_the_aim_on_a_frame_that_runs_no_tick() {
-        let mut g = game();
+        let mut g = test_game();
         g.advance(0, FOCUS, 0, 0);
         let before = g.world().player().body.aim_yaw;
         g.advance(1_000, FOCUS, 1_000, 0);
@@ -334,7 +548,7 @@ mod tests {
 
     #[test]
     fn without_focus_nothing_moves_and_the_hud_says_paused() {
-        let mut g = game();
+        let mut g = test_game();
         g.advance(0, bit("forward"), 0, 0);
         g.advance(500_000, bit("forward"), 50, 0);
         assert_eq!(g.world().tick, 0);
@@ -343,7 +557,7 @@ mod tests {
 
     #[test]
     fn a_tap_shorter_than_a_tick_still_quick_boosts() {
-        let mut g = game();
+        let mut g = test_game();
         let qb = bit("quick_boost");
         g.advance(0, FOCUS, 0, 0);
         // pressed and released inside one tick
@@ -358,7 +572,7 @@ mod tests {
 
     #[test]
     fn holding_forward_shows_speed_on_the_hud() {
-        let mut g = game();
+        let mut g = test_game();
         for k in 0..60 {
             g.advance(k * FRAME_60, FOCUS | bit("forward"), 0, 0);
         }
@@ -383,5 +597,50 @@ mod tests {
         assert_eq!(n["actions"]["focus"], FOCUS);
         assert_eq!(n["meshes"].as_array().unwrap().len(), 4);
         assert_eq!(n["meshes"][0]["vertices"], 36);
+    }
+
+    #[test]
+    fn fitting_a_part_and_paint_survives_a_save_and_a_new_game() {
+        let mut g = game();
+        g.garage_select(
+            crate::parts::Slot::ALL
+                .iter()
+                .position(|s| *s == crate::parts::Slot::Legs)
+                .unwrap(),
+        );
+        g.garage_equip(1);
+        g.garage_paint(2);
+        let saved = g.saved();
+        let again = Game::new(
+            include_str!("../../../data/parts.json"),
+            include_str!("../../../data/palette.json"),
+            include_str!("../../../data/missions.json"),
+            include_str!("../../../data/pilots.json"),
+            &saved,
+        )
+        .unwrap();
+        assert_eq!(again.loadout, g.loadout);
+        assert_eq!(again.paint, 2);
+        assert_ne!(again.loadout, again.cat.default_loadout());
+    }
+
+    #[test]
+    fn each_mode_change_bumps_the_scene_and_the_hud_names_the_mode() {
+        let mut g = game();
+        let v = g.scene_version();
+        g.launch();
+        assert!(g.scene_version() > v);
+        assert!(g.hud_json().contains("\"mode\":\"sortie\""));
+        g.to_garage();
+        assert!(g.hud_json().contains("\"mode\":\"garage\""));
+    }
+
+    #[test]
+    fn dragging_in_the_garage_turns_the_view() {
+        let mut g = game();
+        g.advance(0, 0, 0, 0);
+        let a = g.orbit;
+        g.advance(1, bit("drag"), 5_000, 0);
+        assert_ne!(g.orbit, a);
     }
 }

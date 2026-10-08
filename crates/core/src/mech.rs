@@ -444,6 +444,7 @@ mod tests {
             tall_h_m: 10,
             ceiling_m: 500,
             clearings: vec![],
+            avenue_m: 0,
         })
     }
 
@@ -476,11 +477,7 @@ mod tests {
         run(&mut b, FWD, &t, &m, 60);
         // by hand: 95 km/h = 26.389 m/s = 0.43981 m/tick = 28 823 in Q16
         let expect = 28_823;
-        assert!(
-            (b.vel.len() - expect).abs() < 64,
-            "{} vs {expect}",
-            b.vel.len()
-        );
+        assert!((b.vel.len() - expect).abs() < 64, "{} vs {expect}", b.vel.len());
         assert!(b.pos.z < -int(20), "walked forward (−z), at {:?}", b.pos);
         assert!(b.grounded);
     }
@@ -527,10 +524,7 @@ mod tests {
             &t,
             &m,
         );
-        assert_eq!(
-            b.en, en,
-            "a second quick boost inside the cooldown does nothing"
-        );
+        assert_eq!(b.en, en, "a second quick boost inside the cooldown does nothing");
     }
 
     #[test]

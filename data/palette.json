@@ -1,19 +1,14 @@
 {
   "_note": "Every colour the 3D view draws, as 0-255 RGB. The core reads this file; the page never holds a colour of its own for the scene.",
-  "paints": {
-    "primary": [196, 190, 172],
-    "secondary": [92, 98, 104],
-    "dark": [44, 47, 52],
-    "glow": [255, 168, 60],
-    "accent": [210, 70, 46]
-  },
-  "enemy_paints": {
-    "primary": [96, 104, 88],
-    "secondary": [58, 64, 56],
-    "dark": [34, 36, 34],
-    "glow": [255, 60, 52],
-    "accent": [255, 60, 52]
-  },
+  "schemes": [
+    { "name": "Ash", "primary": [196, 190, 172], "secondary": [92, 98, 104], "dark": [44, 47, 52], "glow": [255, 168, 60], "accent": [210, 70, 46] },
+    { "name": "Oxide", "primary": [150, 62, 44], "secondary": [70, 58, 52], "dark": [36, 32, 30], "glow": [255, 214, 120], "accent": [230, 220, 200] },
+    { "name": "Glacier", "primary": [220, 226, 230], "secondary": [120, 140, 156], "dark": [52, 60, 70], "glow": [110, 210, 255], "accent": [60, 120, 200] },
+    { "name": "Night Shift", "primary": [52, 58, 62], "secondary": [30, 34, 38], "dark": [18, 20, 22], "glow": [60, 255, 200], "accent": [60, 200, 170] },
+    { "name": "Dune", "primary": [188, 160, 112], "secondary": [122, 100, 70], "dark": [60, 50, 38], "glow": [255, 120, 60], "accent": [180, 90, 40] },
+    { "name": "Signal", "primary": [226, 190, 40], "secondary": [40, 40, 40], "dark": [24, 24, 24], "glow": [255, 255, 255], "accent": [20, 20, 20] }
+  ],
+  "enemy": { "name": "Hostile", "primary": [96, 104, 88], "secondary": [58, 64, 56], "dark": [34, 36, 34], "glow": [255, 60, 52], "accent": [255, 60, 52] },
   "sky": [148, 166, 178],
   "fog": [160, 172, 178],
   "ground": [104, 100, 92],
@@ -30,6 +25,7 @@
   "enemy_shot": [255, 80, 70],
   "blast": [255, 150, 70],
   "drone": [70, 76, 82],
+  "beacon": [120, 220, 255],
   "drone_eye": [255, 70, 60],
   "light_dir": [-40, 100, 30]
 }

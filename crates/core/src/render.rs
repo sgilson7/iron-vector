@@ -37,8 +37,8 @@ pub struct Batch {
 impl Batch {
     pub fn push(&mut self, mesh: Mesh, a: &Affine, rgb: [i32; 3], glow: i32) {
         self.meshes[mesh as usize].extend_from_slice(&[
-            a.c0.x, a.c0.y, a.c0.z, a.t.x, a.c1.x, a.c1.y, a.c1.z, a.t.y, a.c2.x, a.c2.y, a.c2.z,
-            a.t.z, rgb[0], rgb[1], rgb[2], glow,
+            a.c0.x, a.c0.y, a.c0.z, a.t.x, a.c1.x, a.c1.y, a.c1.z, a.t.y, a.c2.x, a.c2.y, a.c2.z, a.t.z,
+            rgb[0], rgb[1], rgb[2], glow,
         ]);
     }
 
@@ -123,7 +123,7 @@ pub fn frame(w: &World, pal: &Palette, alpha: i32) -> (Vec<i32>, Vec<u32>) {
     let shadow = q16(pal.shadow);
     let mut parts = Vec::new();
     for m in w.mechs.iter().filter(|m| m.alive) {
-        let paints = pal.paint_set(m.team == crate::combat::Team::Enemy);
+        let paints = m.paint;
         let pos = m.body.prev_pos.lerp(m.body.pos, alpha);
         let yaw = fx::lerp_angle(m.body.prev_yaw, m.body.yaw, alpha);
         let root = m.root(pos, yaw);
@@ -180,12 +180,42 @@ pub fn frame(w: &World, pal: &Palette, alpha: i32) -> (Vec<i32>, Vec<u32>) {
                 );
             }
             CraftKind::Heli => {
+                let part = |at: V3, size: V3| root.then(&boxed(at, size));
+                let dark = dark_of(pal);
+                b.push(Mesh::Cube, &part(V3::ZERO, v3(int(3), int(3), int(6))), drone, 0);
+                let nose = root
+                    .then(&Affine::translate(v3(0, -ONE / 2, -int(4))))
+                    .then(&Affine::scale(v3(int(3), int(2), int(2))));
+                b.push(Mesh::Wedge, &nose, drone, 0);
                 b.push(
                     Mesh::Cube,
-                    &root.then(&Affine::scale(v3(int(4), int(3), int(8)))),
+                    &part(v3(0, ONE / 2, int(6)), v3(ONE, ONE, int(7))),
                     drone,
                     0,
                 );
+                b.push(
+                    Mesh::Cube,
+                    &part(v3(0, int(2), int(9)), v3(ONE / 4, int(3), int(2))),
+                    drone,
+                    0,
+                );
+                let skid = v3(ONE / 4, ONE / 4, int(6));
+                b.push(Mesh::Cube, &part(v3(-int(3) / 2, -int(2), 0), skid), dark, 0);
+                b.push(Mesh::Cube, &part(v3(int(3) / 2, -int(2), 0), skid), dark, 0);
+                b.push(
+                    Mesh::Cube,
+                    &part(v3(0, -ONE / 4, -int(7) / 2), v3(int(2), ONE / 2, ONE / 4)),
+                    eye,
+                    ONE,
+                );
+                let spin = (w.tick as i32).wrapping_mul(fx::deg(31)) + fx::lerp(0, fx::deg(31), alpha);
+                for k in 0..2 {
+                    let blade = root
+                        .then(&Affine::translate(v3(0, int(2), 0)))
+                        .then(&Affine::rot_y(spin + k * fx::QUARTER))
+                        .then(&Affine::scale(v3(int(13), ONE / 8, ONE / 2)));
+                    b.push(Mesh::Cube, &blade, dark, 0);
+                }
             }
         }
         push_shadow(&mut b, w, pos, int(4), shadow);
@@ -234,8 +264,28 @@ pub fn frame(w: &World, pal: &Palette, alpha: i32) -> (Vec<i32>, Vec<u32>) {
             }
         }
     }
+    if let Some(m) = w
+        .mission
+        .as_ref()
+        .filter(|m| m.phase == crate::mission::Phase::Advance)
+    {
+        let beacon = q16(pal.beacon);
+        let column = boxed(
+            v3(m.waypoint.x, int(200), m.waypoint.z),
+            v3(int(2), int(400), int(2)),
+        );
+        b.push(Mesh::Cube, &column, beacon, ONE);
+        for k in 0..12 {
+            let a = fx::TURN * k / 12;
+            let at = m.waypoint.add(crate::geom::facing(a, 0).scale(m.waypoint_r));
+            let seg = Affine::translate(v3(at.x, ONE / 4, at.z))
+                .then(&Affine::rot_y(a))
+                .then(&Affine::scale(v3(int(18), ONE / 4, ONE)));
+            b.push(Mesh::Cube, &seg, beacon, ONE);
+        }
+    }
     let blast = q16(pal.blast);
-    let dark = pal.paint_set(false)[Paint::Dark as usize];
+    let dark = pal.scheme(0).paints()[Paint::Dark as usize];
     for e in &w.effects {
         let k = fx::ratio(e.age, e.life.max(1));
         let spin = Affine::rot_y(e.age * fx::deg(9)).then(&Affine::rot_x(e.age * fx::deg(5)));
@@ -279,6 +329,10 @@ pub fn frame(w: &World, pal: &Palette, alpha: i32) -> (Vec<i32>, Vec<u32>) {
     b.finish(DYNAMIC_BUFFER)
 }
 
+fn dark_of(pal: &Palette) -> [i32; 3] {
+    pal.scheme(0).paints()[Paint::Dark as usize]
+}
+
 /// A dark patch on the floor under something in the air, smaller the higher it is.
 fn push_shadow(b: &mut Batch, w: &World, pos: V3, size: i32, colour: [i32; 3]) {
     let floor = w.map.floor_under(v3(pos.x, pos.y + ONE / 2, pos.z));
@@ -293,20 +347,29 @@ fn push_shadow(b: &mut Batch, w: &World, pos: V3, size: i32, colour: [i32; 3]) {
     );
 }
 
-/// The view-projection matrix for the player's camera this frame.
-pub fn view_projection(w: &World, alpha: i32, aspect: i32) -> (Mat4, V3) {
+/// Where the view is from, and which way it looks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Camera {
+    pub eye: V3,
+    pub yaw: i32,
+    pub pitch: i32,
+}
+
+/// The chase camera behind the player's frame, between the last two ticks.
+pub fn player_camera(w: &World, alpha: i32) -> Camera {
     let m = w.player();
     let pos = m.body.prev_pos.lerp(m.body.pos, alpha);
-    let pivot = pos
-        .add(m.rig.chest())
-        .add(v3(0, crate::world::PIVOT_LIFT, 0));
+    let pivot = pos.add(m.rig.chest()).add(v3(0, crate::world::PIVOT_LIFT, 0));
     let eye = crate::world::camera_eye(&w.map, pivot, m.body.aim_yaw, m.body.aim_pitch);
-    let vp = Mat4::perspective(FOV, aspect, NEAR, FAR).mul(&Mat4::view(
+    Camera {
         eye,
-        m.body.aim_yaw,
-        m.body.aim_pitch,
-    ));
-    (vp, eye)
+        yaw: m.body.aim_yaw,
+        pitch: m.body.aim_pitch,
+    }
+}
+
+pub fn view_projection(cam: &Camera, aspect: i32) -> Mat4 {
+    Mat4::perspective(FOV, aspect, NEAR, FAR).mul(&Mat4::view(cam.eye, cam.yaw, cam.pitch))
 }
 
 /// Scene-wide shader inputs, named in the order `uniform_layout` lists them.
@@ -381,8 +444,66 @@ pub struct Hud {
     pub marks: Vec<Mark>,
     pub kills: u32,
     pub paused: bool,
+    pub mode: crate::game::Mode,
+    pub stagger_pct: i32,
+    pub staggered: bool,
+    /// copy key of the mission's objective, if there is a mission
+    pub objective: Option<&'static str>,
+    pub waypoint: Option<Pointer>,
+    pub boss: Option<BossHud>,
+    pub seconds: u32,
+    pub debrief: Option<crate::mission::Debrief>,
 }
 
+/// A marker for something the player should head for: on screen where it
+/// is, or pinned to the edge of the screen in its direction.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct Pointer {
+    pub x: i32,
+    pub y: i32,
+    pub dist: i32,
+    pub edge: bool,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct BossHud {
+    pub name: String,
+    pub ap_pct: i32,
+    pub stagger_pct: i32,
+    pub staggered: bool,
+    /// copy key of what its pilot is doing
+    pub intent: Option<&'static str>,
+}
+
+/// Where a pointer goes for a world point: on screen, or on the edge in its
+/// direction.
+pub fn pointer(vp: &Mat4, cam_yaw: i32, from: V3, p: V3, css_w: i32, css_h: i32) -> Pointer {
+    let dist = p.dist(from) / ONE;
+    let margin = 48;
+    if let Some((x, y)) = to_screen(vp, p, css_w, css_h) {
+        if x >= margin && y >= margin && x <= css_w - margin && y <= css_h - margin {
+            return Pointer {
+                x,
+                y,
+                dist,
+                edge: false,
+            };
+        }
+    }
+    let (yaw, _) = crate::geom::yaw_pitch_of(p.sub(from));
+    let rel = fx::wrap(yaw - cam_yaw);
+    // left of the view is positive yaw, so −sin puts it on the left
+    let half_w = css_w / 2 - margin;
+    let half_h = css_h / 2 - margin;
+    let x = css_w / 2 - (fx::sin(rel) as i64 * half_w as i64 / ONE as i64) as i32;
+    let y = css_h / 2 - (fx::cos(rel) as i64 * half_h as i64 / ONE as i64) as i32;
+    Pointer {
+        x,
+        y,
+        dist,
+        edge: true,
+    }
+}
 /// What the HUD shows this frame.
 pub fn hud(w: &World, vp: &Mat4, css_w: i32, css_h: i32, names: &[String; 3], paused: bool) -> Hud {
     let m = w.player();
@@ -436,9 +557,38 @@ pub fn hud(w: &World, vp: &Mat4, css_w: i32, css_h: i32, names: &[String; 3], pa
         marks,
         kills: w.kills,
         paused,
+        mode: crate::game::Mode::Garage,
+        stagger_pct: m.stagger_pct(),
+        staggered: m.stagger > 0,
+        objective: w.mission.as_ref().map(|mi| mi.phase.objective()),
+        waypoint: w.objective_point().map(|p| {
+            let (eye, _) = w.player_view();
+            pointer(vp, m.body.aim_yaw, eye, p, css_w, css_h)
+        }),
+        boss: w
+            .mission
+            .as_ref()
+            .and_then(|mi| mi.boss.map(|b| (mi, b)))
+            .map(|(mi, b)| {
+                let e = &w.mechs[b];
+                BossHud {
+                    name: mi.boss_name.clone(),
+                    ap_pct: e.ap * 100 / e.stats.ap.max(1),
+                    stagger_pct: e.stagger_pct(),
+                    staggered: e.stagger > 0,
+                    intent: e.intent.filter(|_| e.alive).map(|a| a.key()),
+                }
+            }),
+        seconds: w
+            .mission
+            .as_ref()
+            .map(|mi| mi.ended_at.unwrap_or(mi.ticks) / TICKS as u32)
+            .unwrap_or(0),
+        debrief: None,
     }
 }
 
+const TICKS: i32 = crate::mech::TICKS_PER_SECOND;
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -475,7 +625,8 @@ mod tests {
     #[test]
     fn the_point_the_camera_looks_at_is_the_centre_of_the_screen() {
         let w = world();
-        let (vp, eye) = view_projection(&w, ONE, fx::ratio(16, 9));
+        let cam = player_camera(&w, ONE);
+        let (vp, eye) = (view_projection(&cam, fx::ratio(16, 9)), cam.eye);
         let m = w.player();
         let ahead = eye.add(crate::geom::facing(m.body.aim_yaw, m.body.aim_pitch).scale(int(100)));
         let (x, y) = to_screen(&vp, ahead, 1600, 900).unwrap();
@@ -487,13 +638,30 @@ mod tests {
     #[test]
     fn the_hud_reads_full_ap_and_en_at_the_start() {
         let w = world();
-        let (vp, _) = view_projection(&w, ONE, ONE);
+        let vp = view_projection(&player_camera(&w, ONE), ONE);
         let names = ["a".to_string(), "b".to_string(), "c".to_string()];
         let h = hud(&w, &vp, 800, 600, &names, false);
         assert_eq!(h.ap_pct, 100);
         assert_eq!(h.en_pct, 100);
         assert_eq!(h.speed, 0);
         assert_eq!(h.weapons[0].part, "b", "the left hand is shown first");
+    }
+
+    #[test]
+    fn a_point_behind_the_camera_is_pinned_to_the_bottom_edge() {
+        let w = world();
+        let cam = player_camera(&w, ONE);
+        let vp = view_projection(&cam, fx::ratio(16, 9));
+        let behind = cam.eye.sub(crate::geom::facing(cam.yaw, 0).scale(int(300)));
+        let p = pointer(&vp, cam.yaw, cam.eye, behind, 1600, 900);
+        assert!(p.edge);
+        assert!((p.x - 800).abs() < 4 && p.y > 800, "{p:?}");
+        // a point to the left (positive yaw) sits on the left edge
+        let left = cam
+            .eye
+            .add(crate::geom::facing(cam.yaw + fx::QUARTER, 0).scale(int(300)));
+        let p = pointer(&vp, cam.yaw, cam.eye, left, 1600, 900);
+        assert!(p.edge && p.x < 100, "{p:?}");
     }
 
     #[test]

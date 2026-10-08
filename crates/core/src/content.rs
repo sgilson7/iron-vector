@@ -5,17 +5,49 @@
 use crate::fx::ONE;
 use crate::map::MapSpec;
 use serde::Deserialize;
-use std::collections::BTreeMap;
 
 pub type Rgb = [i32; 3];
+
+/// A paint scheme: the five paints a mech is drawn in.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Scheme {
+    pub name: String,
+    pub primary: Rgb,
+    pub secondary: Rgb,
+    pub dark: Rgb,
+    pub glow: Rgb,
+    pub accent: Rgb,
+}
+
+impl Scheme {
+    /// The paints in `Paint` order, as Q16.
+    pub fn paints(&self) -> [[i32; 3]; 5] {
+        [self.primary, self.secondary, self.dark, self.glow, self.accent].map(q16)
+    }
+
+    fn channels(&self) -> [Rgb; 5] {
+        [self.primary, self.secondary, self.dark, self.glow, self.accent]
+    }
+}
+
+/// A colour as the page writes it in CSS.
+pub fn hex(c: Rgb) -> String {
+    format!(
+        "#{:02x}{:02x}{:02x}",
+        c[0].clamp(0, 255),
+        c[1].clamp(0, 255),
+        c[2].clamp(0, 255)
+    )
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Palette {
     #[serde(rename = "_note", default)]
     pub note: String,
-    pub paints: BTreeMap<String, Rgb>,
-    pub enemy_paints: BTreeMap<String, Rgb>,
+    pub schemes: Vec<Scheme>,
+    pub enemy: Scheme,
     pub sky: Rgb,
     pub fog: Rgb,
     pub ground: Rgb,
@@ -33,6 +65,7 @@ pub struct Palette {
     pub blast: Rgb,
     pub drone: Rgb,
     pub drone_eye: Rgb,
+    pub beacon: Rgb,
     pub light_dir: [i32; 3],
 }
 
@@ -44,20 +77,14 @@ pub fn q16(c: Rgb) -> [i32; 3] {
 impl Palette {
     pub fn parse(json: &str) -> Result<Palette, String> {
         let p: Palette = serde_json::from_str(json).map_err(|e| format!("palette: {e}"))?;
-        let all = p
-            .paints
-            .values()
-            .chain(p.enemy_paints.values())
-            .chain(p.buildings.iter());
-        for c in all {
+        let schemes = p.schemes.iter().chain([&p.enemy]).flat_map(|s| s.channels());
+        for c in schemes.chain(p.buildings.iter().copied()) {
             if c.iter().any(|v| !(0..=255).contains(v)) {
                 return Err(format!("palette: a colour channel is outside 0-255: {c:?}"));
             }
         }
-        for name in crate::model::Paint::NAMES {
-            if !p.paints.contains_key(name) || !p.enemy_paints.contains_key(name) {
-                return Err(format!("palette: no paint called {name}"));
-            }
+        if p.schemes.is_empty() {
+            return Err("palette: no paint schemes".into());
         }
         if p.buildings.is_empty() {
             return Err("palette: no building colours".into());
@@ -65,14 +92,9 @@ impl Palette {
         Ok(p)
     }
 
-    /// The five paints in `Paint` order, as Q16.
-    pub fn paint_set(&self, enemy: bool) -> [[i32; 3]; 5] {
-        let src = if enemy {
-            &self.enemy_paints
-        } else {
-            &self.paints
-        };
-        crate::model::Paint::NAMES.map(|n| q16(src[n]))
+    /// A scheme by number; an out-of-range number gets the first.
+    pub fn scheme(&self, i: usize) -> &Scheme {
+        self.schemes.get(i).unwrap_or(&self.schemes[0])
     }
 }
 
@@ -90,8 +112,8 @@ pub struct Proving {
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Missions {
     pub proving: Proving,
+    pub mission: crate::mission::MissionSpec,
 }
-
 impl Missions {
     pub fn parse(json: &str) -> Result<Missions, String> {
         serde_json::from_str(json).map_err(|e| format!("missions: {e}"))
@@ -122,9 +144,15 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn a_palette_missing_a_paint_is_refused() {
-        let text =
-            include_str!("../../../data/palette.json").replace("\"glow\": [255, 168, 60],", "");
+    fn a_scheme_missing_a_paint_is_refused() {
+        let text = include_str!("../../../data/palette.json").replacen("\"glow\": [255, 168, 60], ", "", 1);
         assert!(Palette::parse(&text).unwrap_err().contains("glow"));
+    }
+
+    #[test]
+    fn an_unknown_scheme_number_falls_back_to_the_first() {
+        let p = palette();
+        assert_eq!(p.scheme(999), &p.schemes[0]);
+        assert_eq!(hex([255, 168, 60]), "#ffa83c");
     }
 }

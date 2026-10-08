@@ -37,6 +37,18 @@ export function makeHud(copy) {
     enOut: el("en-out"),
     qb: el("qb"),
     marks: el("marks"),
+    waypoint: el("waypoint"),
+    wpDist: document.querySelector("#waypoint .wp-dist"),
+    objective: el("objective"),
+    objectiveBox: el("objective-box"),
+    timer: el("timer"),
+    boss: el("boss"),
+    bossName: el("boss-name"),
+    bossIntent: el("boss-intent"),
+    bossAp: el("boss-ap"),
+    bossStagger: el("boss-stagger"),
+    stagger: el("stagger-bar"),
+    staggered: el("staggered"),
     weapons: ["w0", "w1", "w2"].map((id) => {
       const root = el(id);
       return {
@@ -90,6 +102,28 @@ export function makeHud(copy) {
         set(n.root, `we${i}`, w.empty, cls("empty"));
       });
       marks(h.marks);
+      set(nodes.stagger, "stagger", h.stagger_pct, pct);
+      set(nodes.stagger, "staggerFull", h.staggered, cls("full"));
+      set(nodes.staggered, "staggered", h.staggered, show);
+      set(nodes.objectiveBox, "hasObjective", Boolean(h.objective), show);
+      set(nodes.objective, "objective", h.objective ? copy[h.objective] : "", text);
+      set(nodes.timer, "timer", h.seconds, text);
+      const w = h.waypoint;
+      set(nodes.waypoint, "hasWaypoint", Boolean(w), show);
+      if (w) {
+        nodes.waypoint.style.transform = `translate(${w.x}px, ${w.y}px)`;
+        set(nodes.wpDist, "wpDist", `${w.dist}${copy.metres}`, text);
+        set(nodes.waypoint, "wpEdge", w.edge, cls("edge"));
+      }
+      const b = h.boss;
+      set(nodes.boss, "hasBoss", Boolean(b), show);
+      if (b) {
+        set(nodes.bossName, "bossName", b.name, text);
+        set(nodes.bossIntent, "bossIntent", b.intent ? `${copy.ai_caption}: ${copy[b.intent]}` : "", text);
+        set(nodes.bossAp, "bossAp", b.ap_pct, pct);
+        set(nodes.bossStagger, "bossStagger", b.stagger_pct, pct);
+        set(nodes.bossStagger, "bossStaggered", b.staggered, cls("full"));
+      }
     },
   };
 }

@@ -10,12 +10,24 @@
   <title>Iron Vector</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body data-ready="false">
+<body data-ready="false" data-mode="loading">
   <canvas id="view"></canvas>
 
   <div id="hud" hidden>
     <div id="reticle"></div>
     <div id="marks"></div>
+    <div id="waypoint" hidden><span class="wp-label" data-copy="waypoint"></span><b class="wp-dist"></b></div>
+
+    <div id="objective-box">
+      <div><span class="label" data-copy="objective"></span> <span id="objective"></span></div>
+      <div class="timer"><span class="label" data-copy="mission_timer"></span> <b id="timer">0</b></div>
+    </div>
+
+    <div id="boss" hidden>
+      <div class="boss-head"><span id="boss-name"></span><span id="boss-intent"></span></div>
+      <div class="bar boss-ap" id="boss-ap"><i></i></div>
+      <div class="bar thin stagger" id="boss-stagger"><i></i></div>
+    </div>
 
     <div class="readout" id="readout-left">
       <div><span class="label" data-copy="speed"></span> <b id="speed">0</b> <span class="unit" data-copy="kmh"></span></div>
@@ -27,8 +39,9 @@
     </div>
 
     <div id="gauges">
-      <div class="ap-row"><span class="label" data-copy="ap"></span> <b id="ap">0</b></div>
+      <div class="ap-row"><span class="label" data-copy="ap"></span> <b id="ap">0</b><span id="staggered" class="warn" data-copy="staggered" hidden></span></div>
       <div class="bar" id="ap-bar"><i></i></div>
+      <div class="bar thin stagger" id="stagger-bar"><i></i></div>
       <div class="en-row"><span class="label" data-copy="en"></span><span id="en-out" class="warn" data-copy="en_out" hidden></span><span id="qb" class="flag" data-copy="qb"></span></div>
       <div class="bar en" id="en-bar"><i></i></div>
     </div>
@@ -40,17 +53,84 @@
     </div>
   </div>
 
-  <div id="overlay">
+  <section id="garage" class="screen" hidden>
+    <div class="col left">
+      <header>
+        <h1 data-copy="title"></h1>
+        <p class="sub" data-copy="garage"></p>
+      </header>
+      <h2 data-copy="slots_title"></h2>
+      <ol id="slots" class="list"></ol>
+      <h2 data-copy="parts_title"></h2>
+      <ol id="parts" class="list"></ol>
+    </div>
+    <div class="col middle">
+      <p class="hint" data-copy="garage_hint"></p>
+      <div id="detail" class="card">
+        <div class="card-head"><b id="detail-name"></b><span id="detail-kind"></span></div>
+        <div id="detail-maker" class="maker"></div>
+        <p id="detail-blurb"></p>
+        <table id="detail-rows"></table>
+      </div>
+    </div>
+    <div class="col right">
+      <h2 data-copy="stats_title"></h2>
+      <table id="stats"></table>
+      <ul id="warnings"></ul>
+      <h2 data-copy="paint_title"></h2>
+      <div id="paints"></div>
+      <div class="actions">
+        <button id="to-test" type="button" class="secondary" data-copy="test_field"></button>
+        <button id="to-briefing" type="button" data-copy="sortie"></button>
+      </div>
+      <p class="build" id="build"></p>
+    </div>
+  </section>
+
+  <section id="briefing" class="screen panel-screen" hidden>
+    <div class="panel">
+      <h1 data-copy="briefing_title"></h1>
+      <div id="briefing-text"></div>
+      <h2 data-copy="objectives_title"></h2>
+      <ol id="objectives"></ol>
+      <div class="actions">
+        <button id="briefing-back" type="button" class="secondary" data-copy="back"></button>
+        <button id="launch" type="button" data-copy="launch"></button>
+      </div>
+      <h2 data-copy="controls_title"></h2>
+      <table class="controls"></table>
+    </div>
+  </section>
+
+  <section id="debrief" class="screen panel-screen" hidden>
+    <div class="panel">
+      <h1 id="debrief-title"></h1>
+      <table id="debrief-rows">
+        <tr><td data-copy="debrief_time"></td><td id="d-time"></td></tr>
+        <tr><td data-copy="debrief_ap"></td><td id="d-ap"></td></tr>
+        <tr><td data-copy="debrief_kills"></td><td id="d-kills"></td></tr>
+        <tr><td data-copy="debrief_rank"></td><td id="d-rank" class="rank"></td></tr>
+      </table>
+      <div class="actions">
+        <button id="debrief-garage" type="button" class="secondary" data-copy="to_garage"></button>
+        <button id="retry" type="button" data-copy="retry"></button>
+      </div>
+    </div>
+  </section>
+
+  <div id="overlay" class="panel-screen">
     <div class="panel">
       <h1 data-copy="title"></h1>
       <p data-copy="tagline"></p>
       <p id="status" data-copy="loading"></p>
       <p id="message" role="status"></p>
-      <button id="start" type="button" data-copy="start" hidden></button>
+      <div class="actions">
+        <button id="abort" type="button" class="secondary" data-copy="abort" hidden></button>
+        <button id="start" type="button" data-copy="resume" hidden></button>
+      </div>
       <h2 data-copy="controls_title"></h2>
-      <table id="controls"></table>
+      <table class="controls"></table>
       <p class="hint" data-copy="esc_hint"></p>
-      <p class="build" id="build"></p>
     </div>
   </div>
 

@@ -189,11 +189,7 @@ mod tests {
         assert!(near(atan2(-ONE, -ONE), deg(225), tol));
         assert!(near(atan2(-ONE, ONE), deg(315), tol));
         // tan 30° = 0.57735: atan2(0.57735, 1) = 30°
-        assert!(
-            near(atan2(37_837, ONE), deg(30), tol),
-            "{}",
-            atan2(37_837, ONE)
-        );
+        assert!(near(atan2(37_837, ONE), deg(30), tol), "{}", atan2(37_837, ONE));
     }
 
     #[test]

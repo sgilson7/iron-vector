@@ -48,9 +48,8 @@ impl V3 {
         )
     }
     pub fn len(self) -> i32 {
-        let sq = self.x as i64 * self.x as i64
-            + self.y as i64 * self.y as i64
-            + self.z as i64 * self.z as i64;
+        let sq =
+            self.x as i64 * self.x as i64 + self.y as i64 * self.y as i64 + self.z as i64 * self.z as i64;
         fx::isqrt(sq as u64) as i32
     }
     pub fn len_xz(self) -> i32 {
@@ -186,10 +185,7 @@ impl Affine {
         self.apply_dir(p).add(self.t)
     }
     pub fn apply_dir(&self, d: V3) -> V3 {
-        self.c0
-            .scale(d.x)
-            .add(self.c1.scale(d.y))
-            .add(self.c2.scale(d.z))
+        self.c0.scale(d.x).add(self.c1.scale(d.y)).add(self.c2.scale(d.z))
     }
     /// `self * o`: apply `o` first, then `self`.
     pub fn then(&self, o: &Affine) -> Affine {
@@ -223,8 +219,8 @@ impl Mat4 {
 
     pub fn from_affine(a: &Affine) -> Mat4 {
         Mat4([
-            a.c0.x, a.c0.y, a.c0.z, 0, a.c1.x, a.c1.y, a.c1.z, 0, a.c2.x, a.c2.y, a.c2.z, 0, a.t.x,
-            a.t.y, a.t.z, ONE,
+            a.c0.x, a.c0.y, a.c0.z, 0, a.c1.x, a.c1.y, a.c1.z, 0, a.c2.x, a.c2.y, a.c2.z, 0, a.t.x, a.t.y,
+            a.t.z, ONE,
         ])
     }
 
@@ -304,8 +300,7 @@ mod tests {
     fn a_point_ahead_of_the_camera_lands_in_the_clip_volume_and_one_behind_does_not() {
         let eye = v3(int(10), int(5), int(20));
         let yaw = deg(30);
-        let vp = Mat4::perspective(deg(70), ratio_16_9(), ONE / 4, int(1000))
-            .mul(&Mat4::view(eye, yaw, 0));
+        let vp = Mat4::perspective(deg(70), ratio_16_9(), ONE / 4, int(1000)).mul(&Mat4::view(eye, yaw, 0));
         let ahead = eye.add(facing(yaw, 0).scale(int(50)));
         let [x, y, z, w] = vp.project(ahead);
         assert!(

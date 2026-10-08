@@ -4,7 +4,8 @@
 // decides what an action does.
 
 export function makeInput(canvas, controls, actions, onEngage) {
-  const state = { held: 0, dx: 0, dy: 0, engaged: false, fallback: false };
+  // `tapped` keeps a press that is released before the next frame reads it
+  const state = { held: 0, tapped: 0, dx: 0, dy: 0, engaged: false, fallback: false, dragging: false };
   const bitOf = (code) => actions[controls[code]] || 0;
 
   const locked = () => document.pointerLockElement === canvas;
@@ -12,7 +13,13 @@ export function makeInput(canvas, controls, actions, onEngage) {
 
   function release() {
     state.held = 0;
+    state.tapped = 0;
     state.fallback = false;
+  }
+
+  function letGo() {
+    release();
+    if (document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
   }
 
   function engage() {
@@ -41,26 +48,32 @@ export function makeInput(canvas, controls, actions, onEngage) {
   });
 
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Escape") return release();
+    // Esc always pauses: it lets go of a real pointer lock as well as the fallback
+    if (e.code === "Escape") return letGo();
     const bit = bitOf(e.code);
     if (!bit || !engaged()) return;
     state.held |= bit;
+    state.tapped |= bit;
     e.preventDefault();
   });
   window.addEventListener("keyup", (e) => {
     state.held &= ~bitOf(e.code);
   });
   canvas.addEventListener("mousedown", (e) => {
+    // outside a sortie, dragging the view turns the garage camera
+    state.dragging = !engaged();
     if (!engaged()) return;
     state.held |= bitOf(`Mouse${e.button}`);
+    state.tapped |= bitOf(`Mouse${e.button}`);
     e.preventDefault();
   });
   window.addEventListener("mouseup", (e) => {
+    state.dragging = false;
     state.held &= ~bitOf(`Mouse${e.button}`);
   });
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   window.addEventListener("mousemove", (e) => {
-    if (!engaged()) return;
+    if (!engaged() && !state.dragging) return;
     state.dx += e.movementX;
     state.dy += e.movementY;
   });
@@ -69,10 +82,15 @@ export function makeInput(canvas, controls, actions, onEngage) {
   return {
     engage,
     engaged,
+    // Lets go of the pointer, as the debrief and the garage need.
+    release: letGo,
     // The held bits plus focus, and the movement since the last read.
     read() {
-      const bits = engaged() ? state.held | actions.focus : state.held;
+      const drag = state.dragging ? actions.drag : 0;
+      const down = state.held | state.tapped;
+      const bits = (engaged() ? down | actions.focus : down) | drag;
       const out = { bits, dx: state.dx, dy: state.dy };
+      state.tapped = 0;
       state.dx = 0;
       state.dy = 0;
       return out;

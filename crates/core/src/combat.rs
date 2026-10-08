@@ -114,10 +114,7 @@ impl Shot {
                             w.spread / 2 + rng.range(0, w.spread / 4),
                         )
                     }
-                    _ => (
-                        rng.range(-w.spread, w.spread),
-                        rng.range(-w.spread, w.spread),
-                    ),
+                    _ => (rng.range(-w.spread, w.spread), rng.range(-w.spread, w.spread)),
                 };
                 let dir = facing(yaw + dy, pitch + dp);
                 Shot {
@@ -131,11 +128,7 @@ impl Shot {
                     age: 0,
                     full_ticks: full,
                     life: full * LIFE_PCT / 100,
-                    target: if w.kind == WeaponKind::Missile {
-                        lock
-                    } else {
-                        None
-                    },
+                    target: if w.kind == WeaponKind::Missile { lock } else { None },
                     turn: w.turn,
                     blast: w.blast,
                 }
@@ -182,8 +175,7 @@ pub fn segment_sphere(a: V3, b: V3, c: V3, r: i32) -> Option<i32> {
     };
     let closest = a.add(d.scale(t));
     let off = closest.sub(c);
-    let dist2 =
-        off.x as i64 * off.x as i64 + off.y as i64 * off.y as i64 + off.z as i64 * off.z as i64;
+    let dist2 = off.x as i64 * off.x as i64 + off.y as i64 * off.y as i64 + off.z as i64 * off.z as i64;
     if dist2 <= r as i64 * r as i64 {
         Some(t)
     } else {
@@ -285,14 +277,7 @@ mod tests {
         let c = catalog();
         let w = Weapon::from_part(c.get("rf-marrow").unwrap());
         let mut rng = Rng::new(1);
-        let mut s = Shot::fire(
-            &w,
-            Team::Player,
-            V3::ZERO,
-            v3(0, 0, -int(100)),
-            None,
-            &mut rng,
-        )[0];
+        let mut s = Shot::fire(&w, Team::Player, V3::ZERO, v3(0, 0, -int(100)), None, &mut rng)[0];
         assert_eq!(s.damage_now(), w.damage);
         s.age = s.full_ticks + 1;
         assert_eq!(s.damage_now(), w.damage * FALLOFF_PCT / 100);

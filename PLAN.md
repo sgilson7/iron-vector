@@ -46,3 +46,5 @@ None block stage A. The answers chosen so far are recorded in `SECOND-ORDER.md`.
 ## Status
 
 - [x] Approved in advance by Sam (BRIEF.md, 2026-10-08).
+- [x] Stage A deployed 2026-10-08 (e9c3189).
+- [x] Stage B built; deployed with the commit that follows this line.

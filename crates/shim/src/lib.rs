@@ -28,9 +28,10 @@ impl Game {
         parts: &str,
         palette: &str,
         missions: &str,
-        saved_loadout: &str,
+        pilots: &str,
+        saved: &str,
     ) -> Result<Game, JsValue> {
-        game::Game::new(parts, palette, missions, saved_loadout)
+        game::Game::new(parts, palette, missions, pilots, saved)
             .map(|inner| Game { inner })
             .map_err(|e| JsValue::from_str(&e))
     }
@@ -78,6 +79,52 @@ impl Game {
 
     pub fn clear_color(&self) -> Vec<f32> {
         floats(self.inner.clear_color())
+    }
+
+    pub fn scene_version(&self) -> u32 {
+        self.inner.scene_version()
+    }
+
+    pub fn garage(&self) -> String {
+        self.inner.garage_json()
+    }
+
+    pub fn garage_select(&mut self, slot: u32) {
+        self.inner.garage_select(slot as usize)
+    }
+
+    /// The part under the pointer, or −1 for none.
+    pub fn garage_hover(&mut self, part: i32) {
+        self.inner.garage_hover(part)
+    }
+
+    pub fn garage_equip(&mut self, part: u32) {
+        self.inner.garage_equip(part as usize)
+    }
+
+    pub fn garage_paint(&mut self, scheme: u32) {
+        self.inner.garage_paint(scheme as usize)
+    }
+
+    /// The loadout and paint, for the page to keep in local storage.
+    pub fn saved(&self) -> String {
+        self.inner.saved()
+    }
+
+    pub fn briefing(&mut self) {
+        self.inner.briefing()
+    }
+
+    pub fn launch(&mut self) {
+        self.inner.launch()
+    }
+
+    pub fn test_field(&mut self) {
+        self.inner.test_field()
+    }
+
+    pub fn to_garage(&mut self) {
+        self.inner.to_garage()
     }
 }
 

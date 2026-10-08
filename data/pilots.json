@@ -1,0 +1,26 @@
+{
+  "_note": "Enemy pilots. A pilot reads the world as a player would and returns only the controls a player could press. Its rules are tried top to bottom each time it thinks; the first whose condition holds is what it does. Conditions: staggered, missile_near, en_low, far, too_close, below_target, always. Actions: hold, dodge, recover, approach, retreat, climb, strafe.",
+  "frame": {
+    "think_ms": 250,
+    "aim_error_deg": 5,
+    "keep_min_m": 80,
+    "keep_max_m": 220,
+    "strafe_flip_ms": 2600,
+    "burst_ms": 900,
+    "pause_ms": 1500,
+    "missile_every_ms": 5500,
+    "shoulder_every_ms": 9000,
+    "dodge_range_m": 70,
+    "climb_gap_m": 25,
+    "en_low_pct": 22,
+    "rules": [
+      { "when": "staggered", "do": "hold" },
+      { "when": "missile_near", "do": "dodge" },
+      { "when": "en_low", "do": "recover" },
+      { "when": "far", "do": "approach" },
+      { "when": "too_close", "do": "retreat" },
+      { "when": "below_target", "do": "climb" },
+      { "when": "always", "do": "strafe" }
+    ]
+  }
+}

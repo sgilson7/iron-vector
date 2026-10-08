@@ -1,6 +1,6 @@
 {
   "title": "IRON VECTOR",
-  "tagline": "Proving ground. Take the frame out and see how it moves.",
+  "tagline": "Build a frame. Take it into the city.",
   "loading": "Loading the frame…",
   "start": "Click to take control",
   "resume": "Click to resume",
@@ -9,14 +9,42 @@
   "no_webgl": "This browser could not start WebGL 2, so the 3D view cannot be drawn. The simulation still runs; try a current Chrome, Firefox or Safari.",
   "controls_title": "Controls",
   "controls": [
-    ["W A S D", "Move"],
-    ["Mouse", "Look and aim"],
-    ["Space (hold)", "Jump, then ascend. Uses EN."],
-    ["Shift", "Quick boost. Uses EN."],
-    ["C", "Glide boost on or off"],
-    ["Left button", "Left-hand weapon"],
-    ["Right button", "Right-hand weapon"],
-    ["E or F", "Shoulder weapon"]
+    [
+      "W A S D",
+      "Move"
+    ],
+    [
+      "Mouse",
+      "Look and aim"
+    ],
+    [
+      "Space (hold)",
+      "Jump, then ascend. Uses EN."
+    ],
+    [
+      "Shift",
+      "Quick boost. Uses EN."
+    ],
+    [
+      "C",
+      "Glide boost on or off"
+    ],
+    [
+      "Left button",
+      "Left-hand weapon"
+    ],
+    [
+      "Right button",
+      "Right-hand weapon"
+    ],
+    [
+      "E or F",
+      "Shoulder weapon"
+    ],
+    [
+      "Esc",
+      "Pause and release the mouse"
+    ]
   ],
   "ap": "AP",
   "en": "EN",
@@ -29,5 +57,102 @@
   "qb": "QB",
   "kills": "DOWNED",
   "ammo_empty": "EMPTY",
-  "build": "build {hash}"
+  "build": "build {hash}",
+  "garage": "GARAGE",
+  "garage_hint": "Pick a slot, then a part. Hover a part to compare it before you fit it. Drag the view to turn the frame.",
+  "slots_title": "Slots",
+  "parts_title": "Parts",
+  "stats_title": "Frame",
+  "paint_title": "Paint",
+  "sortie": "SORTIE",
+  "test_field": "TEST FIELD",
+  "slot_head": "Head",
+  "slot_core": "Core",
+  "slot_arms": "Arms",
+  "slot_legs": "Legs",
+  "slot_booster": "Booster",
+  "slot_generator": "Generator",
+  "slot_right_weapon": "R-arm weapon",
+  "slot_left_weapon": "L-arm weapon",
+  "slot_shoulder_weapon": "Shoulder weapon",
+  "equipped": "FITTED",
+  "kind_rifle": "Rifle",
+  "kind_shotgun": "Shotgun",
+  "kind_missile": "Missile",
+  "kind_laser": "Laser",
+  "kind_grenade": "Cannon",
+  "stat_ap": "AP",
+  "stat_weight": "Weight",
+  "stat_load_limit": "Load limit",
+  "stat_arms_weight": "Arm-weapon weight",
+  "stat_arms_limit": "Arms load limit",
+  "stat_en_load": "EN load",
+  "stat_en_output": "EN output",
+  "stat_en_capacity": "EN capacity",
+  "stat_en_recovery": "EN recovery /s",
+  "stat_supply_delay_ms": "Supply delay ms",
+  "stat_walk_kmh": "Walk km/h",
+  "stat_glide_kmh": "Glide km/h",
+  "stat_qb_kmh": "Quick boost km/h",
+  "stat_qb_en": "Quick boost EN",
+  "stat_ascend_ms2": "Ascent",
+  "stat_ascend_en": "Ascent EN /s",
+  "stat_lock_range_m": "Lock range m",
+  "stat_stability": "Stability",
+  "stat_jump_ms": "Jump",
+  "stat_damage": "Damage",
+  "stat_impact": "Impact",
+  "stat_rate": "Rounds /min",
+  "stat_speed_ms": "Projectile m/s",
+  "stat_range_m": "Range m",
+  "stat_ammo": "Ammo",
+  "stat_salvo": "Per shot",
+  "stat_homing_dps": "Homing °/s",
+  "stat_blast_m": "Blast m",
+  "stat_spread_deg": "Spread °",
+  "warn_overweight": "OVERWEIGHT: the legs carry more than their limit, so every speed drops.",
+  "warn_over_en": "EN LOAD OVER OUTPUT: the generator cannot keep up, so EN recovers slowly.",
+  "warn_over_arms": "ARMS OVERLOADED: the arms carry more than their limit.",
+  "briefing_title": "OPERATION SALTLINE",
+  "briefing": [
+    "The Saltline relay sits at the heart of a city the evacuation left empty. A security contractor has taken the relay and is charging tolls on every convoy that crosses.",
+    "Cross the city from the south and reach the relay plaza. Expect gunships.",
+    "Our scouts saw a single armoured frame on the contractor's books. If it shows itself, it is the job: put it down."
+  ],
+  "objectives_title": "Objectives",
+  "objectives": [
+    "Reach the relay plaza",
+    "Destroy the gunships",
+    "Defeat the enemy frame"
+  ],
+  "launch": "LAUNCH",
+  "back": "BACK",
+  "abort": "ABORT TO GARAGE",
+  "obj_advance": "Reach the relay plaza",
+  "obj_helis": "Destroy the gunships",
+  "obj_duel": "Defeat the enemy frame",
+  "obj_success": "Target destroyed",
+  "obj_failure": "Frame lost",
+  "objective": "OBJECTIVE",
+  "waypoint": "RELAY",
+  "boss_label": "ENEMY FRAME",
+  "staggered": "STAGGERED",
+  "ai_hold": "staggered",
+  "ai_dodge": "evading",
+  "ai_recover": "recovering EN",
+  "ai_approach": "closing in",
+  "ai_retreat": "opening range",
+  "ai_climb": "climbing",
+  "ai_strafe": "strafing",
+  "ai_caption": "intent",
+  "debrief_success": "MISSION COMPLETE",
+  "debrief_failure": "MISSION FAILED",
+  "debrief_time": "Time",
+  "debrief_ap": "AP kept",
+  "debrief_kills": "Downed",
+  "debrief_rank": "Rank",
+  "retry": "RETRY",
+  "to_garage": "RETURN TO GARAGE",
+  "mission_timer": "TIME",
+  "drag_to_turn": "drag to turn"
 }

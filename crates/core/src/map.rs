@@ -33,8 +33,10 @@ pub struct MapSpec {
     pub ceiling_m: i32,
     #[serde(default)]
     pub clearings: Vec<Clearing>,
+    /// width of a clear avenue down x = 0, the length of the map; 0 for none
+    #[serde(default)]
+    pub avenue_m: i32,
 }
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Block {
     pub min: V3,
@@ -126,7 +128,9 @@ impl Map {
                     let reach = (c.r_m + spec.cell_m * 3 / 4) as i64;
                     dx * dx + dz * dz < reach * reach
                 });
-                if cleared || rng.chance(spec.empty_pct) {
+                let on_avenue =
+                    spec.avenue_m > 0 && left < spec.avenue_m / 2 && left + usable > -spec.avenue_m / 2;
+                if cleared || on_avenue || rng.chance(spec.empty_pct) {
                     continue;
                 }
                 // One building, or two side by side on a split lot.
@@ -266,9 +270,20 @@ mod tests {
                 z_m: 0,
                 r_m: 60,
             }],
+            avenue_m: 0,
         }
     }
 
+    #[test]
+    fn an_avenue_runs_the_length_of_the_map_with_no_building_on_it() {
+        let m = Map::generate(&MapSpec {
+            avenue_m: 60,
+            ..spec()
+        });
+        let half = int(30);
+        assert!(!m.box_blocked(v3(-half, 0, -m.half_z), v3(half, int(300), m.half_z)));
+        assert!(m.blocks.len() > 40);
+    }
     #[test]
     fn the_same_seed_builds_the_same_city() {
         assert_eq!(Map::generate(&spec()), Map::generate(&spec()));
@@ -292,10 +307,7 @@ mod tests {
             assert!(b.min.z >= -m.half_z && b.max.z <= m.half_z);
             let mut found = 0;
             m.each_near(b.min, b.max, |n| found += (n == b) as i32);
-            assert_eq!(
-                found, 1,
-                "building {i} is found once by a query over itself"
-            );
+            assert_eq!(found, 1, "building {i} is found once by a query over itself");
         }
     }
 
@@ -318,9 +330,7 @@ mod tests {
     #[test]
     fn the_ground_stops_a_falling_segment() {
         let m = Map::generate(&spec());
-        let t = m
-            .segment_hit(v3(0, int(10), 0), v3(0, int(-10), 0))
-            .unwrap();
+        let t = m.segment_hit(v3(0, int(10), 0), v3(0, int(-10), 0)).unwrap();
         assert_eq!(t, ONE / 2);
     }
 
@@ -328,11 +338,7 @@ mod tests {
     fn the_floor_under_a_roof_is_the_roof() {
         let m = Map::generate(&spec());
         let b = m.blocks[0];
-        let mid = v3(
-            (b.min.x + b.max.x) / 2,
-            b.max.y + int(5),
-            (b.min.z + b.max.z) / 2,
-        );
+        let mid = v3((b.min.x + b.max.x) / 2, b.max.y + int(5), (b.min.z + b.max.z) / 2);
         assert_eq!(m.floor_under(mid), b.max.y);
         assert_eq!(m.floor_under(v3(0, int(5), 0)), 0);
     }
