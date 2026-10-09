@@ -1478,6 +1478,37 @@ pub(crate) mod tests {
         )
     }
 
+    /// All the damage the player's frame carries into a mission, and all the AP
+    /// it must take off the enemy frames and craft to win.
+    fn magazine_and_hostile_ap(w: &World) -> (i64, i64) {
+        let me = &w.mechs[0];
+        let magazine = me
+            .weapons
+            .iter()
+            .zip(&me.wstate)
+            .map(|(wp, st)| wp.damage as i64 * st.ammo as i64)
+            .sum();
+        let frames: i64 = w
+            .mechs
+            .iter()
+            .filter(|m| m.team == Team::Enemy)
+            .map(|m| m.ap as i64)
+            .sum();
+        let craft: i64 = w.craft.iter().map(|c| c.ap as i64).sum();
+        (magazine, frames + craft)
+    }
+
+    #[test]
+    fn the_twin_colossi_fall_to_two_thirds_of_the_starting_frames_ammunition() {
+        // Sam, 2026-10-09: "the twin colossui are way too hard"; they had four times it
+        let w = mission_world("tethys-2");
+        let (magazine, hostile) = magazine_and_hostile_ap(&w);
+        assert!(
+            hostile * 100 <= magazine * 70,
+            "the colossi and their guns hold {hostile} AP; the starting frame carries {magazine}"
+        );
+    }
+
     #[test]
     fn the_proving_ground_starts_with_its_drones_clear_of_buildings() {
         let w = world();
@@ -1740,7 +1771,7 @@ pub(crate) mod tests {
         let riders: Vec<usize> = (0..w.craft.len())
             .filter(|i| w.craft[*i].mount.is_some_and(|(h, _)| h == Host::Mech(g)))
             .collect();
-        assert_eq!(riders.len(), 6);
+        assert_eq!(riders.len(), 3, "two shoulder guns and one on its back");
         for _ in 0..120 {
             w.tick(Controls::default());
         }

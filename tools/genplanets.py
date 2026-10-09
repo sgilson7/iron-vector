@@ -526,7 +526,7 @@ def fortress(name, L, deck_y, legs_per_side, towers, weak_ap, core_ap, path, spe
                 core=core, core_ap=core_ap, core_radius_m=max(30, min(120, L // 40)),
                 turrets=tur, batteries=bat)
 
-GIANT_RING = [(-2.0, 4.2, 0), (2.0, 4.2, 0), (-1.2, 6.8, 1.2), (1.2, 6.8, 1.2), (0, 7.4, -0.6), (0, 2.6, 1.4)]
+GIANT_SHOULDERS = [(-2.0, 4.2, 0), (2.0, 4.2, 0), (0, 7.4, -0.6)]
 planets.append(dict(
   id="tethys", name="TETHYS", opens_at=11, opens_at_plus=8, hidden=True,
   blurb="A dead sea of black glass that no chart shows. The things that walk here were built for wars between worlds: frames the size of towers, and fortresses the size of cities.",
@@ -545,9 +545,11 @@ planets.append(dict(
       "duel", [0, 900, 0], "hd-argus", plus("min_ap_pct", 60, "cr-aegis"), time_limit_s=420, power_pct=120,
       mechs=[giant("TITAN-CLASS", [0, 0, 180], 1000, 900, speed=45, damage=220)]),
     m("tethys-2", "TWIN COLOSSI", "Two frames thirty times your height, each with guns riding its shoulders. They walk together.",
-      "duel", [0, 1500, 0], "ar-talon", plus("under_seconds", 300, "lt-crawler"), requires=["tethys-1"], time_limit_s=540, power_pct=125,
-      mechs=[giant("COLOSSUS ALPHA", [-320, 0, 180], 3000, 1500, speed=30, damage=280, turrets=GIANT_RING),
-             giant("COLOSSUS BETA", [320, 0, 180], 3000, 1500, speed=30, damage=280, turrets=GIANT_RING)]),
+      "duel", [0, 1500, 0], "ar-talon", plus("under_seconds", 300, "lt-crawler"), requires=["tethys-1"], time_limit_s=540,
+      # 240% AP each and three guns apiece: the pair and their guns take about two thirds of the
+      # starting frame's ammunition, where at 1500% they took four times all of it
+      mechs=[giant("COLOSSUS ALPHA", [-320, 0, 180], 3000, 240, speed=30, damage=170, turrets=GIANT_SHOULDERS),
+             giant("COLOSSUS BETA", [320, -500, 180], 3000, 240, speed=30, damage=170, turrets=GIANT_SHOULDERS)]),
     m("tethys-3", "WALKING BASTION", "An arms fort seven hundred metres long, on four legs. Climb its legs, break the joints, and the core on its tower opens.",
       "duel", [0, 1700, 0], "bt-nova", plus("min_ap_pct", 50, "pr-corona"), requires=["tethys-2"], time_limit_s=720, power_pct=130,
       fortresses=[fortress("BASTION · ARMS FORT", 700, 240, 2, [0], 6000, 30000, [[0, 0], [0, -1500]], 10, 100, 4, [[-1, -1], [1, 1]])]),
