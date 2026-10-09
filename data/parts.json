@@ -1109,6 +1109,110 @@
       "maker": "Rook Heavy",
       "blurb": "A generator that seems to have no bottom.",
       "stats": {"weight": 9800, "en_capacity": 4600, "en_recovery": 2200, "en_output": 4900, "supply_delay_ms": 800}
+    },
+    {
+      "id": "hd-crown",
+      "slot": "head",
+      "name": "HD-11 CROWN",
+      "maker": "Arena Guild",
+      "blurb": "The arena's champion head: a warden's lock with a rook's armour.",
+      "like": "hd-warden",
+      "scale_pct": 104,
+      "stats": {"ap": 1035, "weight": 3150, "en_load": 120, "lock_range_m": 403, "stability": 192}
+    },
+    {
+      "id": "cr-gladius",
+      "slot": "core",
+      "name": "CR-12 GLADIUS",
+      "maker": "Arena Guild",
+      "blurb": "A duelling core, plated where a rival aims.",
+      "like": "cr-bulwark",
+      "scale_pct": 104,
+      "stats": {"ap": 3584, "weight": 21630, "en_load": 285, "stability": 600}
+    },
+    {
+      "id": "ar-cestus",
+      "slot": "arms",
+      "name": "AR-10 CESTUS",
+      "maker": "Arena Guild",
+      "blurb": "Arena arms: steadier aim and a heavier guard.",
+      "like": "ar-lancer",
+      "scale_pct": 104,
+      "stats": {"ap": 2070, "weight": 11440, "en_load": 180, "arms_limit": 14000}
+    },
+    {
+      "id": "lg-retiarius",
+      "slot": "legs",
+      "name": "LG-14 RETIARIUS",
+      "maker": "Arena Guild",
+      "blurb": "Light legs cut for circling a rival.",
+      "like": "lg-wisp",
+      "scale_pct": 104,
+      "stats": {"ap": 2750, "weight": 13260, "en_load": 330, "load_limit": 45000, "walk_kmh": 120, "jump_ms": 21, "stability": 450}
+    },
+    {
+      "id": "bt-sprint",
+      "slot": "booster",
+      "name": "BT-13 SPRINT",
+      "maker": "Arena Guild",
+      "blurb": "A booster tuned for the arena's short straights.",
+      "like": "bt-comet",
+      "scale_pct": 104,
+      "stats": {"weight": 1900, "en_load": 340, "glide_kmh": 286, "qb_kmh": 432, "qb_en": 276, "ascend_ms2": 52, "ascend_en": 450}
+    },
+    {
+      "id": "gn-ludus",
+      "slot": "generator",
+      "name": "GN-09 LUDUS",
+      "maker": "Arena Guild",
+      "blurb": "A generator that recovers fast between exchanges.",
+      "like": "gn-kiln",
+      "scale_pct": 104,
+      "stats": {"weight": 5500, "en_capacity": 2600, "en_recovery": 1610, "en_output": 2900, "supply_delay_ms": 765}
+    },
+    {
+      "id": "rf-murmillo",
+      "slot": "right_weapon",
+      "name": "RF-31 MURMILLO",
+      "maker": "Arena Guild",
+      "blurb": "A rifle with a duellist's grouping.",
+      "kind": "rifle",
+      "like": "rf-marrow",
+      "scale_pct": 104,
+      "stats": {"weight": 4200, "en_load": 120, "damage": 106, "impact": 60, "fire_ms": 120, "speed_ms": 700, "ammo": 600, "range_m": 260, "spread_deg": 1}
+    },
+    {
+      "id": "sg-thraex",
+      "slot": "right_weapon",
+      "name": "SG-14 THRAEX",
+      "maker": "Arena Guild",
+      "blurb": "A short-barrelled shotgun for the arena's close quarters.",
+      "kind": "shotgun",
+      "like": "sg-brand",
+      "scale_pct": 104,
+      "stats": {"weight": 5200, "en_load": 140, "damage": 92, "impact": 121, "fire_ms": 900, "speed_ms": 420, "ammo": 60, "range_m": 90, "salvo": 8, "spread_deg": 5}
+    },
+    {
+      "id": "ml-secutor",
+      "slot": "right_weapon",
+      "name": "ML-12 SECUTOR",
+      "maker": "Arena Guild",
+      "blurb": "Missiles that turn harder than the hornet's.",
+      "kind": "missile",
+      "like": "ml-hornet",
+      "scale_pct": 104,
+      "stats": {"weight": 5000, "en_load": 160, "damage": 273, "impact": 200, "fire_ms": 1500, "speed_ms": 180, "ammo": 120, "range_m": 360, "homing_dps": 188, "salvo": 4, "spread_deg": 14}
+    },
+    {
+      "id": "gc-coliseum",
+      "slot": "shoulder_weapon",
+      "name": "GC-4 COLISEUM",
+      "maker": "Arena Guild",
+      "blurb": "A grenade cannon with a wider burst, built for crowds of one.",
+      "kind": "grenade",
+      "like": "gc-anvil",
+      "scale_pct": 104,
+      "stats": {"weight": 7800, "en_load": 250, "damage": 945, "impact": 800, "fire_ms": 2600, "speed_ms": 260, "ammo": 20, "range_m": 400, "blast_m": 22}
     }
   ]
 }

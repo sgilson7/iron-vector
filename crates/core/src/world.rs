@@ -2207,7 +2207,7 @@ pub(crate) mod tests {
     #[test]
     fn every_planet_has_a_giant_and_the_hidden_one_climbs_ten_thirty_hundred_three_hundred_thousand() {
         let camp = crate::campaign::tests::campaign();
-        for p in camp.planets.iter().filter(|p| !p.hidden) {
+        for p in camp.planets.iter().filter(|p| !p.hidden && !p.arena) {
             assert!(
                 p.missions
                     .iter()

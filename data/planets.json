@@ -2704,6 +2704,342 @@
    ]
   },
   {
+   "id": "arena",
+   "name": "THE ARENA",
+   "opens_at": 3,
+   "arena": true,
+   "blurb": "An old orbital hangar the contractors fight in for rank. Five named frames stand between you and the top of the board.",
+   "gimmick": "One on one, rank by rank. Each rank you take pays a part built for the arena.",
+   "star": {
+    "color": [
+     200,
+     150,
+     80
+    ],
+    "band": [
+     255,
+     200,
+     120
+    ],
+    "size": 70,
+    "rings": false,
+    "moons": 0,
+    "glow": 0
+   },
+   "look": {
+    "sky": [
+     20,
+     16,
+     30
+    ],
+    "fog": [
+     34,
+     26,
+     44
+    ],
+    "ground": [
+     44,
+     42,
+     52
+    ],
+    "grid": [
+     255,
+     170,
+     60
+    ],
+    "buildings": [
+     [
+      64,
+      58,
+      74
+     ],
+     [
+      52,
+      48,
+      62
+     ],
+     [
+      74,
+      66,
+      84
+     ]
+    ],
+    "roof": [
+     86,
+     74,
+     96
+    ],
+    "window": [
+     255,
+     170,
+     60
+    ],
+    "windows": true,
+    "light_dir": [
+     -30,
+     100,
+     20
+    ],
+    "fog_near_m": 260,
+    "fog_far_m": 900,
+    "ground_glow_pct": 12,
+    "stars": true,
+    "structure": [
+     255,
+     170,
+     60
+    ]
+   },
+   "climate": {
+    "gravity_pct": 100,
+    "traction_pct": 100,
+    "floor_dps": 0
+   },
+   "map": {
+    "seed": 777,
+    "width_m": 640,
+    "length_m": 640,
+    "cell_m": 80,
+    "street_m": 30,
+    "empty_pct": 70,
+    "min_h_m": 8,
+    "max_h_m": 30,
+    "tall_pct": 12,
+    "tall_h_m": 60,
+    "ceiling_m": 160,
+    "style": "pillars",
+    "clearings": [
+     {
+      "x_m": 0,
+      "z_m": 0,
+      "r_m": 70
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "arena-1",
+     "name": "RANK E · RUST HOUND",
+     "scene": "The board's lowest rank, and hungry. A light rifle frame that never stops moving.",
+     "kind": "duel",
+     "start": [
+      0,
+      220,
+      0
+     ],
+     "reward": "bt-sprint",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 70,
+      "reward": "gn-ludus"
+     },
+     "mechs": [
+      {
+       "name": "RUST HOUND",
+       "pilot": "duelist",
+       "at": [
+        0,
+        -220,
+        180
+       ],
+       "ap_pct": 80,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "rf-marrow",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "requires": [],
+     "time_limit_s": 240
+    },
+    {
+     "id": "arena-2",
+     "name": "RANK D · IRONJAW",
+     "scene": "A heavy shotgun frame that wants to be close enough to touch.",
+     "kind": "duel",
+     "start": [
+      0,
+      220,
+      0
+     ],
+     "reward": "rf-murmillo",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 70,
+      "reward": "cr-gladius"
+     },
+     "mechs": [
+      {
+       "name": "IRONJAW",
+       "pilot": "brute",
+       "at": [
+        0,
+        -220,
+        180
+       ],
+       "ap_pct": 95,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "sg-brand",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       }
+      }
+     ],
+     "requires": [
+      "arena-1"
+     ],
+     "time_limit_s": 240
+    },
+    {
+     "id": "arena-3",
+     "name": "RANK C · SKYLARK",
+     "scene": "It fights from above and lets its missiles do the work.",
+     "kind": "duel",
+     "start": [
+      0,
+      220,
+      0
+     ],
+     "reward": "sg-thraex",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 60,
+      "reward": "lg-retiarius"
+     },
+     "mechs": [
+      {
+       "name": "SKYLARK",
+       "pilot": "keeper",
+       "at": [
+        0,
+        -220,
+        180
+       ],
+       "ap_pct": 105,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "requires": [
+      "arena-2"
+     ],
+     "time_limit_s": 240
+    },
+    {
+     "id": "arena-4",
+     "name": "RANK B · NIGHTCALL",
+     "scene": "A contractor's ace on loan to the board. It reads you as you read it.",
+     "kind": "duel",
+     "start": [
+      0,
+      220,
+      0
+     ],
+     "reward": "ml-secutor",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 90,
+      "reward": "ar-cestus"
+     },
+     "mechs": [
+      {
+       "name": "NIGHTCALL",
+       "pilot": "ace",
+       "at": [
+        0,
+        -220,
+        180
+       ],
+       "ap_pct": 115,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "rj-hare",
+        "booster": "bt-surge",
+        "generator": "gn-ember",
+        "right_weapon": "lr-glint",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ],
+     "requires": [
+      "arena-3"
+     ],
+     "time_limit_s": 240
+    },
+    {
+     "id": "arena-5",
+     "name": "RANK A · THE CHAMPION",
+     "scene": "Top of the board, in pulse armour. Break the shield, then make the window count.",
+     "kind": "duel",
+     "start": [
+      0,
+      220,
+      0
+     ],
+     "reward": "gc-coliseum",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 50,
+      "reward": "hd-crown"
+     },
+     "mechs": [
+      {
+       "name": "THE CHAMPION",
+       "pilot": "ace",
+       "at": [
+        0,
+        -220,
+        180
+       ],
+       "ap_pct": 130,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "rj-hare",
+        "booster": "bt-surge",
+        "generator": "gn-forge",
+        "right_weapon": "lr-glint",
+        "left_weapon": "sg-brand",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "pulse_ap": 2200,
+       "pulse_down_ms": 6000
+      }
+     ],
+     "requires": [
+      "arena-4"
+     ],
+     "time_limit_s": 240
+    }
+   ]
+  },
+  {
    "id": "spindle",
    "name": "SPINDLE",
    "opens_at": 5,

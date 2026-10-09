@@ -567,6 +567,42 @@ planets.append(dict(
       units=[unit("heli", 220, -820, 90), unit("heli", 380, -820, 90)], time_limit_s=420, power_pct=130),
   ]))
 
+# ---------------- THE ARENA: a ladder of duels ----------------
+LIGHT = dict(head="hd-kestrel", core="cr-vane", arms="ar-reed", legs="lg-wisp", booster="bt-comet", generator="gn-ember")
+HEAVY = dict(head="hd-mantle", core="cr-citadel", arms="ar-bastion", legs="lg-bastion", booster="bt-titan", generator="gn-forge")
+def rival(name, pilot, ap, frame, r, l, s, **kw):
+    return dict(name=name, pilot=pilot, at=[0, -220, 180], ap_pct=ap,
+                loadout=dict(frame, right_weapon=r, left_weapon=l, shoulder_weapon=s), **kw)
+def rank(n, name, scene, foe, plus_, req):
+    return m("arena-%d" % n, name, scene, "duel", [0, 220, 0], "PLACEHOLDER", plus_, mechs=[foe],
+             requires=[req] if req else [], time_limit_s=240)
+planets.append(dict(
+  id="arena", name="THE ARENA", opens_at=3, arena=True,
+  blurb="An old orbital hangar the contractors fight in for rank. Five named frames stand between you and the top of the board.",
+  gimmick="One on one, rank by rank. Each rank you take pays a part built for the arena.",
+  star=dict(color=[200, 150, 80], band=[255, 200, 120], size=70, rings=False, moons=0, glow=0),
+  look=look((20, 16, 30), (34, 26, 44), (44, 42, 52), (255, 170, 60),
+            [(64, 58, 74), (52, 48, 62), (74, 66, 84)],
+            (86, 74, 96), (255, 170, 60), True, (-30, 100, 20), 260, 900, glow=12, stars=True, structure=(255, 170, 60)),
+  climate=dict(gravity_pct=100, traction_pct=100, floor_dps=0),
+  map=dict(seed=777, width_m=640, length_m=640, cell_m=80, street_m=30, empty_pct=70, min_h_m=8, max_h_m=30,
+           tall_pct=12, tall_h_m=60, ceiling_m=160, style="pillars", clearings=[dict(x_m=0, z_m=0, r_m=70)]),
+  missions=[
+    rank(1, "RANK E · RUST HOUND", "The board's lowest rank, and hungry. A light rifle frame that never stops moving.",
+         rival("RUST HOUND", "duelist", 80, LIGHT, "rf-marrow", "rf-marrow", "mp-swarm"), plus("min_ap_pct", 70, "PLACEHOLDER"), None),
+    rank(2, "RANK D · IRONJAW", "A heavy shotgun frame that wants to be close enough to touch.",
+         rival("IRONJAW", "brute", 95, HEAVY, "sg-brand", "rf-marrow", "gc-anvil"), plus("under_seconds", 70, "PLACEHOLDER"), "arena-1"),
+    rank(3, "RANK C · SKYLARK", "It fights from above and lets its missiles do the work.",
+         rival("SKYLARK", "keeper", 105, LIGHT, "ml-hornet", "rf-marrow", "mp-swarm"), plus("min_ap_pct", 60, "PLACEHOLDER"), "arena-2"),
+    rank(4, "RANK B · NIGHTCALL", "A contractor's ace on loan to the board. It reads you as you read it.",
+         rival("NIGHTCALL", "ace", 115, dict(LIGHT, legs="rj-hare", booster="bt-surge"), "lr-glint", "rf-marrow", "mp-swarm"),
+         plus("under_seconds", 90, "PLACEHOLDER"), "arena-3"),
+    rank(5, "RANK A · THE CHAMPION", "Top of the board, in pulse armour. Break the shield, then make the window count.",
+         rival("THE CHAMPION", "ace", 130, dict(HEAVY, legs="rj-hare", booster="bt-surge"), "lr-glint", "sg-brand", "gc-anvil",
+               pulse_ap=2200, pulse_down_ms=6000),
+         plus("min_ap_pct", 50, "PLACEHOLDER"), "arena-4"),
+  ]))
+
 GIANT = dict(head="hd-mantle", core="cr-citadel", arms="ar-bastion", legs="lg-bastion", booster="bt-titan",
                                generator="gn-forge", right_weapon="ml-hornet", left_weapon="rf-marrow", shoulder_weapon="gc-anvil")
 def giant(name, at, scale, ap, speed=60, damage=140, wave=0, turrets=()):
@@ -689,6 +725,8 @@ planets.append(dict(
                                generator="gn-ember", right_weapon="ml-hornet", left_weapon="rf-marrow", shoulder_weapon="mp-swarm"))]),
   ]))
 
+# the arena opens after three clears, so it sits between Sere (two) and Spindle (five)
+planets.insert(2, planets.pop(next(i for i, p in enumerate(planets) if p["id"] == "arena")))
 # reward bookkeeping: every non-starter part exactly once
 starters = {"hd-warden", "cr-bulwark", "ar-lancer", "lg-stride", "bt-surge", "gn-kiln", "ml-hornet", "rf-marrow", "gc-anvil", "bl-emberline"}
 # fix rewards to cover all 40 parts
@@ -701,6 +739,8 @@ assign = {
  "cinder-1": ("hd-sentinel", "cr-lattice"), "cinder-2": ("ar-titan", "lg-monolith"), "cinder-3": ("bt-wisp", "lr-spear"), "cinder-4": ("gc-quake", "lc-halo"),
  "tethys-1": ("hd-argus", "cr-aegis"), "tethys-2": ("ar-talon", "lt-crawler"), "tethys-3": ("bt-nova", "pr-corona"),
  "tethys-4": ("gn-singularity", "pc-nova"), "tethys-5": ("pb-ramspike", "cr-ark"),
+ "arena-1": ("bt-sprint", "gn-ludus"), "arena-2": ("rf-murmillo", "cr-gladius"), "arena-3": ("sg-thraex", "lg-retiarius"),
+ "arena-4": ("ml-secutor", "ar-cestus"), "arena-5": ("gc-coliseum", "hd-crown"),
 }
 for p in planets:
     for mi in p["missions"]:

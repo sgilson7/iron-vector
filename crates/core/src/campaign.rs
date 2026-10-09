@@ -75,6 +75,9 @@ pub struct Planet {
     /// left off the star map until it opens
     #[serde(default)]
     pub hidden: bool,
+    /// a ladder of duels rather than a world: no giant, no gimmick of terrain
+    #[serde(default)]
+    pub arena: bool,
     pub blurb: String,
     pub gimmick: String,
     pub star: Star,
@@ -320,19 +323,51 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn five_planets_open_at_two_five_eight_and_eleven_and_a_hidden_sixth_wants_plus_clears() {
+    fn five_planets_open_at_two_five_eight_and_eleven_the_arena_at_three_and_a_hidden_one_wants_plus_clears()
+    {
         let c = campaign();
         assert!(c.planets.iter().all(|p| (4..=8).contains(&p.missions.len())));
-        let shown: Vec<usize> = c
+        let worlds: Vec<usize> = c
             .planets
             .iter()
-            .filter(|p| !p.hidden)
+            .filter(|p| !p.hidden && !p.arena)
             .map(|p| p.opens_at)
             .collect();
-        assert_eq!(shown, vec![0, 2, 5, 8, 11]);
+        assert_eq!(worlds, vec![0, 2, 5, 8, 11]);
+        let arena: Vec<&Planet> = c.planets.iter().filter(|p| p.arena).collect();
+        assert_eq!(arena.len(), 1);
+        assert_eq!(arena[0].opens_at, 3, "after Halden's first three");
         let hidden: Vec<&Planet> = c.planets.iter().filter(|p| p.hidden).collect();
         assert_eq!(hidden.len(), 1);
         assert!(hidden[0].opens_at_plus > 0);
+    }
+
+    #[test]
+    fn the_arena_opens_after_three_clears_and_its_ranks_are_taken_in_order() {
+        let c = campaign();
+        let a = c.planets.iter().position(|p| p.arena).unwrap();
+        let mut p = Progress::default();
+        p.cleared.insert("halden-1".into());
+        p.cleared.insert("halden-2".into());
+        assert!(!p.planet_open(&c, a));
+        p.cleared.insert("halden-3".into());
+        assert!(p.planet_open(&c, a));
+        let ranks: Vec<&str> = c.planets[a].missions.iter().map(|m| m.id.as_str()).collect();
+        assert_eq!(p.standing(&c, ranks[0]), Standing::Open);
+        assert_eq!(
+            p.standing(&c, ranks[1]),
+            Standing::Locked,
+            "rank D waits for rank E"
+        );
+        p.cleared.insert(ranks[0].into());
+        assert_eq!(p.standing(&c, ranks[1]), Standing::Open);
+        assert!(
+            c.planets[a]
+                .missions
+                .iter()
+                .all(|m| m.kind == crate::mission::Kind::Duel && m.mechs.len() == 1),
+            "one on one"
+        );
     }
 
     #[test]
