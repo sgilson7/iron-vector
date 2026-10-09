@@ -260,6 +260,15 @@ NEST_LIGHTS = [light(nest[0] - 110, nest[1] - 60, 40, [(nest[0] - 60, nest[1] - 
                light(nest[0], nest[1] - 150, 44, [(nest[0] - 30, nest[1] - 80), (nest[0] + 40, nest[1] - 90)], speed=12)]
 NEST_TOWERS = [block(l["at"][0], l["at"][1], 6, 6, l["at"][2] - 3) for l in NEST_LIGHTS]
 
+# Spindle's escape: a full turn of the ring from the hub to the dock, with slabs coming down
+ESCAPE_ROUTE = [(200, 400), (500, 750), (-480, 1050), (-200, 1350), (0, 1600)]
+def slab(x, z, w, d, after_s, h=60, drop=100):
+    return machine("slab", x, z, w, d, h, base=drop, path=[(0, 0, 0), (0, 0, -drop)], speed=45) | {"after_ms": after_s * 1000}
+ESCAPE_SLABS = [slab(100, 230, 90, 12, 3), slab(350, 575, 90, 12, 8), slab(200, 330, 60, 60, 12),
+                slab(530, 900, 90, 12, 13), slab(-350, 1200, 90, 12, 19), slab(-480, 1000, 60, 60, 22),
+                slab(-100, 1475, 90, 12, 25), slab(0, 1500, 50, 12, 30)]
+GENERATORS = [(300, 250), (-300, 250), (300, -250), (-300, -250)]
+
 planets = []
 
 # ---------------- 1 HALDEN ----------------
@@ -385,17 +394,23 @@ planets.append(dict(
            tall_pct=10, tall_h_m=95, ceiling_m=150, style="ruins", wrap=True,
            clearings=[dict(x_m=0, z_m=1600, r_m=80), dict(x_m=0, z_m=0, r_m=150), dict(x_m=0, z_m=-1400, r_m=160)]),
   missions=[
-    m("spindle-1", "SPIN-UP", "Twelve survey drones went dark across the ring. Find and destroy them before their data is sold.",
-      "destroy", [0, 1600, 0], "hd-osprey", plus("under_seconds", 110, "cr-spire"),
-      units=[unit("drone", int(520 * math.sin(k * 2.4)), 1450 - (k % 6) * 40 - (k // 6) * 1250, 18 + (k * 13) % 40, k // 6) for k in range(12)],
-      stages=[dict(objective="Destroy the drones round the dock", wave=0),
-              dict(objective="Run down the spin to the hub", wave=1, reach=[0, 60, 10, 90]),
-              dict(objective="Destroy the drones round the hub", wave=1)],
-      time_limit_s=180),
-    m("spindle-2", "COLD FLOW", "Hold the central clearing while the station's last coolant flows through. Ninety seconds.",
-      "survive", [0, 60, 0], "ar-heron", plus("min_ap_pct", 70, "lg-gale"),
-      units=ring(0, 0, 140, 4, "turret", -1) + ring(0, 0, 110, 3, "heli", 60, 0) + ring(0, 0, 110, 3, "heli", 70, 1, 0.5)
-            + ring(0, 0, 110, 4, "heli", 80, 2, 0.2), time_limit_s=90),
+    m("spindle-1", "SPIN-UP", "A coolant line has burst at the hub and the ring is shaking itself apart. Run a full turn of the Spindle to the dock before the sections behind you, and ahead of you, come down.",
+      "escape", [0, 60, 180], "hd-osprey", plus("under_seconds", 55, "cr-spire"),
+      units=[unit("heli", 300, 500, 60), unit("heli", -520, 950, 70), unit("heli", -260, 1300, 60)],
+      machines=ESCAPE_SLABS,
+      clear=corridors([0, 60], [dict(at=[x, z]) for x, z in ESCAPE_ROUTE], 50, 550),
+      stages=[stage("Get clear of the hub", reach=[200, 400, 10, 60], fight=False),
+              stage("Run the spin", reach=[500, 750, 10, 60], fight=False),
+              stage("Round the seam", reach=[-480, 1050, 10, 60], fight=False),
+              stage("Keep running", reach=[-200, 1350, 10, 60], fight=False),
+              stage("Reach the dock", reach=[0, 1600, 10, 50], fight=False)],
+      time_limit_s=90),
+    m("spindle-2", "COLD FLOW", "The hub's coolant plant sits under a shield dome, and nothing you fire gets through. Four generators round the ring hold it up, and the Ring Hulk walks between them. Break the generators, then the plant.",
+      "destroy", [0, 420, 0], "ar-heron", plus("min_ap_pct", 60, "lg-gale"),
+      shields=[dict(at=[0, 0, 0], r_m=60, generators=[[x, z, -1] for x, z in GENERATORS])],
+      units=[dict(type="core", at=[0, 0, 22], ap=9000)] + [unit("turret", x + 30, z, -1) for x, z in GENERATORS]
+            + ring(0, 0, 220, 4, "heli", 70),
+      clear=[[x - 40, z - 40, x + 40, z + 40] for x, z in GENERATORS], time_limit_s=360),
     m("spindle-3", "LONG WAY ROUND", "The ring's couriers race a full turn of the Spindle on platforms that move. Land on the lifts, ride them up, and keep your head; the floor goes up.",
       "race", [-14, 1650, 0], "bt-flare", plus("under_seconds", 45, "rf-gatling"), weapons=False, requires=["spindle-1"],
       mechs=[dict(name="ORBIT · COURIER", pilot="racer_hot", speed_pct=85, at=[14, 1650, 0], ap_pct=100, racer=True,
@@ -404,8 +419,9 @@ planets.append(dict(
       course=SPIN_COURSE, machines=SPIN_MACHINES, pads=SPIN_BLOCKS,
       clear=corridors([-14, 1650], SPIN_COURSE, 40, 550) + [[g["at"][0] - 40, g["at"][1] - 40, g["at"][0] + 40, g["at"][1] + 40] for g in SPIN_COURSE],
       time_limit_s=200),
-    m("spindle-4", "KEEPER OF THE SPINDLE", "The ring's keeper flies close to the axis and rains missiles down the curve, while two wardens hunt you along the floor. Three frames, one ring.",
+    m("spindle-4", "KEEPER OF THE SPINDLE", "The ring's keeper flies close to the axis and calls down shells on wherever you are heading, while two wardens hunt you along the floor. Watch the ground: a ring of light is where the next one lands.",
       "duel", [0, -1250, 0], "bz-maul", plus("under_seconds", 150, "gn-corona"), requires=["spindle-2", "spindle-3"],
+      artillery=dict(every_ms=6000, warn_ms=2000, radius_m=16, damage=600),
       mechs=[dict(name="KEEPER", pilot="keeper", at=[0, -1550, 180], ap_pct=100,
                   loadout=dict(head="hd-kestrel", core="cr-bulwark", arms="ar-lancer", legs="rj-hare", booster="bt-comet",
                                generator="gn-forge", right_weapon="ml-hornet", left_weapon="rf-marrow", shoulder_weapon="mp-swarm")),
@@ -525,7 +541,7 @@ def add_giant(pid, mid, g):
     raise SystemExit(mid)
 add_giant("halden", "halden-3", giant("SIEGE WALKER", [yards[0], yards[1] - 170, 0], 240, 260, wave=2))
 add_giant("sere", "sere-2", giant("DUNE STRIDER", [-450, -80, 0], 220, 220, wave=1))
-add_giant("spindle", "spindle-2", giant("RING HULK", [0, -130, 0], 200, 220, wave=2))
+add_giant("spindle", "spindle-2", giant("RING HULK", [0, -160, 0], 200, 220))
 add_giant("rime", "rime-1", giant("FROST COLOSSUS", [0, -150, 0], 260, 260, wave=1))
 add_giant("cinder", "cinder-3", giant("MAGMA TITAN", [foundry[0], foundry[1] - 170, 0], 280, 280, wave=2))
 

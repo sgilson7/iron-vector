@@ -387,7 +387,7 @@ impl World {
             };
             let goal = u.goal.map(|[gx, gz]| v3(int(gx), 0, int(gz)));
             let Some(us) = units.0.get(&u.unit) else { continue };
-            let c = make_unit(
+            let mut c = make_unit(
                 &u.unit,
                 us,
                 v3(int(x), y, int(z)),
@@ -396,6 +396,10 @@ impl World {
                 spec.power_pct,
                 k as i32,
             );
+            if let Some(ap) = u.ap {
+                c.ap = ap;
+                c.max_ap = ap;
+            }
             if u.wave == 0 {
                 w.craft.push(c);
             } else {

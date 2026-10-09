@@ -86,6 +86,9 @@ pub struct UnitSpawn {
     /// a place it drives for; reaching it fails the mission
     #[serde(default)]
     pub goal: Option<[i32; 2]>,
+    /// its AP, in place of its kind's
+    #[serde(default)]
+    pub ap: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -1139,8 +1142,11 @@ mod tests {
 
     #[test]
     fn surviving_until_the_clock_runs_out_wins() {
-        let mut w = mission_world("spindle-2");
-        w.mechs[0].ap = i32::MAX / 4;
+        // no shipped mission is a survival now; the rule stays, tried on the first map
+        let mut w = mission_world("halden-1");
+        w.mission.as_mut().unwrap().kind = Kind::Survive;
+        kill_all(&mut w);
+        assert_eq!(outcome(&w).0, None, "a survival is not won by clearing the sky");
         let limit = w.mission.as_ref().unwrap().time_limit;
         run(&mut w, limit);
         assert_eq!(outcome(&w), (Some(true), None));
@@ -1305,6 +1311,102 @@ mod tests {
                     .count();
             assert_eq!(n, frames, "{id}");
         }
+    }
+
+    /// One rifle round from `from` at the hub's coolant plant; returns the AP it took.
+    fn shoot_core(w: &mut World, from: V3) -> i32 {
+        let core = w.craft.iter().position(|c| c.kind == CraftKind::Core).unwrap();
+        let before = w.craft[core].ap;
+        let rifle =
+            crate::combat::Weapon::from_part(crate::parts::tests::catalog().get("rf-marrow").unwrap());
+        let shots =
+            crate::combat::Shot::fire(&rifle, Team::Player, from, w.craft[core].pos, None, &mut w.rng);
+        w.shots.extend(shots);
+        run(w, 30);
+        before - w.craft[core].ap
+    }
+
+    #[test]
+    fn the_dome_turns_fire_until_its_generators_fall() {
+        let mut w = mission_world("spindle-2");
+        // only the plant and its generators: the shot test should not be about gunships
+        for c in &mut w.craft {
+            if !matches!(c.kind, CraftKind::Core | CraftKind::Generator) {
+                c.alive = false;
+            }
+        }
+        w.mechs.truncate(1);
+        let outside = w.shields[0].centre.add(v3(int(90), int(20), 0));
+        assert_eq!(shoot_core(&mut w, outside), 0, "the dome stops it");
+        let gens = w.shields[0].gens.clone();
+        for g in gens {
+            w.hurt(Target::Craft(g), 1_000_000, 0);
+        }
+        run(&mut w, 1);
+        assert!(!w.shields[0].up);
+        assert!(
+            shoot_core(&mut w, outside) > 0,
+            "with the generators down it gets through"
+        );
+    }
+
+    #[test]
+    fn the_ring_comes_down_on_its_schedule_and_a_fallen_slab_stays() {
+        let mut w = mission_world("spindle-1");
+        let k = 0;
+        let top = w.map.movers[w.machines[k].block].max.y;
+        run(&mut w, 2 * 60);
+        assert_eq!(
+            w.map.movers[w.machines[k].block].max.y, top,
+            "still up after two seconds"
+        );
+        run(&mut w, 4 * 60);
+        let down = w.map.movers[w.machines[k].block];
+        assert!(down.min.y <= ONE, "fallen to the floor, at {}", down.min.y);
+        run(&mut w, 60);
+        assert_eq!(w.map.movers[w.machines[k].block], down, "and it stays");
+    }
+
+    #[test]
+    fn the_escape_is_a_run_not_a_fight() {
+        let mut w = mission_world("spindle-1");
+        assert!(w.hostiles_alive() > 0);
+        let reaches: Vec<V3> = w
+            .mission
+            .as_ref()
+            .unwrap()
+            .stages
+            .iter()
+            .map(|s| s.reach.unwrap().0)
+            .collect();
+        for p in reaches {
+            put(&mut w, p.x >> 16, 0, p.z >> 16);
+        }
+        assert_eq!(outcome(&w), (Some(true), None), "every gunship is still up");
+    }
+
+    #[test]
+    fn artillery_marks_the_ground_then_lands_on_it() {
+        let mut w = mission_world("spindle-4");
+        // the frames stay in the fight but sit it out, far off
+        for m in w.mechs.iter_mut().skip(1) {
+            m.pilot = None;
+            m.body.pos = v3(0, 0, int(1500));
+        }
+        let a = w.mission.as_ref().unwrap().artillery.clone().unwrap();
+        run(&mut w, (a.every_ms * TICKS_PER_SECOND / 1000) as u32);
+        assert_eq!(w.strikes.len(), 1, "a mark on the ground");
+        let mark = w.strikes[0];
+        assert!(
+            w.map_delta(mark.at, w.mechs[0].body.pos).len_xz() < int(2),
+            "under a frame standing still"
+        );
+        let ap = w.mechs[0].ap;
+        run(&mut w, mark.ticks as u32 - 1);
+        assert_eq!(w.mechs[0].ap, ap, "nothing until it lands");
+        run(&mut w, 1);
+        assert!(w.mechs[0].ap < ap, "then it does");
+        assert!(w.strikes.is_empty());
     }
 
     #[test]

@@ -2835,310 +2835,523 @@
     {
      "id": "spindle-1",
      "name": "SPIN-UP",
-     "scene": "Twelve survey drones went dark across the ring. Find and destroy them before their data is sold.",
-     "kind": "destroy",
+     "scene": "A coolant line has burst at the hub and the ring is shaking itself apart. Run a full turn of the Spindle to the dock before the sections behind you, and ahead of you, come down.",
+     "kind": "escape",
      "start": [
       0,
-      1600,
-      0
+      60,
+      180
      ],
      "reward": "hd-osprey",
      "plus": {
       "rule": "under_seconds",
-      "value": 110,
+      "value": 55,
       "reward": "cr-spire"
      },
      "units": [
       {
-       "type": "drone",
+       "type": "heli",
        "at": [
-        0,
-        1450,
-        18
+        300,
+        500,
+        60
        ],
        "wave": 0
       },
       {
-       "type": "drone",
+       "type": "heli",
        "at": [
-        351,
-        1410,
-        31
+        -520,
+        950,
+        70
        ],
        "wave": 0
       },
       {
-       "type": "drone",
+       "type": "heli",
        "at": [
-        -518,
-        1370,
-        44
+        -260,
+        1300,
+        60
        ],
        "wave": 0
-      },
-      {
-       "type": "drone",
-       "at": [
-        412,
-        1330,
-        57
-       ],
-       "wave": 0
-      },
-      {
-       "type": "drone",
-       "at": [
-        -90,
-        1290,
-        30
-       ],
-       "wave": 0
-      },
-      {
-       "type": "drone",
-       "at": [
-        -279,
-        1250,
-        43
-       ],
-       "wave": 0
-      },
-      {
-       "type": "drone",
-       "at": [
-        502,
-        200,
-        56
-       ],
-       "wave": 1
-      },
-      {
-       "type": "drone",
-       "at": [
-        -461,
-        160,
-        29
-       ],
-       "wave": 1
-      },
-      {
-       "type": "drone",
-       "at": [
-        178,
-        120,
-        42
-       ],
-       "wave": 1
-      },
-      {
-       "type": "drone",
-       "at": [
-        198,
-        80,
-        55
-       ],
-       "wave": 1
-      },
-      {
-       "type": "drone",
-       "at": [
-        -470,
-        40,
-        28
-       ],
-       "wave": 1
-      },
-      {
-       "type": "drone",
-       "at": [
-        496,
-        0,
-        41
-       ],
-       "wave": 1
       }
+     ],
+     "machines": [
+      {
+       "role": "slab",
+       "at": [
+        100,
+        230,
+        100
+       ],
+       "size": [
+        90,
+        12,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 3000
+      },
+      {
+       "role": "slab",
+       "at": [
+        350,
+        575,
+        100
+       ],
+       "size": [
+        90,
+        12,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 8000
+      },
+      {
+       "role": "slab",
+       "at": [
+        200,
+        330,
+        100
+       ],
+       "size": [
+        60,
+        60,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 12000
+      },
+      {
+       "role": "slab",
+       "at": [
+        530,
+        900,
+        100
+       ],
+       "size": [
+        90,
+        12,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 13000
+      },
+      {
+       "role": "slab",
+       "at": [
+        -350,
+        1200,
+        100
+       ],
+       "size": [
+        90,
+        12,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 19000
+      },
+      {
+       "role": "slab",
+       "at": [
+        -480,
+        1000,
+        100
+       ],
+       "size": [
+        60,
+        60,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 22000
+      },
+      {
+       "role": "slab",
+       "at": [
+        -100,
+        1475,
+        100
+       ],
+       "size": [
+        90,
+        12,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 25000
+      },
+      {
+       "role": "slab",
+       "at": [
+        0,
+        1500,
+        100
+       ],
+       "size": [
+        50,
+        12,
+        60
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -100
+        ]
+       ],
+       "speed_ms": 45,
+       "after_ms": 30000
+      }
+     ],
+     "clear": [
+      [
+       -50,
+       10,
+       250,
+       450
+      ],
+      [
+       150,
+       350,
+       550,
+       800
+      ],
+      [
+       -530,
+       1000,
+       -150,
+       1400
+      ],
+      [
+       -250,
+       1300,
+       50,
+       1650
+      ]
      ],
      "stages": [
       {
-       "objective": "Destroy the drones round the dock",
-       "wave": 0
+       "objective": "Get clear of the hub",
+       "wave": 0,
+       "reach": [
+        200,
+        400,
+        10,
+        60
+       ],
+       "fight": false
       },
       {
-       "objective": "Run down the spin to the hub",
-       "wave": 1,
+       "objective": "Run the spin",
+       "wave": 0,
+       "reach": [
+        500,
+        750,
+        10,
+        60
+       ],
+       "fight": false
+      },
+      {
+       "objective": "Round the seam",
+       "wave": 0,
+       "reach": [
+        -480,
+        1050,
+        10,
+        60
+       ],
+       "fight": false
+      },
+      {
+       "objective": "Keep running",
+       "wave": 0,
+       "reach": [
+        -200,
+        1350,
+        10,
+        60
+       ],
+       "fight": false
+      },
+      {
+       "objective": "Reach the dock",
+       "wave": 0,
        "reach": [
         0,
-        60,
+        1600,
         10,
-        90
-       ]
-      },
-      {
-       "objective": "Destroy the drones round the hub",
-       "wave": 1
+        50
+       ],
+       "fight": false
       }
      ],
-     "time_limit_s": 180
+     "time_limit_s": 90
     },
     {
      "id": "spindle-2",
      "name": "COLD FLOW",
-     "scene": "Hold the central clearing while the station's last coolant flows through. Ninety seconds.",
-     "kind": "survive",
+     "scene": "The hub's coolant plant sits under a shield dome, and nothing you fire gets through. Four generators round the ring hold it up, and the Ring Hulk walks between them. Break the generators, then the plant.",
+     "kind": "destroy",
      "start": [
       0,
-      60,
+      420,
       0
      ],
      "reward": "ar-heron",
      "plus": {
       "rule": "min_ap_pct",
-      "value": 70,
+      "value": 60,
       "reward": "lg-gale"
      },
-     "units": [
+     "shields": [
       {
-       "type": "turret",
        "at": [
         0,
-        140,
-        -1
-       ],
-       "wave": 0
-      },
-      {
-       "type": "turret",
-       "at": [
-        140,
         0,
-        -1
+        0
        ],
-       "wave": 0
-      },
-      {
-       "type": "turret",
-       "at": [
-        0,
-        -140,
-        -1
-       ],
-       "wave": 0
-      },
-      {
-       "type": "turret",
-       "at": [
-        -140,
-        0,
-        -1
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        0,
-        110,
-        60
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        95,
-        -54,
-        60
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        -95,
-        -55,
-        60
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        52,
-        96,
-        70
-       ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        57,
-        -93,
-        70
-       ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        -109,
-        -2,
-        70
-       ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        21,
-        107,
-        80
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        107,
-        -21,
-        80
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        -21,
-        -107,
-        80
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        -107,
-        21,
-        80
-       ],
-       "wave": 2
+       "r_m": 60,
+       "generators": [
+        [
+         300,
+         250,
+         -1
+        ],
+        [
+         -300,
+         250,
+         -1
+        ],
+        [
+         300,
+         -250,
+         -1
+        ],
+        [
+         -300,
+         -250,
+         -1
+        ]
+       ]
       }
      ],
-     "time_limit_s": 90,
+     "units": [
+      {
+       "type": "core",
+       "at": [
+        0,
+        0,
+        22
+       ],
+       "ap": 9000
+      },
+      {
+       "type": "turret",
+       "at": [
+        330,
+        250,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -270,
+        250,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        330,
+        -250,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -270,
+        -250,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        220,
+        70
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        220,
+        0,
+        70
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        -220,
+        70
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -220,
+        0,
+        70
+       ],
+       "wave": 0
+      }
+     ],
+     "clear": [
+      [
+       260,
+       210,
+       340,
+       290
+      ],
+      [
+       -340,
+       210,
+       -260,
+       290
+      ],
+      [
+       260,
+       -290,
+       340,
+       -210
+      ],
+      [
+       -340,
+       -290,
+       -260,
+       -210
+      ]
+     ],
+     "time_limit_s": 360,
      "mechs": [
       {
        "name": "RING HULK",
        "pilot": "giant",
        "at": [
         0,
-        -130,
+        -160,
         0
        ],
        "ap_pct": 220,
        "scale_pct": 200,
        "speed_pct": 60,
        "damage_pct": 140,
-       "wave": 2,
+       "wave": 0,
        "loadout": {
         "head": "hd-mantle",
         "core": "cr-citadel",
@@ -3731,7 +3944,7 @@
     {
      "id": "spindle-4",
      "name": "KEEPER OF THE SPINDLE",
-     "scene": "The ring's keeper flies close to the axis and rains missiles down the curve, while two wardens hunt you along the floor. Three frames, one ring.",
+     "scene": "The ring's keeper flies close to the axis and calls down shells on wherever you are heading, while two wardens hunt you along the floor. Watch the ground: a ring of light is where the next one lands.",
      "kind": "duel",
      "start": [
       0,
@@ -3748,6 +3961,12 @@
       "spindle-2",
       "spindle-3"
      ],
+     "artillery": {
+      "every_ms": 6000,
+      "warn_ms": 2000,
+      "radius_m": 16,
+      "damage": 600
+     },
      "mechs": [
       {
        "name": "KEEPER",
