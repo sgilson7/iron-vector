@@ -178,5 +178,8 @@
   "plus_won": "+ CHALLENGE MET",
   "plus_now": "+ challenge now open:",
   "to_map": "STAR MAP",
-  "racing": "racing"
+  "racing": "racing",
+  "wp_objective": "OBJECTIVE",
+  "kind_assault": "ASSAULT",
+  "obj_assault": "Take the position"
 }

@@ -186,7 +186,7 @@
      "reward": "ar-reed",
      "plus": {
       "rule": "under_seconds",
-      "value": 52,
+      "value": 32,
       "reward": "lg-wisp"
      },
      "weapons": false,
@@ -202,12 +202,12 @@
        "ap_pct": 100,
        "racer": true,
        "loadout": {
-        "head": "hd-kestrel",
-        "core": "cr-vane",
-        "arms": "ar-reed",
-        "legs": "lg-wisp",
-        "booster": "bt-comet",
-        "generator": "gn-ember",
+        "head": "hd-warden",
+        "core": "cr-citadel",
+        "arms": "ar-lancer",
+        "legs": "lg-stride",
+        "booster": "bt-titan",
+        "generator": "gn-kiln",
         "right_weapon": "rf-marrow",
         "left_weapon": "rf-marrow",
         "shoulder_weapon": "mp-swarm"
@@ -218,52 +218,52 @@
       [
        0,
        900,
-       20
+       12
       ],
       [
        24,
        720,
-       35
+       16
       ],
       [
        -24,
        540,
-       55
+       22
       ],
       [
        0,
        360,
-       25
+       12
       ],
       [
        28,
        180,
-       70
+       28
       ],
       [
        -20,
        0,
-       40
+       16
       ],
       [
        16,
        -200,
-       25
+       12
       ],
       [
        -26,
        -420,
-       60
+       24
       ],
       [
        10,
        -640,
-       30
+       14
       ],
       [
        0,
        -860,
-       45
+       18
       ]
      ],
      "time_limit_s": 180
@@ -542,6 +542,394 @@
       }
      ],
      "time_limit_s": 300
+    },
+    {
+     "id": "halden-5",
+     "name": "THE BREAKWATER",
+     "scene": "The contractor walled off Halden's south port: a rampart a hundred and eighty metres high, guns along its crest, one gate tunnel through it. Clear the approach, break through the gate, climb the inner face, and take the guardian on top.",
+     "kind": "assault",
+     "start": [
+      0,
+      -300,
+      0
+     ],
+     "reward": "lc-lance",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 300,
+      "reward": "cr-rampart"
+     },
+     "requires": [
+      "halden-1",
+      "halden-2",
+      "halden-3",
+      "halden-4"
+     ],
+     "time_limit_s": 720,
+     "power_pct": 115,
+     "clear": [
+      [
+       -700,
+       -1200,
+       700,
+       -820
+      ]
+     ],
+     "pads": [
+      {
+       "at": [
+        -363,
+        -880
+       ],
+       "size": [
+        676,
+        60,
+        180
+       ]
+      },
+      {
+       "at": [
+        363,
+        -880
+       ],
+       "size": [
+        676,
+        60,
+        180
+       ]
+      },
+      {
+       "at": [
+        0,
+        -880
+       ],
+       "size": [
+        50,
+        60,
+        150
+       ],
+       "base": 30
+      },
+      {
+       "at": [
+        0,
+        -1070
+       ],
+       "size": [
+        1400,
+        120,
+        180
+       ]
+      },
+      {
+       "at": [
+        -140,
+        -995
+       ],
+       "size": [
+        70,
+        30,
+        6
+       ],
+       "base": 34
+      },
+      {
+       "at": [
+        120,
+        -995
+       ],
+       "size": [
+        70,
+        30,
+        6
+       ],
+       "base": 74
+      },
+      {
+       "at": [
+        -90,
+        -995
+       ],
+       "size": [
+        70,
+        30,
+        6
+       ],
+       "base": 114
+      },
+      {
+       "at": [
+        150,
+        -995
+       ],
+       "size": [
+        70,
+        30,
+        6
+       ],
+       "base": 154
+      },
+      {
+       "at": [
+        -120,
+        -1050
+       ],
+       "size": [
+        14,
+        14,
+        10
+       ],
+       "base": 180
+      },
+      {
+       "at": [
+        110,
+        -1090
+       ],
+       "size": [
+        14,
+        14,
+        10
+       ],
+       "base": 180
+      },
+      {
+       "at": [
+        0,
+        -1030
+       ],
+       "size": [
+        14,
+        14,
+        10
+       ],
+       "base": 180
+      },
+      {
+       "at": [
+        -40,
+        -1110
+       ],
+       "size": [
+        14,
+        14,
+        10
+       ],
+       "base": 180
+      },
+      {
+       "at": [
+        180,
+        -1040
+       ],
+       "size": [
+        14,
+        14,
+        10
+       ],
+       "base": 180
+      }
+     ],
+     "stages": [
+      {
+       "objective": "Clear the approach to the wall",
+       "wave": 0
+      },
+      {
+       "objective": "Break through the gate tunnel",
+       "wave": 1,
+       "reach": [
+        0,
+        -960,
+        5,
+        45
+       ]
+      },
+      {
+       "objective": "Climb the inner face to the top",
+       "wave": 2,
+       "reach": [
+        0,
+        -1070,
+        200,
+        170
+       ]
+      },
+      {
+       "objective": "Destroy the wall's guardian",
+       "wave": 3
+      }
+     ],
+     "units": [
+      {
+       "type": "tank",
+       "at": [
+        -20,
+        -640,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        20,
+        -690,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        0,
+        -760,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -160,
+        -870,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        0,
+        -900,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        170,
+        -870,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -80,
+        -700,
+        90
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        90,
+        -760,
+        110
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -14,
+        -868,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "turret",
+       "at": [
+        14,
+        -896,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "turret",
+       "at": [
+        -140,
+        -995,
+        -1
+       ],
+       "wave": 2
+      },
+      {
+       "type": "turret",
+       "at": [
+        150,
+        -995,
+        -1
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -60,
+        -960,
+        100
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        60,
+        -960,
+        130
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -150,
+        -1080,
+        220
+       ],
+       "wave": 3
+      },
+      {
+       "type": "heli",
+       "at": [
+        150,
+        -1080,
+        220
+       ],
+       "wave": 3
+      }
+     ],
+     "mechs": [
+      {
+       "name": "GATEKEEPER",
+       "pilot": "brute",
+       "at": [
+        0,
+        -1105,
+        0
+       ],
+       "ap_pct": 170,
+       "wave": 3,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "sg-brand",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       }
+      }
+     ]
     }
    ]
   },
@@ -903,7 +1291,7 @@
      "reward": "bt-titan",
      "plus": {
       "rule": "under_seconds",
-      "value": 58,
+      "value": 33,
       "reward": "rj-hare"
      },
      "weapons": false,
@@ -926,7 +1314,7 @@
         "core": "cr-vane",
         "arms": "ar-reed",
         "legs": "lg-wisp",
-        "booster": "bt-comet",
+        "booster": "bt-ram",
         "generator": "gn-ember",
         "right_weapon": "rf-marrow",
         "left_weapon": "rf-marrow",
@@ -938,52 +1326,52 @@
       [
        0,
        880,
-       18
+       12
       ],
       [
        -30,
        680,
-       30
+       18
       ],
       [
        30,
        480,
-       18
+       12
       ],
       [
        -30,
        280,
-       45
+       26
       ],
       [
        30,
        80,
-       20
+       14
       ],
       [
        0,
        -120,
-       70
+       30
       ],
       [
        -34,
        -340,
-       25
+       14
       ],
       [
        34,
        -560,
-       35
+       20
       ],
       [
        -20,
        -780,
-       20
+       12
       ],
       [
        0,
        -1000,
-       50
+       24
       ]
      ],
      "time_limit_s": 180
@@ -991,7 +1379,7 @@
     {
      "id": "sere-4",
      "name": "THE SCORPION",
-     "scene": "A heavy frame with a shotgun has been taking convoys apart up close. Keep your distance, or don't.",
+     "scene": "A heavy shotgun frame has been taking convoys apart up close, and a light missile frame keeps watch for it from above. Two at once.",
      "kind": "duel",
      "start": [
       450,
@@ -1001,7 +1389,7 @@
      "reward": "gn-forge",
      "plus": {
       "rule": "under_seconds",
-      "value": 75,
+      "value": 110,
       "reward": "lr-glint"
      },
      "requires": [
@@ -1029,9 +1417,30 @@
         "left_weapon": "rf-marrow",
         "shoulder_weapon": "gc-anvil"
        }
+      },
+      {
+       "name": "STINGER",
+       "pilot": "keeper",
+       "at": [
+        560,
+        -940,
+        180
+       ],
+       "ap_pct": 65,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "rj-hare",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
       }
      ],
-     "time_limit_s": 300
+     "time_limit_s": 360
     }
    ]
   },
@@ -1177,7 +1586,7 @@
      "reward": "hd-osprey",
      "plus": {
       "rule": "under_seconds",
-      "value": 70,
+      "value": 110,
       "reward": "cr-spire"
      },
      "units": [
@@ -1194,7 +1603,7 @@
        "type": "drone",
        "at": [
         351,
-        1395,
+        1410,
         31
        ],
        "wave": 0
@@ -1203,7 +1612,7 @@
        "type": "drone",
        "at": [
         -518,
-        1340,
+        1370,
         44
        ],
        "wave": 0
@@ -1212,7 +1621,7 @@
        "type": "drone",
        "at": [
         412,
-        1285,
+        1330,
         57
        ],
        "wave": 0
@@ -1221,7 +1630,7 @@
        "type": "drone",
        "at": [
         -90,
-        1230,
+        1290,
         30
        ],
        "wave": 0
@@ -1230,7 +1639,7 @@
        "type": "drone",
        "at": [
         -279,
-        1175,
+        1250,
         43
        ],
        "wave": 0
@@ -1239,58 +1648,78 @@
        "type": "drone",
        "at": [
         502,
-        1120,
+        200,
         56
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "drone",
        "at": [
         -461,
-        1065,
+        160,
         29
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "drone",
        "at": [
         178,
-        1010,
+        120,
         42
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "drone",
        "at": [
         198,
-        955,
+        80,
         55
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "drone",
        "at": [
         -470,
-        900,
+        40,
         28
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "drone",
        "at": [
         496,
-        845,
+        0,
         41
        ],
-       "wave": 0
+       "wave": 1
       }
      ],
-     "time_limit_s": 150
+     "stages": [
+      {
+       "objective": "Destroy the drones round the dock",
+       "wave": 0
+      },
+      {
+       "objective": "Run down the spin to the hub",
+       "wave": 1,
+       "reach": [
+        0,
+        60,
+        10,
+        90
+       ]
+      },
+      {
+       "objective": "Destroy the drones round the hub",
+       "wave": 1
+      }
+     ],
+     "time_limit_s": 180
     },
     {
      "id": "spindle-2",
@@ -1451,7 +1880,7 @@
      "reward": "bt-flare",
      "plus": {
       "rule": "under_seconds",
-      "value": 62,
+      "value": 43,
       "reward": "rf-gatling"
      },
      "weapons": false,
@@ -1474,7 +1903,7 @@
         "core": "cr-vane",
         "arms": "ar-reed",
         "legs": "lg-wisp",
-        "booster": "bt-flare",
+        "booster": "bt-surge",
         "generator": "gn-corona",
         "right_weapon": "rf-marrow",
         "left_weapon": "rf-marrow",
@@ -1486,57 +1915,185 @@
       [
        0,
        1500,
-       20
+       14
       ],
       [
        120,
        1270,
-       45
+       22
       ],
       [
        240,
        1040,
-       70
+       30
       ],
       [
        360,
        810,
-       20
+       14
       ],
       [
        480,
        580,
-       45
+       22
       ],
       [
        -500,
        350,
-       70
+       30
       ],
       [
        -380,
        120,
-       20
+       14
       ],
       [
        -260,
        -110,
-       45
+       22
       ],
       [
        -140,
        -340,
-       70
+       30
       ],
       [
        -20,
        -570,
-       20
+       14
       ],
       [
        100,
        -800,
-       45
+       22
+      ]
+     ],
+     "clear": [
+      [
+       -49,
+       1465,
+       35,
+       1685
+      ],
+      [
+       -35,
+       1235,
+       155,
+       1535
+      ],
+      [
+       85,
+       1005,
+       275,
+       1305
+      ],
+      [
+       205,
+       775,
+       395,
+       1075
+      ],
+      [
+       325,
+       545,
+       515,
+       845
+      ],
+      [
+       -535,
+       85,
+       -345,
+       385
+      ],
+      [
+       -415,
+       -145,
+       -225,
+       155
+      ],
+      [
+       -295,
+       -375,
+       -105,
+       -75
+      ],
+      [
+       -175,
+       -605,
+       15,
+       -305
+      ],
+      [
+       -55,
+       -835,
+       135,
+       -535
+      ],
+      [
+       -40,
+       1460,
+       40,
+       1540
+      ],
+      [
+       80,
+       1230,
+       160,
+       1310
+      ],
+      [
+       200,
+       1000,
+       280,
+       1080
+      ],
+      [
+       320,
+       770,
+       400,
+       850
+      ],
+      [
+       440,
+       540,
+       520,
+       620
+      ],
+      [
+       -540,
+       310,
+       -460,
+       390
+      ],
+      [
+       -420,
+       80,
+       -340,
+       160
+      ],
+      [
+       -300,
+       -150,
+       -220,
+       -70
+      ],
+      [
+       -180,
+       -380,
+       -100,
+       -300
+      ],
+      [
+       -60,
+       -610,
+       20,
+       -530
+      ],
+      [
+       60,
+       -840,
+       140,
+       -760
       ]
      ],
      "time_limit_s": 200
@@ -1544,7 +2101,7 @@
     {
      "id": "spindle-4",
      "name": "KEEPER OF THE SPINDLE",
-     "scene": "The ring's keeper flies close to the axis and rains missiles down the curve. Bring it to the floor.",
+     "scene": "The ring's keeper flies close to the axis and rains missiles down the curve, while two wardens hunt you along the floor. Three frames, one ring.",
      "kind": "duel",
      "start": [
       0,
@@ -1554,7 +2111,7 @@
      "reward": "bz-maul",
      "plus": {
       "rule": "under_seconds",
-      "value": 100,
+      "value": 150,
       "reward": "gn-corona"
      },
      "requires": [
@@ -1570,7 +2127,7 @@
         -1550,
         180
        ],
-       "ap_pct": 120,
+       "ap_pct": 100,
        "loadout": {
         "head": "hd-kestrel",
         "core": "cr-bulwark",
@@ -1582,9 +2139,51 @@
         "left_weapon": "rf-marrow",
         "shoulder_weapon": "mp-swarm"
        }
+      },
+      {
+       "name": "WARDEN A",
+       "pilot": "twin",
+       "at": [
+        -60,
+        -1500,
+        180
+       ],
+       "ap_pct": 55,
+       "loadout": {
+        "head": "hd-warden",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-surge",
+        "generator": "gn-ember",
+        "right_weapon": "sg-brand",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       }
+      },
+      {
+       "name": "WARDEN B",
+       "pilot": "twin",
+       "at": [
+        60,
+        -1500,
+        180
+       ],
+       "ap_pct": 55,
+       "loadout": {
+        "head": "hd-warden",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-surge",
+        "generator": "gn-ember",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       }
       }
      ],
-     "time_limit_s": 300
+     "time_limit_s": 360
     }
    ]
   },
@@ -1826,7 +2425,7 @@
      "reward": "ar-grip",
      "plus": {
       "rule": "under_seconds",
-      "value": 60,
+      "value": 34,
       "reward": "rj-lynx"
      },
      "weapons": false,
@@ -1845,8 +2444,8 @@
         "head": "hd-kestrel",
         "core": "cr-vane",
         "arms": "ar-reed",
-        "legs": "lg-gale",
-        "booster": "bt-flare",
+        "legs": "lg-wisp",
+        "booster": "bt-surge",
         "generator": "gn-corona",
         "right_weapon": "rf-marrow",
         "left_weapon": "rf-marrow",
@@ -1863,47 +2462,47 @@
       [
        90,
        600,
-       25
+       18
       ],
       [
        120,
        380,
-       15
+       12
       ],
       [
        40,
        160,
-       40
+       30
       ],
       [
        -80,
        0,
-       20
+       14
       ],
       [
        -140,
        -200,
-       30
+       24
       ],
       [
        -60,
        -420,
-       15
+       12
       ],
       [
        60,
        -620,
-       35
+       28
       ],
       [
        180,
        -760,
-       20
+       14
       ],
       [
        400,
        -700,
-       40
+       30
       ]
      ],
      "time_limit_s": 180
@@ -2511,7 +3110,7 @@
      "reward": "ar-titan",
      "plus": {
       "rule": "under_seconds",
-      "value": 66,
+      "value": 40,
       "reward": "lg-monolith"
      },
      "weapons": false,
@@ -2525,6 +3124,116 @@
         60,
         40,
         25
+       ]
+      },
+      {
+       "at": [
+        0,
+        760
+       ],
+       "size": [
+        26,
+        26,
+        14
+       ]
+      },
+      {
+       "at": [
+        -120,
+        600
+       ],
+       "size": [
+        26,
+        26,
+        18
+       ]
+      },
+      {
+       "at": [
+        -60,
+        400
+       ],
+       "size": [
+        26,
+        26,
+        12
+       ]
+      },
+      {
+       "at": [
+        100,
+        260
+       ],
+       "size": [
+        26,
+        26,
+        22
+       ]
+      },
+      {
+       "at": [
+        160,
+        60
+       ],
+       "size": [
+        26,
+        26,
+        14
+       ]
+      },
+      {
+       "at": [
+        40,
+        -120
+       ],
+       "size": [
+        26,
+        26,
+        18
+       ]
+      },
+      {
+       "at": [
+        -140,
+        -260
+       ],
+       "size": [
+        26,
+        26,
+        12
+       ]
+      },
+      {
+       "at": [
+        -60,
+        -460
+       ],
+       "size": [
+        26,
+        26,
+        22
+       ]
+      },
+      {
+       "at": [
+        140,
+        -560
+       ],
+       "size": [
+        26,
+        26,
+        14
+       ]
+      },
+      {
+       "at": [
+        300,
+        -700
+       ],
+       "size": [
+        26,
+        26,
+        18
        ]
       }
      ],
@@ -2540,12 +3249,12 @@
        "ap_pct": 100,
        "racer": true,
        "loadout": {
-        "head": "hd-kestrel",
-        "core": "cr-vane",
-        "arms": "ar-reed",
-        "legs": "lg-gale",
-        "booster": "bt-flare",
-        "generator": "gn-corona",
+        "head": "hd-warden",
+        "core": "cr-bulwark",
+        "arms": "ar-lancer",
+        "legs": "rj-hare",
+        "booster": "bt-surge",
+        "generator": "gn-kiln",
         "right_weapon": "rf-marrow",
         "left_weapon": "rf-marrow",
         "shoulder_weapon": "mp-swarm"
@@ -2556,55 +3265,117 @@
       [
        0,
        760,
-       45
+       36
       ],
       [
        -120,
        600,
-       60
+       40
       ],
       [
        -60,
        400,
-       40
+       34
       ],
       [
        100,
        260,
-       70
+       44
       ],
       [
        160,
        60,
-       50
+       36
       ],
       [
        40,
        -120,
-       60
+       40
       ],
       [
        -140,
        -260,
-       45
+       34
       ],
       [
        -60,
        -460,
-       75
+       44
       ],
       [
        140,
        -560,
-       50
+       36
       ],
       [
        300,
        -700,
-       60
+       40
       ]
      ],
-     "time_limit_s": 180
+     "time_limit_s": 180,
+     "clear": [
+      [
+       -35,
+       725,
+       35,
+       935
+      ],
+      [
+       -155,
+       565,
+       35,
+       795
+      ],
+      [
+       -155,
+       365,
+       -25,
+       635
+      ],
+      [
+       -95,
+       225,
+       135,
+       435
+      ],
+      [
+       65,
+       25,
+       195,
+       295
+      ],
+      [
+       5,
+       -155,
+       195,
+       95
+      ],
+      [
+       -175,
+       -295,
+       75,
+       -85
+      ],
+      [
+       -175,
+       -495,
+       -25,
+       -225
+      ],
+      [
+       -95,
+       -595,
+       175,
+       -425
+      ],
+      [
+       105,
+       -735,
+       335,
+       -525
+      ]
+     ]
     },
     {
      "id": "cinder-3",

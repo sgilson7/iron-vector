@@ -24,6 +24,8 @@ pub enum Kind {
     Duel,
     /// still be standing when the clock runs out
     Survive,
+    /// take a fortified position stage by stage
+    Assault,
 }
 
 impl Kind {
@@ -34,6 +36,7 @@ impl Kind {
             Kind::Defend => "obj_defend",
             Kind::Duel => "obj_duel",
             Kind::Survive => "obj_survive",
+            Kind::Assault => "obj_assault",
         }
     }
 }
@@ -79,6 +82,21 @@ pub struct Building {
     pub size: [i32; 3],
     #[serde(default)]
     pub ap: i32,
+    /// height of its underside above the ground (m): a tunnel's roof, a ledge
+    #[serde(default)]
+    pub base: i32,
+}
+
+/// One step of a staged mission: what to do, the wave that rises for it, and
+/// where to get to, if anywhere.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Stage {
+    pub objective: String,
+    pub wave: u32,
+    /// x, z, altitude, radius (m)
+    #[serde(default)]
+    pub reach: Option<[i32; 4]>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -146,6 +164,12 @@ pub struct MissionSpec {
     /// scales the AP and damage of every unit
     #[serde(default = "hundred")]
     pub power_pct: i32,
+    /// steps taken in order; with stages the mission is won by finishing the last
+    #[serde(default)]
+    pub stages: Vec<Stage>,
+    /// rectangles x0, z0, x1, z1 (m) cleared of the planet's buildings first
+    #[serde(default)]
+    pub clear: Vec<[i32; 4]>,
 }
 
 /// One kind of unit, from `data/units.json`.
@@ -193,7 +217,7 @@ impl Units {
 }
 
 /// How far from a checkpoint's centre a frame passes through it.
-pub const CHECKPOINT_RADIUS: i32 = int(24);
+pub const CHECKPOINT_RADIUS: i32 = int(30);
 /// How near its goal a fleeing unit counts as escaped.
 const ESCAPE_RADIUS: i32 = int(25);
 /// Seconds the world keeps running after the mission ends, before the debrief.
@@ -278,6 +302,9 @@ pub fn rank(success: bool, seconds: i32, ap_kept_pct: i32, par_s: i32) -> &'stat
     }
 }
 
+/// A stage as flown: its objective, its wave, and where to reach and how near.
+pub type StageNow = (String, u32, Option<(V3, i32)>);
+
 /// A mission under way.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Mission {
@@ -301,6 +328,8 @@ pub struct Mission {
     pub reserve_craft: Vec<Craft>,
     pub reserve_mechs: Vec<(u32, crate::world::Mech)>,
     pub course: Vec<V3>,
+    pub stages: Vec<StageNow>,
+    pub stage: usize,
 }
 
 impl Mission {
@@ -335,7 +364,23 @@ impl Mission {
                 .iter()
                 .map(|c| v3(int(c[0]), int(c[2]), int(c[1])))
                 .collect(),
+            stages: spec
+                .stages
+                .iter()
+                .map(|s| {
+                    (
+                        s.objective.clone(),
+                        s.wave,
+                        s.reach.map(|[x, z, a, r]| (v3(int(x), int(a), int(z)), int(r))),
+                    )
+                })
+                .collect(),
+            stage: 0,
         }
+    }
+
+    pub fn staged(&self) -> bool {
+        !self.stages.is_empty()
     }
 
     pub fn seconds(&self) -> u32 {
@@ -425,17 +470,13 @@ impl World {
             if p.alive && p.body.grounded && p.body.pos.y == 0 && self.map.climate.floor_dps > 0 {
                 m.floor_ticks += 1;
             }
-            // the next wave rises when this one is down
-            if self.hostiles_alive() == 0 && m.wave < m.last_wave {
+            if m.staged() {
+                self.update_stage(&mut m);
+            } else if self.hostiles_alive() == 0 && m.wave < m.last_wave {
+                // the next wave rises when this one is down
                 m.wave += 1;
                 let w = m.wave;
-                let (now, later): (Vec<Craft>, Vec<Craft>) =
-                    m.reserve_craft.drain(..).partition(|c| c.wave == w);
-                m.reserve_craft = later;
-                self.craft.extend(now);
-                let (now, later): (Vec<_>, Vec<_>) = m.reserve_mechs.drain(..).partition(|(wv, _)| *wv == w);
-                m.reserve_mechs = later;
-                self.mechs.extend(now.into_iter().map(|(_, mech)| mech));
+                self.release_wave(&mut m, w);
             }
             self.update_course(&m);
             if let Some((ok, why)) = self.judge(&m) {
@@ -445,6 +486,31 @@ impl World {
             }
         }
         self.mission = Some(m);
+    }
+
+    fn release_wave(&mut self, m: &mut Mission, w: u32) {
+        let (now, later): (Vec<Craft>, Vec<Craft>) = m.reserve_craft.drain(..).partition(|c| c.wave == w);
+        m.reserve_craft = later;
+        self.craft.extend(now);
+        let (now, later): (Vec<_>, Vec<_>) = m.reserve_mechs.drain(..).partition(|(wv, _)| *wv == w);
+        m.reserve_mechs = later;
+        self.mechs.extend(now.into_iter().map(|(_, mech)| mech));
+    }
+
+    /// A stage is done when its hostiles are down and, if it names a place,
+    /// the player has got there; then the next stage's wave rises.
+    fn update_stage(&mut self, m: &mut Mission) {
+        let Some((_, _, reach)) = m.stages.get(m.stage).cloned() else {
+            return;
+        };
+        let there = reach.is_none_or(|(p, r)| self.map_delta(self.player().chest(), p).len() < r);
+        if self.hostiles_alive() == 0 && there {
+            m.stage += 1;
+            if let Some((_, w, _)) = m.stages.get(m.stage).cloned() {
+                m.wave = w;
+                self.release_wave(m, w);
+            }
+        }
     }
 
     /// Moves every racer's next checkpoint on when it passes through one.
@@ -502,6 +568,9 @@ impl World {
             && m.wave >= m.last_wave
             && m.reserve_craft.is_empty()
             && m.reserve_mechs.is_empty();
+        if m.staged() {
+            return (m.stage >= m.stages.len()).then_some((true, None));
+        }
         if cleared && matches!(m.kind, Kind::Destroy | Kind::Defend | Kind::Duel) {
             return Some((true, None));
         }
@@ -511,7 +580,13 @@ impl World {
     /// Where the player is sent next, if anywhere.
     pub fn objective_point(&self) -> Option<V3> {
         let m = self.mission.as_ref()?;
-        if m.ended_at.is_some() || m.kind != Kind::Race {
+        if m.ended_at.is_some() {
+            return None;
+        }
+        if let Some((_, _, Some((p, _)))) = m.stages.get(m.stage) {
+            return Some(*p);
+        }
+        if m.kind != Kind::Race {
             return None;
         }
         m.course.get(self.player().course_next).copied()
@@ -722,6 +797,111 @@ mod tests {
                 "{} has nothing to fight",
                 m.id
             );
+        }
+    }
+
+    fn kill_all(w: &mut World) {
+        for i in 0..w.craft.len() {
+            if w.craft[i].alive {
+                w.hurt(Target::Craft(i), 1_000_000, 0);
+            }
+        }
+        for i in 1..w.mechs.len() {
+            if w.mechs[i].alive && w.mechs[i].team == crate::combat::Team::Enemy {
+                w.hurt(Target::Mech(i), 10_000_000, 0);
+            }
+        }
+        run(w, 1);
+    }
+
+    fn stage(w: &World) -> usize {
+        w.mission.as_ref().unwrap().stage
+    }
+
+    fn put(w: &mut World, x: i32, y: i32, z: i32) {
+        w.mechs[0].body.pos = v3(int(x), int(y), int(z));
+        w.mechs[0].body.prev_pos = w.mechs[0].body.pos;
+        w.mechs[0].body.grounded = false;
+        run(w, 2);
+    }
+
+    #[test]
+    fn the_wall_is_taken_stage_by_stage_and_its_guardian_waits_on_top() {
+        let mut w = mission_world("halden-5");
+        assert_eq!(stage(&w), 0);
+        kill_all(&mut w);
+        assert_eq!(stage(&w), 1, "the approach is clear");
+        assert!(
+            w.craft.iter().filter(|c| c.alive).all(|c| c.pos.y < int(30)),
+            "the next guns are inside the tunnel"
+        );
+        kill_all(&mut w);
+        assert_eq!(
+            stage(&w),
+            1,
+            "clearing the tunnel is not enough: the player must come through"
+        );
+        put(&mut w, 0, 0, -960);
+        assert_eq!(stage(&w), 2, "through the gate into the inner yard");
+        kill_all(&mut w);
+        put(&mut w, 30, 181, -1070);
+        assert_eq!(stage(&w), 3, "on top of the wall");
+        let guardian = w
+            .mechs
+            .iter()
+            .find(|m| m.name == "GATEKEEPER")
+            .expect("the guardian has come out");
+        assert!(
+            guardian.body.pos.y >= int(180),
+            "it stands on the wall top, at {}",
+            guardian.body.pos.y
+        );
+        kill_all(&mut w);
+        assert_eq!(outcome(&w), (Some(true), None));
+    }
+
+    #[test]
+    fn the_wall_lets_a_frame_through_its_gate_and_nowhere_else() {
+        let w = mission_world("halden-5");
+        let walk = |x: i32| {
+            let mut w = w.clone();
+            w.mechs[0].body.pos = v3(int(x), 0, -int(800));
+            w.mechs[0].body.aim_yaw = 0;
+            w.mission.as_mut().unwrap().time_limit = 0;
+            for _ in 0..20 * 60 {
+                w.tick(Controls {
+                    move_z: ONE,
+                    ..Controls::default()
+                });
+            }
+            w.mechs[0].body.pos.z
+        };
+        assert!(walk(0) < -int(915), "through the tunnel");
+        assert!(walk(200) > -int(850), "stopped at the face");
+    }
+
+    #[test]
+    fn the_wall_opens_only_when_the_rest_of_halden_is_clear() {
+        let c = crate::campaign::tests::campaign();
+        let mut p = crate::campaign::Progress::default();
+        for id in ["halden-1", "halden-2", "halden-3"] {
+            p.cleared.insert(id.to_string());
+        }
+        assert_eq!(p.standing(&c, "halden-5"), crate::campaign::Standing::Locked);
+        p.cleared.insert("halden-4".to_string());
+        assert_eq!(p.standing(&c, "halden-5"), crate::campaign::Standing::Open);
+    }
+
+    #[test]
+    fn some_fights_put_several_enemy_frames_against_you_at_once() {
+        for (id, frames) in [("sere-4", 2), ("spindle-4", 3), ("rime-4", 2)] {
+            let w = mission_world(id);
+            let n = w
+                .mechs
+                .iter()
+                .filter(|m| m.team == crate::combat::Team::Enemy)
+                .count();
+            assert_eq!(n, frames, "{id}");
         }
     }
 

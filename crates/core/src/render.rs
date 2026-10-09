@@ -187,7 +187,7 @@ pub fn scene(w: &World, look: &Look) -> (Vec<i32>, Vec<u32>) {
         if look.windows {
             let bands = (size.y / int(WINDOW_EVERY_M) - 1).clamp(0, MAX_WINDOW_BANDS);
             for k in 0..bands {
-                let y = int(WINDOW_EVERY_M) * (k + 1) - int(3);
+                let y = blk.min.y + int(WINDOW_EVERY_M) * (k + 1) - int(3);
                 let band = v3(size.x + ONE / 5, ONE + ONE / 4, size.z + ONE / 5);
                 b.push(
                     Mesh::Cube,
@@ -758,6 +758,8 @@ pub struct MissionHud {
     pub plus: Option<(crate::mission::PlusRule, i32, i32)>,
     pub over: bool,
     pub success: Option<bool>,
+    /// a staged mission's current objective, and its step of how many
+    pub stage: Option<(String, usize, usize)>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -878,7 +880,17 @@ pub fn hud(
         .filter_map(|tg| w.target_centre(tg))
         .min_by_key(|c| w.map_delta(m.chest(), *c).len());
     let waypoint = match (w.objective_point(), nearest) {
-        (Some(p), _) => Some(pointer(vp, cam, drawn(w, p), css_w, css_h, "wp_checkpoint")),
+        (Some(p), _) => {
+            let staged = w.mission.as_ref().is_some_and(|mi| mi.staged());
+            Some(pointer(
+                vp,
+                cam,
+                drawn(w, p),
+                css_w,
+                css_h,
+                if staged { "wp_objective" } else { "wp_checkpoint" },
+            ))
+        }
         (None, Some(p)) if w.mission.is_some() => {
             Some(pointer(vp, cam, drawn(w, p), css_w, css_h, "wp_target"))
         }
@@ -904,6 +916,10 @@ pub fn hud(
         plus: plus_revealed.then(|| (mi.plus.rule, mi.plus.value, mi.plus_progress(w))),
         over: mi.ended_at.is_some(),
         success: mi.success,
+        stage: mi
+            .stages
+            .get(mi.stage)
+            .map(|(text, _, _)| (text.clone(), mi.stage + 1, mi.stages.len())),
     });
     let frames = w
         .mechs

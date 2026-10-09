@@ -232,6 +232,20 @@ impl Map {
         }
     }
 
+    /// Takes away every building that stands in the rectangle `min..max` (x and
+    /// z only), so a mission can set down its own structures there.
+    pub fn clear_rect(&mut self, min: V3, max: V3) {
+        self.blocks
+            .retain(|b| !(b.min.x < max.x && b.max.x > min.x && b.min.z < max.z && b.max.z > min.z));
+        for b in &mut self.buckets {
+            b.clear();
+        }
+        let all = std::mem::take(&mut self.blocks);
+        for b in all {
+            self.add_block(b);
+        }
+    }
+
     /// The radius of a ring map: its width is the circumference.
     pub fn ring_radius(&self) -> i32 {
         // r = c / 2π, with 2π as 6 283 / 1 000
@@ -364,6 +378,19 @@ mod tests {
             avenue_m: 0,
             style: Style::Towers,
             wrap: false,
+        }
+    }
+
+    #[test]
+    fn clearing_a_rectangle_removes_its_buildings_and_keeps_the_rest_findable() {
+        let mut m = Map::generate(&spec());
+        let before = m.blocks.len();
+        let (lo, hi) = (v3(-int(200), 0, -int(200)), v3(int(200), 0, int(200)));
+        m.clear_rect(lo, hi);
+        assert!(m.blocks.len() < before);
+        assert!(!m.box_blocked(v3(lo.x, 0, lo.z), v3(hi.x, int(300), hi.z)));
+        for b in m.blocks.clone() {
+            assert!(m.box_blocked(b.min, b.max), "a kept building is still found");
         }
     }
 

@@ -890,6 +890,37 @@
         "range_m": 420,
         "blast_m": 26
       }
+    },
+    {
+      "id": "lc-lance",
+      "slot": "shoulder_weapon",
+      "name": "LC-11 LANCE",
+      "maker": "Calder Works",
+      "blurb": "A siege laser taken off the wall's own guns.",
+      "kind": "laser",
+      "like": "lc-halo",
+      "scale_pct": 125,
+      "stats": {
+        "weight": 9200,
+        "en_load": 560,
+        "damage": 1250,
+        "impact": 900,
+        "fire_ms": 3200,
+        "speed_ms": 1800,
+        "ammo": 20,
+        "range_m": 420,
+        "spread_deg": 0
+      }
+    },
+    {
+      "id": "cr-rampart",
+      "slot": "core",
+      "name": "CR-40 RAMPART",
+      "maker": "Rook Heavy",
+      "blurb": "Wall-plate armour cut into a core.",
+      "like": "cr-citadel",
+      "scale_pct": 110,
+      "stats": {"ap": 5600, "weight": 31000, "en_load": 400, "stability": 1150}
     }
   ]
 }

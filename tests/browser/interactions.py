@@ -12,7 +12,8 @@ copied from the game's own output:
   Halden's race, so a new player cannot fit it.
 - The default legs walk at 95 km/h, so after a second and a half of holding
   W in the test field the speed readout is between 90 and 96.
-- The star map has 5 planets and 20 missions: 25 places to click. The second
+- The star map has 5 planets and 21 missions (Halden has five, with the
+  wall): 26 places to click. The second
   planet, Sere, opens when 2 missions are cleared.
 """
 
@@ -90,7 +91,7 @@ def run(page, check, engine):
     # star map
     open_map(page)
     spots = len(page.query_selector_all(".spot:not([hidden])"))
-    check(spots == 25, f"the map shows 5 planets and 20 missions ({spots})")
+    check(spots == 26, f"the map shows 5 planets and 21 missions ({spots})")
     page.click(".spot.planet >> nth=1")
     check(page.inner_text("#planet-name") == "SERE", "clicking a planet shows it")
     check(page.inner_text("#planet-lock") == COPY["opens_at"].replace("{n}", "2"), "Sere opens after two clears")

@@ -192,13 +192,13 @@ fn empty_world(map: Map, player: Mech, seed: u64) -> World {
     }
 }
 
-/// A box standing on the ground, centred on `at` (m).
-fn standing(at: [i32; 2], size: [i32; 3], shade: u8) -> Block {
+/// A box centred on `at` (m), its underside `base` above the ground.
+fn standing(at: [i32; 2], size: [i32; 3], base: i32, shade: u8) -> Block {
     let [x, z] = at;
     let [w, d, h] = size;
     Block {
-        min: v3(int(x) - int(w) / 2, 0, int(z) - int(d) / 2),
-        max: v3(int(x) + int(w) / 2, int(h), int(z) + int(d) / 2),
+        min: v3(int(x) - int(w) / 2, int(base), int(z) - int(d) / 2),
+        max: v3(int(x) + int(w) / 2, int(base + h), int(z) + int(d) / 2),
         shade,
     }
 }
@@ -242,8 +242,11 @@ impl World {
     ) -> World {
         let mut map = Map::generate(&planet.map);
         map.climate = planet.climate;
+        for [x0, z0, x1, z1] in &spec.clear {
+            map.clear_rect(v3(int(*x0), 0, int(*z0)), v3(int(*x1), 0, int(*z1)));
+        }
         for pad in &spec.pads {
-            map.add_block(standing(pad.at, pad.size, 2));
+            map.add_block(standing(pad.at, pad.size, pad.base, 2));
         }
         let mut structures = Vec::new();
         for s in &spec.protect {
@@ -253,7 +256,7 @@ impl World {
                 max_ap: s.ap,
                 alive: true,
             });
-            map.add_block(standing(s.at, s.size, 255));
+            map.add_block(standing(s.at, s.size, s.base, 255));
         }
         let on_top = |m: &Map, x: i32, z: i32| m.floor_under(v3(int(x), m.ceiling, int(z)));
         let [sx, sz, syaw] = spec.start;
@@ -264,11 +267,12 @@ impl World {
         let mut mission = Mission::new(spec);
         for (k, u) in spec.units.iter().enumerate() {
             let [x, z, alt] = u.at;
-            let ground = on_top(&w.map, x, z);
+            // below zero: on top of whatever is there; otherwise on whatever
+            // floor is under that height, as inside a tunnel
             let y = if alt < 0 {
-                ground + int(2)
+                on_top(&w.map, x, z) + int(2)
             } else {
-                int(alt).max(ground)
+                int(alt).max(w.map.floor_under(v3(int(x), int(alt) + ONE, int(z))))
             };
             let goal = u.goal.map(|[gx, gz]| v3(int(gx), 0, int(gz)));
             let Some(us) = units.0.get(&u.unit) else { continue };
@@ -1289,5 +1293,62 @@ pub(crate) mod tests {
         // 240 AP a second
         let lost = ap - w.mechs[0].ap;
         assert!((230..=250).contains(&lost), "lost {lost}");
+    }
+}
+#[cfg(test)]
+mod race_balance {
+    use super::tests::mission_world;
+    use super::*;
+
+    /// Flies the player's frame round a race with the plain racer tree, the
+    /// rival's own kind of pilot, and returns both finishing times in seconds.
+    fn race(id: &str) -> (Option<u32>, Option<u32>) {
+        let mut w = mission_world(id);
+        let mut bot = crate::pilot::tests::pilots().pilot("racer", 9).unwrap();
+        let n = w.mission.as_ref().unwrap().course.len();
+        let mut mine = None;
+        for t in 0..200 * 60u32 {
+            let d = bot.think(&w.senses(0));
+            w.mechs[0].body.aim_yaw = d.aim_yaw & (fx::TURN - 1);
+            w.mechs[0].body.aim_pitch = d.aim_pitch.clamp(crate::mech::PITCH_MIN, crate::mech::PITCH_MAX);
+            w.tick(d.controls);
+            if mine.is_none() && w.mechs[0].course_next == n {
+                mine = Some(t / 60);
+            }
+            // keep both racing to the line, whoever finishes first
+            let m = w.mission.as_mut().unwrap();
+            m.ended_at = None;
+            m.success = None;
+            if mine.is_some() && w.mechs[1].finished_at.is_some() {
+                break;
+            }
+        }
+        (mine, w.mechs[1].finished_at.map(|t| t / 60))
+    }
+
+    #[test]
+    fn the_starting_frame_flown_plainly_beats_every_rival_and_can_reach_each_plus_time() {
+        // Sam, 2026-10-08: "the race missions are like really difficult"
+        let camp = crate::campaign::tests::campaign();
+        for m in camp
+            .planets
+            .iter()
+            .flat_map(|p| &p.missions)
+            .filter(|m| m.kind == crate::mission::Kind::Race)
+        {
+            let (mine, rival) = race(&m.id);
+            let (mine, rival) = (mine.expect(&m.id), rival.expect(&m.id));
+            assert!(
+                mine < rival,
+                "{}: the starting frame took {mine} s, the rival {rival} s",
+                m.id
+            );
+            assert!(
+                (mine as i32) < m.plus.value,
+                "{}: the plus asks for under {} s; a plain run took {mine}",
+                m.id,
+                m.plus.value
+            );
+        }
     }
 }

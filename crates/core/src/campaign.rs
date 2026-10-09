@@ -93,6 +93,9 @@ impl Campaign {
                 return Err(format!("planets: {} has no missions", p.id));
             }
             for (i, m) in p.missions.iter().enumerate() {
+                if m.kind == crate::mission::Kind::Assault && m.stages.is_empty() {
+                    return Err(format!("planets: {} is an assault with no stages", m.id));
+                }
                 if !ids.insert(m.id.clone()) {
                     return Err(format!("planets: duplicate mission id {}", m.id));
                 }

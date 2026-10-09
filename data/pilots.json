@@ -386,20 +386,6 @@
      "do": "race_climb"
     },
     {
-     "if": [
-      {
-       "course_far": 140
-      },
-      {
-       "en_above": 70
-      },
-      {
-       "chance": 4
-      }
-     ],
-     "do": "race_boost"
-    },
-    {
      "if": [],
      "do": "race_line"
     }
@@ -429,13 +415,13 @@
     {
      "if": [
       {
-       "course_far": 110
+       "course_far": 160
       },
       {
-       "en_above": 55
+       "en_above": 70
       },
       {
-       "chance": 10
+       "chance": 3
       }
      ],
      "do": "race_boost"

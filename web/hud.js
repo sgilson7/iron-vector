@@ -122,7 +122,9 @@ export function makeHud(copy) {
     set(nodes.missionBox, "hasMission", Boolean(m), show);
     if (!m) return;
     set(nodes.missionName, "mName", m.name, text);
-    set(nodes.objective, "objective", copy[m.objective], text);
+    // a staged mission names its own step; others say what their kind asks
+    const objective = m.stage ? `${m.stage[0]} (${m.stage[1]}/${m.stage[2]})` : copy[m.objective];
+    set(nodes.objective, "objective", objective, text);
     set(nodes.hostiles, "hostiles", m.hostiles, text);
     set(nodes.structuresBox, "hasStructures", Boolean(m.structures), show);
     if (m.structures) {
