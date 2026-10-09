@@ -270,28 +270,19 @@ pub fn push_cockpit(
                     q16(col),
                     glow,
                 );
-                // a cleared mission wears a + above it: bright gold once its
-                // plus challenge is met, a dim outline while it is still to earn
-                if matches!(standing, Standing::Cleared | Standing::Plus) {
-                    let met = standing == Standing::Plus;
-                    let (c, glow, bar) = if met {
-                        (q16(pal.plus), ONE, cm(1) * 3 / 5)
-                    } else {
-                        (q16(pal.locked), ONE / 4, cm(1) / 3)
-                    };
-                    let above = Affine::translate(n.at.add(v3(0, cm(5), 0))).then(&Affine::rot_y(sway / 2));
-                    b.push_raw(
-                        Mesh::Cube,
-                        &holo.then(&above).then(&Affine::scale(v3(cm(4), bar, bar))),
-                        c,
-                        glow,
-                    );
-                    b.push_raw(
-                        Mesh::Cube,
-                        &holo.then(&above).then(&Affine::scale(v3(bar, cm(4), bar))),
-                        c,
-                        glow,
-                    );
+                // a mission whose plus challenge is met wears a gold halo: a
+                // ring of light round the node, facing the pilot, turning slowly
+                if standing == Standing::Plus {
+                    const SEGMENTS: i32 = 18;
+                    let r = s + cm(2);
+                    for k in 0..SEGMENTS {
+                        let a = fx::TURN * k / SEGMENTS + power.clock;
+                        let p = n.at.add(v3(fx::mul(r, fx::cos(a)), fx::mul(r, fx::sin(a)), 0));
+                        let seg = Affine::translate(p)
+                            .then(&Affine::rot_z(a + fx::QUARTER))
+                            .then(&Affine::scale(v3(r * 2 / 5, cm(1) / 3, cm(1) / 3)));
+                        b.push_raw(Mesh::Cube, &holo.then(&seg), q16(pal.plus), ONE);
+                    }
                 }
             }
         }
