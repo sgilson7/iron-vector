@@ -4172,33 +4172,150 @@
     {
      "id": "rime-1",
      "name": "WHITEOUT",
-     "scene": "Gunships and turrets hold the ice plain. Clear it; mind your footing.",
-     "kind": "destroy",
+     "scene": "Three guns on the summit of Rime's great needle fire down its whole length. Climb it, ledge by ledge and up the lift, past the mines; silence the guns; and the Frost Colossus waits on top.",
+     "kind": "climb",
      "start": [
       0,
-      220,
+      160,
       0
      ],
      "reward": "hd-bastille",
      "plus": {
-      "rule": "max_rounds",
-      "value": 40,
+      "rule": "under_seconds",
+      "value": 180,
       "reward": "cr-anvil"
      },
+     "pads": [
+      {
+       "at": [
+        0,
+        0
+       ],
+       "size": [
+        30,
+        30,
+        260
+       ]
+      },
+      {
+       "at": [
+        0,
+        0
+       ],
+       "size": [
+        60,
+        60,
+        6
+       ],
+       "base": 260
+      },
+      {
+       "at": [
+        37,
+        13
+       ],
+       "size": [
+        18,
+        18,
+        4
+       ],
+       "base": 36
+      },
+      {
+       "at": [
+        6,
+        39
+       ],
+       "size": [
+        18,
+        18,
+        4
+       ],
+       "base": 72
+      },
+      {
+       "at": [
+        -30,
+        25
+       ],
+       "size": [
+        18,
+        18,
+        4
+       ],
+       "base": 108
+      },
+      {
+       "at": [
+        -37,
+        -13
+       ],
+       "size": [
+        18,
+        18,
+        4
+       ],
+       "base": 144
+      },
+      {
+       "at": [
+        -6,
+        -39
+       ],
+       "size": [
+        18,
+        18,
+        4
+       ],
+       "base": 180
+      },
+      {
+       "at": [
+        30,
+        -25
+       ],
+       "size": [
+        18,
+        18,
+        4
+       ],
+       "base": 216
+      }
+     ],
+     "machines": [
+      {
+       "role": "lift",
+       "at": [
+        -45,
+        45,
+        222
+       ],
+       "size": [
+        16,
+        16,
+        4
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         36
+        ]
+       ],
+       "speed_ms": 8,
+       "wait_ms": 1000
+      }
+     ],
      "units": [
       {
        "type": "turret",
        "at": [
-        0,
-        160,
-        -1
-       ],
-       "wave": 0
-      },
-      {
-       "type": "turret",
-       "at": [
-        160,
+        22,
         0,
         -1
        ],
@@ -4207,8 +4324,8 @@
       {
        "type": "turret",
        "at": [
+        -22,
         0,
-        -160,
         -1
        ],
        "wave": 0
@@ -4216,9 +4333,36 @@
       {
        "type": "turret",
        "at": [
-        -160,
         0,
+        -22,
         -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        6,
+        39,
+        76
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        -37,
+        -13,
+        148
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        30,
+        -25,
+        220
        ],
        "wave": 0
       },
@@ -4226,36 +4370,39 @@
        "type": "heli",
        "at": [
         0,
-        120,
-        90
+        90,
+        140
        ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        120,
-        0,
-        90
-       ],
-       "wave": 1
+       "wave": 0
       },
       {
        "type": "heli",
        "at": [
         0,
-        -120,
-        90
+        -90,
+        140
        ],
-       "wave": 1
+       "wave": 0
+      }
+     ],
+     "stages": [
+      {
+       "objective": "Climb the needle",
+       "wave": 0,
+       "reach": [
+        0,
+        0,
+        270,
+        32
+       ],
+       "fight": false
       },
       {
-       "type": "heli",
-       "at": [
-        -120,
-        0,
-        90
-       ],
+       "objective": "Silence the summit guns",
+       "wave": 0
+      },
+      {
+       "objective": "The Frost Colossus",
        "wave": 1
       }
      ],
@@ -4266,10 +4413,10 @@
        "pilot": "giant",
        "at": [
         0,
-        -150,
-        0
+        0,
+        180
        ],
-       "ap_pct": 260,
+       "ap_pct": 220,
        "scale_pct": 260,
        "speed_pct": 60,
        "damage_pct": 140,
@@ -4811,190 +4958,83 @@
     {
      "id": "rime-3",
      "name": "THAW LINE",
-     "scene": "Raiders want the relay pylons on the western shelf. Lose two and the moon goes silent.",
-     "kind": "defend",
+     "scene": "A crawler is carrying the relay core across the ice to the western shelf. Raiders want the core, not you: keep the crawler alive to the end of its route.",
+     "kind": "escort",
      "start": [
-      -400,
-      -610,
-      0
+      440,
+      -720,
+      90
      ],
      "reward": "bt-ram",
      "plus": {
-      "rule": "max_lost",
-      "value": 0,
+      "rule": "escort_ap_pct",
+      "value": 70,
       "reward": "gn-reactor"
      },
      "requires": [
       "rime-1"
      ],
-     "protect": [
-      {
-       "at": [
+     "escort": {
+      "name": "RELAY CRAWLER",
+      "route": [
+       [
+        400,
+        -760
+       ],
+       [
+        200,
+        -600
+       ],
+       [
+        0,
+        -420
+       ],
+       [
+        -200,
+        -560
+       ],
+       [
         -400,
         -700
-       ],
-       "size": [
-        18,
-        18,
-        40
-       ],
-       "ap": 3000
-      },
-      {
-       "at": [
-        -460,
-        -740
-       ],
-       "size": [
-        18,
-        18,
-        28
-       ],
-       "ap": 3000
-      },
-      {
-       "at": [
-        -340,
-        -740
-       ],
-       "size": [
-        18,
-        18,
-        28
-       ],
-       "ap": 3000
-      },
-      {
-       "at": [
-        -450,
-        -650
-       ],
-       "size": [
-        18,
-        18,
-        24
-       ],
-       "ap": 3000
-      },
-      {
-       "at": [
-        -350,
-        -650
-       ],
-       "size": [
-        18,
-        18,
-        24
-       ],
-       "ap": 3000
-      }
-     ],
-     "may_lose": 2,
+       ]
+      ],
+      "speed_ms": 7,
+      "ap": 7000,
+      "radius_m": 8
+     },
      "units": [
       {
        "type": "tank",
        "at": [
-        -400,
-        -550,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -257,
-        -653,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -311,
-        -821,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -488,
-        -821,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -542,
-        -653,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        -400,
-        -580,
-        80
-       ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        -296,
-        -760,
-        80
-       ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        -503,
-        -760,
-        80
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -355,
-        -556,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -250,
-        -697,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -351,
-        -841,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
+        150,
         -520,
-        -789,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        230,
+        -500,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        120,
+        -660,
+        70
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -60,
+        -330,
         0
        ],
        "wave": 1
@@ -5002,8 +5042,8 @@
       {
        "type": "tank",
        "at": [
-        -522,
-        -613,
+        40,
+        -320,
         0
        ],
        "wave": 1
@@ -5011,8 +5051,26 @@
       {
        "type": "tank",
        "at": [
-        -315,
-        -576,
+        -20,
+        -520,
+        0
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        -380,
+        80
+       ],
+       "wave": 1
+      },
+      {
+       "type": "tank",
+       "at": [
+        -300,
+        -520,
         0
        ],
        "wave": 2
@@ -5020,44 +5078,8 @@
       {
        "type": "tank",
        "at": [
-        -250,
-        -711,
-        0
-       ],
-       "wave": 2
-      },
-      {
-       "type": "tank",
-       "at": [
-        -335,
-        -835,
-        0
-       ],
-       "wave": 2
-      },
-      {
-       "type": "tank",
-       "at": [
-        -484,
-        -823,
-        0
-       ],
-       "wave": 2
-      },
-      {
-       "type": "tank",
-       "at": [
-        -549,
-        -688,
-        0
-       ],
-       "wave": 2
-      },
-      {
-       "type": "tank",
-       "at": [
-        -464,
-        -564,
+        -320,
+        -640,
         0
        ],
        "wave": 2
@@ -5065,38 +5087,72 @@
       {
        "type": "heli",
        "at": [
-        -342,
-        -594,
-        90
+        -260,
+        -600,
+        70
        ],
        "wave": 2
       },
       {
        "type": "heli",
        "at": [
-        -337,
-        -802,
-        90
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        -519,
-        -702,
+        -340,
+        -560,
         90
        ],
        "wave": 2
       }
      ],
-     "time_limit_s": 480,
-     "power_pct": 120
+     "clear": [
+      [
+       340,
+       -820,
+       500,
+       -700
+      ],
+      [
+       140,
+       -820,
+       460,
+       -540
+      ],
+      [
+       -60,
+       -660,
+       260,
+       -360
+      ],
+      [
+       -260,
+       -620,
+       60,
+       -360
+      ],
+      [
+       -460,
+       -760,
+       -140,
+       -500
+      ],
+      [
+       -560,
+       -860,
+       -240,
+       -540
+      ],
+      [
+       240,
+       -900,
+       560,
+       -600
+      ]
+     ],
+     "time_limit_s": 300
     },
     {
      "id": "rime-4",
      "name": "TWIN SHADOWS",
-     "scene": "Two light frames that fight as one. When one dodges, the other fires.",
+     "scene": "Two light frames that fight as one, inside the storm front where nothing locks. No lock-on, and the storm drains EN: fight them by eye.",
      "kind": "duel",
      "start": [
       400,
@@ -5112,6 +5168,16 @@
      "requires": [
       "rime-2",
       "rime-3"
+     ],
+     "jam": [
+      {
+       "at": [
+        400,
+        -700,
+        420
+       ],
+       "drain_pct": 4
+      }
      ],
      "mechs": [
       {
@@ -6864,7 +6930,7 @@
         0,
         180
        ],
-       "ap_pct": 900,
+       "ap_pct": 550,
        "scale_pct": 1000,
        "speed_pct": 45,
        "damage_pct": 220,
@@ -6881,6 +6947,16 @@
         "shoulder_weapon": "gc-anvil"
        },
        "turrets": []
+      }
+     ],
+     "resupply": [
+      {
+       "at": [
+        0,
+        1100,
+        0
+       ],
+       "r_m": 12
       }
      ]
     },
@@ -6988,6 +7064,16 @@
          -60
         ]
        ]
+      }
+     ],
+     "resupply": [
+      {
+       "at": [
+        0,
+        1700,
+        0
+       ],
+       "r_m": 12
       }
      ]
     },
@@ -7297,6 +7383,34 @@
          350
         ]
        ]
+      }
+     ],
+     "resupply": [
+      {
+       "at": [
+        63,
+        -175,
+        260
+       ],
+       "fortress": 0,
+       "r_m": 14
+      },
+      {
+       "at": [
+        -63,
+        175,
+        260
+       ],
+       "fortress": 0,
+       "r_m": 14
+      },
+      {
+       "at": [
+        0,
+        1900,
+        0
+       ],
+       "r_m": 12
       }
      ]
     },
@@ -8060,6 +8174,34 @@
          1050
         ]
        ]
+      }
+     ],
+     "resupply": [
+      {
+       "at": [
+        189,
+        -525,
+        543
+       ],
+       "fortress": 0,
+       "r_m": 14
+      },
+      {
+       "at": [
+        -189,
+        525,
+        543
+       ],
+       "fortress": 0,
+       "r_m": 14
+      },
+      {
+       "at": [
+        0,
+        3100,
+        0
+       ],
+       "r_m": 12
       }
      ]
     },
@@ -9343,6 +9485,34 @@
          3500
         ]
        ]
+      }
+     ],
+     "resupply": [
+      {
+       "at": [
+        630,
+        -1750,
+        977
+       ],
+       "fortress": 0,
+       "r_m": 14
+      },
+      {
+       "at": [
+        -630,
+        1750,
+        977
+       ],
+       "fortress": 0,
+       "r_m": 14
+      },
+      {
+       "at": [
+        0,
+        5200,
+        0
+       ],
+       "r_m": 12
       }
      ],
      "mechs": [

@@ -293,6 +293,14 @@ FOUNDRY_LIGHTS = [light(*fx_(0, 70), 30, [fx_(0, 55), fx_(0, -5)], r=9, speed=7)
 REACTORS = [fx_(-50, 10), fx_(50, 10), fx_(0, -60)]
 FOUNDRY_MINES = [fx_(0, 30), fx_(-35, 0), fx_(35, -10), fx_(0, -25), fx_(-50, -60), fx_(50, -60)]
 
+# Rime: the great needle, and the route across the ice
+NEEDLE_TOP = 260
+LEDGES = [(int(40 * math.cos(math.radians(60 * k + 20))), int(40 * math.sin(math.radians(60 * k + 20))), 36 + 36 * k) for k in range(6)]
+NEEDLE = ([block(0, 0, 30, 30, NEEDLE_TOP), block(0, 0, 60, 60, 6, NEEDLE_TOP)]
+          + [block(x, z, 18, 18, 4, b) for x, z, b in LEDGES])
+NEEDLE_LIFT = machine("lift", -45, 45, 16, 16, 4, base=222, path=[(0, 0, 0), (0, 0, 36)], speed=8, wait=1000)
+CROSSING = [(400, -760), (200, -600), (0, -420), (-200, -560), (-400, -700)]
+
 planets = []
 
 # ---------------- 1 HALDEN ----------------
@@ -474,25 +482,33 @@ planets.append(dict(
            clearings=[dict(x_m=0, z_m=900, r_m=90), dict(x_m=0, z_m=0, r_m=200), dict(x_m=relay[0], z_m=relay[1], r_m=160),
                       dict(x_m=400, z_m=-700, r_m=200)]),
   missions=[
-    m("rime-1", "WHITEOUT", "Gunships and turrets hold the ice plain. Clear it; mind your footing.",
-      "destroy", [0, 220, 0], "hd-bastille", plus("max_rounds", 40, "cr-anvil"),
-      units=ring(0, 0, 160, 4, "turret", -1) + ring(0, 0, 120, 4, "heli", 90, 1), time_limit_s=360),
+    m("rime-1", "WHITEOUT", "Three guns on the summit of Rime's great needle fire down its whole length. Climb it, ledge by ledge and up the lift, past the mines; silence the guns; and the Frost Colossus waits on top.",
+      "climb", [0, 160, 0], "hd-bastille", plus("under_seconds", 180, "cr-anvil"),
+      pads=NEEDLE, machines=[NEEDLE_LIFT],
+      units=[unit("turret", 22, 0, -1), unit("turret", -22, 0, -1), unit("turret", 0, -22, -1)]
+            + [unit("mine", x, z, b + 4) for x, z, b in LEDGES[1::2]]
+            + ring(0, 0, 90, 2, "heli", 140),
+      stages=[stage("Climb the needle", reach=[0, 0, NEEDLE_TOP + 10, 32], fight=False),
+              stage("Silence the summit guns"),
+              stage("The Frost Colossus", wave=1)],
+      time_limit_s=360),
     m("rime-2", "SKATER", "Rime's racers land on the needle tops in low gravity and thread the ice walls. Little grip, less margin.",
       "race", [-14, 950, 0], "ar-grip", plus("under_seconds", 62, "rj-lynx"), weapons=False,
       mechs=[dict(name="FROST · SKATER", pilot="racer_hot", at=[14, 950, 0], ap_pct=100, racer=True,
                   loadout=dict(head="hd-kestrel", core="cr-vane", arms="ar-reed", legs="lg-wisp", booster="bt-surge",
                                generator="gn-corona", right_weapon="rf-marrow", left_weapon="rf-marrow", shoulder_weapon="mp-swarm"))],
       course=RIME_COURSE, machines=RIME_MACHINES, pads=RIME_BLOCKS, clear=corridors([-14, 950], RIME_COURSE, 45), time_limit_s=180),
-    m("rime-3", "THAW LINE", "Raiders want the relay pylons on the western shelf. Lose two and the moon goes silent.",
-      "defend", [relay[0], relay[1] + 90, 0], "bt-ram", plus("max_lost", 0, "gn-reactor"), requires=["rime-1"],
-      protect=[dict(at=[relay[0] + dx, relay[1] + dz], size=[18, 18, h], ap=3000) for dx, dz, h in
-               [(0, 0, 40), (-60, -40, 28), (60, -40, 28), (-50, 50, 24), (50, 50, 24)]],
-      may_lose=2,
-      units=ring(relay[0], relay[1], 150, 5, "tank", 0, 0) + ring(relay[0], relay[1], 120, 3, "heli", 80, 1)
-            + ring(relay[0], relay[1], 150, 5, "tank", 0, 1, 0.3) + ring(relay[0], relay[1], 150, 6, "tank", 0, 2, 0.6) + ring(relay[0], relay[1], 120, 3, "heli", 90, 2, 0.5),
-      time_limit_s=480, power_pct=120),
-    m("rime-4", "TWIN SHADOWS", "Two light frames that fight as one. When one dodges, the other fires.",
+    m("rime-3", "THAW LINE", "A crawler is carrying the relay core across the ice to the western shelf. Raiders want the core, not you: keep the crawler alive to the end of its route.",
+      "escort", [440, -720, 90], "bt-ram", plus("escort_ap_pct", 70, "gn-reactor"), requires=["rime-1"],
+      escort=dict(name="RELAY CRAWLER", route=[list(p) for p in CROSSING], speed_ms=7, ap=7000, radius_m=8),
+      units=[unit("tank", 150, -520, 0), unit("tank", 230, -500, 0), unit("heli", 120, -660, 70)]
+            + [unit("tank", -60, -330, 0, 1), unit("tank", 40, -320, 0, 1), unit("tank", -20, -520, 0, 1), unit("heli", 0, -380, 80, 1)]
+            + [unit("tank", -300, -520, 0, 2), unit("tank", -320, -640, 0, 2), unit("heli", -260, -600, 70, 2), unit("heli", -340, -560, 90, 2)],
+      clear=corridors([440, -760], [dict(at=list(p)) for p in CROSSING], 60) + [[-560, -860, -240, -540], [240, -900, 560, -600]],
+      time_limit_s=300),
+    m("rime-4", "TWIN SHADOWS", "Two light frames that fight as one, inside the storm front where nothing locks. No lock-on, and the storm drains EN: fight them by eye.",
       "duel", [400, -540, 0], "sg-thunder", plus("min_ap_pct", 40, "mp-hydra"), requires=["rime-2", "rime-3"],
+      jam=[dict(at=[400, -700, 420], drain_pct=4)],
       mechs=[dict(name="SHADOW A", pilot="twin", at=[340, -880, 180], ap_pct=80,
                   loadout=dict(head="hd-kestrel", core="cr-vane", arms="ar-reed", legs="lg-wisp", booster="bt-comet",
                                generator="gn-ember", right_weapon="sg-brand", left_weapon="rf-marrow", shoulder_weapon="mp-swarm")),
@@ -569,10 +585,16 @@ def add_giant(pid, mid, g):
 add_giant("halden", "halden-3", giant("SIEGE WALKER", [yards[0], yards[1] - 170, 0], 240, 260, wave=2))
 add_giant("sere", "sere-2", giant("DUNE STRIDER", [-450, -80, 0], 220, 220, wave=1))
 add_giant("spindle", "spindle-2", giant("RING HULK", [0, -160, 0], 200, 220))
-add_giant("rime", "rime-1", giant("FROST COLOSSUS", [0, -150, 0], 260, 260, wave=1))
+add_giant("rime", "rime-1", giant("FROST COLOSSUS", [0, 0, 180], 260, 220, wave=1))
 add_giant("cinder", "cinder-3", giant("MAGMA TITAN", [foundry[0], foundry[1] - 170, 0], 280, 280, wave=2))
 
 # ---------------- 6 TETHYS (hidden) ----------------
+def deck_resupply(L, deck_y, fi=0):
+    """Two resupply pads on an arms fort's deck, clear of its towers and guns."""
+    top = deck_y + max(20, L // 90)
+    W = L * 3 // 10
+    return [dict(at=[W * 3 // 10, -L // 4, top], fortress=fi, r_m=14), dict(at=[-W * 3 // 10, L // 4, top], fortress=fi, r_m=14)]
+
 def fortress(name, L, deck_y, legs_per_side, towers, weak_ap, core_ap, path, speed, size_x, turrets_per_side, batteries, engines=0):
     """An arms fort L metres long: legs with ledges to climb, a deck, towers,
     the core on the tallest tower, weak points on the leg joints (and engines),
@@ -635,24 +657,30 @@ planets.append(dict(
   missions=[
     m("tethys-1", "FIRST GIANT", "A frame ten times your height walks the glass, armed like any frame. Find out what it can take.",
       "duel", [0, 900, 0], "hd-argus", plus("min_ap_pct", 60, "cr-aegis"), time_limit_s=420, power_pct=120,
-      mechs=[giant("TITAN-CLASS", [0, 0, 180], 1000, 900, speed=45, damage=220)]),
+      # 550%: about seven tenths of the starting frame's ammunition, with one resupply behind you
+      mechs=[giant("TITAN-CLASS", [0, 0, 180], 1000, 550, speed=45, damage=220)],
+      resupply=[dict(at=[0, 1100, 0], r_m=12)]),
     m("tethys-2", "TWIN COLOSSI", "Two frames thirty times your height, each with guns riding its shoulders. They walk together.",
       "duel", [0, 1500, 0], "ar-talon", plus("under_seconds", 300, "lt-crawler"), requires=["tethys-1"], time_limit_s=540,
       # 240% AP each and three guns apiece: the pair and their guns take about two thirds of the
       # starting frame's ammunition, where at 1500% they took four times all of it
       mechs=[giant("COLOSSUS ALPHA", [-320, 0, 180], 3000, 240, speed=30, damage=170, turrets=GIANT_SHOULDERS),
-             giant("COLOSSUS BETA", [320, -500, 180], 3000, 240, speed=30, damage=170, turrets=GIANT_SHOULDERS)]),
+             giant("COLOSSUS BETA", [320, -500, 180], 3000, 240, speed=30, damage=170, turrets=GIANT_SHOULDERS)],
+      resupply=[dict(at=[0, 1700, 0], r_m=12)]),
     m("tethys-3", "WALKING BASTION", "An arms fort seven hundred metres long, on four legs. Climb its legs, break the joints, and the core on its tower opens.",
       "duel", [0, 1700, 0], "bt-nova", plus("min_ap_pct", 50, "pr-corona"), requires=["tethys-2"], time_limit_s=720, power_pct=130,
-      fortresses=[fortress("BASTION · ARMS FORT", 700, 240, 2, [0], 6000, 30000, [[0, 0], [0, -1500]], 10, 100, 4, [[-1, -1], [1, 1]])]),
+      fortresses=[fortress("BASTION · ARMS FORT", 700, 240, 2, [0], 6000, 30000, [[0, 0], [0, -1500]], 10, 100, 4, [[-1, -1], [1, 1]])],
+      resupply=deck_resupply(700, 240) + [dict(at=[0, 1900, 0], r_m=12)]),
     m("tethys-4", "LEVIATHAN", "Two kilometres of fortress on six legs, with engines astern and guns end to end.",
       "duel", [0, 2900, 0], "gn-singularity", plus("under_seconds", 600, "pc-nova"), requires=["tethys-3"], time_limit_s=960, power_pct=135,
       fortresses=[fortress("LEVIATHAN · ARMS FORT", 2100, 520, 3, [-600, 0, 600], 9000, 50000, [[0, 0], [1500, -800]], 7, 300, 8,
-                           [[-1, -1], [1, -1], [-1, 1], [1, 1]], engines=2)]),
+                           [[-1, -1], [1, -1], [-1, 1], [1, 1]], engines=2)],
+      resupply=deck_resupply(2100, 520) + [dict(at=[0, 3100, 0], r_m=12)]),
     m("tethys-5", "THE ARK", "Seven kilometres long and taller than any mountain on Halden, with escorts at its feet. Whoever built it is not coming back for it.",
       "duel", [0, 5000, 0], "pb-ramspike", plus("min_ap_pct", 40, "cr-ark"), requires=["tethys-4"], time_limit_s=1500, power_pct=140,
       fortresses=[fortress("THE ARK · ARMS FORT", 7000, 900, 4, [-2200, 0, 2200], 14000, 80000, [[0, 0], [0, -2500]], 4, 1000, 12,
                            [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]], engines=3)],
+      resupply=deck_resupply(7000, 900) + [dict(at=[0, 5200, 0], r_m=12)],
       mechs=[dict(name="ESCORT ONE", pilot="twin", at=[-150, 3800, 180], ap_pct=90,
                   loadout=dict(head="hd-kestrel", core="cr-vane", arms="ar-reed", legs="lg-wisp", booster="bt-comet",
                                generator="gn-ember", right_weapon="sg-brand", left_weapon="rf-marrow", shoulder_weapon="mp-swarm")),

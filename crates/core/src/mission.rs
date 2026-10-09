@@ -171,6 +171,8 @@ pub enum PlusRule {
     MaxFloorSeconds,
     /// be seen by a searchlight no more than this many times
     MaxAlarms,
+    /// bring the escort home with at least this share of its AP, in percent
+    EscortApPct,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -571,6 +573,7 @@ impl Mission {
                 PlusRule::MaxLost => w.structures_lost() <= v,
                 PlusRule::MaxFloorSeconds => self.floor_ticks <= v * TICKS_PER_SECOND,
                 PlusRule::MaxAlarms => self.alarms <= v,
+                PlusRule::EscortApPct => w.escort_ap_pct() >= v,
             }
     }
 
@@ -584,6 +587,7 @@ impl Mission {
             PlusRule::MaxLost => w.structures_lost(),
             PlusRule::MaxFloorSeconds => self.floor_ticks / TICKS_PER_SECOND,
             PlusRule::MaxAlarms => self.alarms,
+            PlusRule::EscortApPct => w.escort_ap_pct(),
         }
     }
 
@@ -819,6 +823,14 @@ impl World {
         m.course
             .get(self.player().course_next)
             .map(|g| self.gate_point(g))
+    }
+
+    /// The escort's AP, in percent; 0 with no escort.
+    pub fn escort_ap_pct(&self) -> i32 {
+        self.escort.as_ref().map_or(0, |e| {
+            let c = &self.craft[e.craft];
+            c.ap * 100 / c.max_ap.max(1)
+        })
     }
 
     /// The structures that have fallen.
@@ -1455,6 +1467,101 @@ mod tests {
         assert_eq!(w.mechs[ace].ap, ap - 500, "the window");
         run(&mut w, 7 * 60 + 1);
         assert!(w.mechs[ace].pulse.unwrap().up(), "whole again");
+    }
+
+    #[test]
+    fn the_crawler_drives_its_route_and_its_arrival_wins() {
+        let mut w = mission_world("rime-3");
+        let e = w.escort.clone().unwrap();
+        let start = w.craft[e.craft].pos;
+        // keep the raiders out of it
+        for c in w.craft.iter_mut().filter(|c| c.team == Team::Enemy) {
+            c.alive = false;
+        }
+        w.mission.as_mut().unwrap().reserve_craft.clear();
+        run(&mut w, 10 * 60);
+        assert!(
+            w.map_delta(start, w.craft[e.craft].pos).len_xz() > int(60),
+            "it moves along"
+        );
+        run(&mut w, 200 * 60);
+        assert!(w.escort.as_ref().unwrap().arrived);
+        assert_eq!(outcome(&w), (Some(true), None));
+    }
+
+    #[test]
+    fn raiders_go_for_the_crawler_and_losing_it_fails() {
+        let mut w = mission_world("rime-3");
+        let k = w.escort.as_ref().unwrap().craft;
+        // the player far away and high up, out of every fight
+        w.mechs[0].body.pos = v3(-int(700), int(400), int(900));
+        let ap = w.craft[k].ap;
+        for _ in 0..60 * 60 {
+            w.mechs[0].body.pos = v3(-int(700), int(400), int(900));
+            w.tick(Controls::default());
+            if !w.craft[k].alive {
+                break;
+            }
+        }
+        assert!(w.craft[k].ap < ap, "the raiders shot at the crawler");
+        w.hurt(Target::Craft(k), 1_000_000, 0);
+        run(&mut w, 1);
+        assert_eq!(outcome(&w), (Some(false), Some("fail_escort")));
+    }
+
+    #[test]
+    fn in_the_storm_front_nothing_locks_and_en_drains() {
+        let mut w = mission_world("rime-4");
+        let twin = w.mechs.iter().position(|m| m.team == Team::Enemy).unwrap();
+        // stand still facing a twin, inside the field
+        let (me, them) = (w.mechs[0].chest(), w.mechs[twin].chest());
+        let (yaw, pitch) = crate::geom::yaw_pitch_of(them.sub(me));
+        w.mechs[0].body.aim_yaw = yaw;
+        w.mechs[0].body.aim_pitch = pitch;
+        let en = w.mechs[0].body.en;
+        run(&mut w, 30);
+        assert!(w.jammed());
+        assert_eq!(w.mechs[0].lock, None);
+        assert!(w.mechs[0].body.en < en, "drained");
+        w.mission.as_mut().unwrap().jam.clear();
+        let (me, them) = (w.mechs[0].chest(), w.mechs[twin].chest());
+        let (yaw, pitch) = crate::geom::yaw_pitch_of(them.sub(me));
+        w.mechs[0].body.aim_yaw = yaw;
+        w.mechs[0].body.aim_pitch = pitch;
+        run(&mut w, 1);
+        assert!(w.mechs[0].lock.is_some(), "out of the field it locks");
+    }
+
+    #[test]
+    fn the_needle_is_climbed_then_its_guns_silenced_then_the_colossus_comes() {
+        let mut w = mission_world("rime-1");
+        let mine_heights: Vec<i32> = w
+            .craft
+            .iter()
+            .filter(|c| c.kind == CraftKind::Mine)
+            .map(|c| c.pos.y >> 16)
+            .collect();
+        assert!(
+            mine_heights.iter().all(|h| *h >= 70),
+            "mines lie on the ledges: {mine_heights:?}"
+        );
+        assert_eq!(stage(&w), 0);
+        put(&mut w, 0, 266, 0);
+        assert_eq!(stage(&w), 1, "on the summit");
+        assert!(w.mechs.iter().all(|m| m.team == Team::Player), "no colossus yet");
+        kill_all(&mut w);
+        let colossus = w
+            .mechs
+            .iter()
+            .find(|m| m.name == "FROST COLOSSUS")
+            .expect("it comes");
+        assert!(
+            colossus.body.pos.y >= int(260),
+            "on top: {}",
+            colossus.body.pos.y >> 16
+        );
+        kill_all(&mut w);
+        assert_eq!(outcome(&w), (Some(true), None));
     }
 
     #[test]

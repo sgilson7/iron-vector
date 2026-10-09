@@ -825,8 +825,12 @@ impl World {
             }
         }
         // a jamming field drains EN
-        if self.jammed() {
-            let drain: i32 = m.jam.iter().map(|j| j.drain_pct).max().unwrap_or(0);
+        // (the mission is out of the world here, so the field is read from it directly)
+        let jam = m
+            .jam
+            .iter()
+            .filter(|j| j.covers(chest, |a, b| self.map_delta(a, b)));
+        if let Some(drain) = jam.map(|j| j.drain_pct).max() {
             let b = &mut self.mechs[0];
             b.body.en = (b.body.en - b.tuning.en_capacity * drain / 100 / TICKS_PER_SECOND).max(0);
         }
@@ -1833,7 +1837,17 @@ pub(crate) mod tests {
             .filter(|m| m.team == Team::Enemy)
             .map(|m| m.ap as i64)
             .sum();
-        let craft: i64 = w.craft.iter().map(|c| c.ap as i64).sum();
+        // a fortress's guns fall with its core, so only its weak points and core count
+        let craft: i64 = w
+            .craft
+            .iter()
+            .filter(|c| c.team == Team::Enemy)
+            .filter(|c| {
+                !matches!(c.mount, Some((Host::Fortress(_), _)))
+                    || matches!(c.kind, CraftKind::Weak | CraftKind::Core)
+            })
+            .map(|c| c.ap as i64)
+            .sum();
         (magazine, frames + craft)
     }
 
@@ -1846,6 +1860,69 @@ pub(crate) mod tests {
             hostile * 100 <= magazine * 70,
             "the colossi and their guns hold {hostile} AP; the starting frame carries {magazine}"
         );
+    }
+
+    #[test]
+    fn every_fight_fits_the_ammunition_its_resupplies_allow() {
+        // a full magazine, and another for each resupply pad, must hold the mission's
+        // hostiles with room to miss: their AP, every wave and every gun, under 70%
+        let camp = crate::campaign::tests::campaign();
+        let mut over = Vec::new();
+        for m in camp.planets.iter().flat_map(|p| &p.missions) {
+            let w = mission_world(&m.id);
+            let (magazine, now) = magazine_and_hostile_ap(&w);
+            let mi = w.mission.as_ref().unwrap();
+            let later: i64 = mi.reserve_craft.iter().map(|c| c.ap as i64).sum::<i64>()
+                + mi.reserve_mechs
+                    .iter()
+                    .map(|(_, m, t)| m.ap as i64 + t.iter().map(|c| c.ap as i64).sum::<i64>())
+                    .sum::<i64>();
+            let loads = 1 + w.resupply.len() as i64;
+            if (now + later) * 100 > magazine * loads * 70 {
+                over.push(format!(
+                    "{}: {}% of {loads} loads",
+                    m.id,
+                    (now + later) * 100 / (magazine * loads)
+                ));
+            }
+        }
+        assert!(over.is_empty(), "{over:?}");
+    }
+
+    #[test]
+    fn a_resupply_pad_refills_once_and_one_on_a_deck_rides_with_it() {
+        let mut w = mission_world("tethys-3");
+        let deck = w.resupply.iter().position(|r| r.fortress.is_some()).unwrap();
+        for st in &mut w.mechs[0].wstate {
+            st.ammo = 0;
+        }
+        w.mechs[0].ap = w.mechs[0].stats.ap / 4;
+        for _ in 0..10 * 60 {
+            w.tick(Controls::default());
+        }
+        let r = w.resupply[deck].clone();
+        let at = w.fortresses[0].pos.add(r.at);
+        w.mechs[0].body.pos = at;
+        w.mechs[0].body.prev_pos = at;
+        w.mechs[0].body.vel = V3::ZERO;
+        w.mechs[0].body.grounded = true;
+        let ap = w.mechs[0].ap;
+        w.tick(Controls::default());
+        assert!(w.resupply[deck].used, "landed on the moving deck's pad");
+        assert!(
+            w.mechs[0]
+                .wstate
+                .iter()
+                .zip(&w.mechs[0].weapons)
+                .all(|(s, wp)| s.ammo == wp.ammo),
+            "full again"
+        );
+        assert!(w.mechs[0].ap > ap, "and some AP back");
+        for st in &mut w.mechs[0].wstate {
+            st.ammo = 0;
+        }
+        w.tick(Controls::default());
+        assert!(w.mechs[0].wstate.iter().all(|s| s.ammo == 0), "only once");
     }
 
     #[test]

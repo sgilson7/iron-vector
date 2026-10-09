@@ -227,5 +227,7 @@
   "alarm": "ALARM — YOU HAVE BEEN SEEN",
   "scanning": "SCANNING",
   "jammed": "JAMMED — NO LOCK",
-  "plus_max_alarms": "Be seen by the lights no more than {value} times"
+  "plus_max_alarms": "Be seen by the lights no more than {value} times",
+  "plus_escort_ap_pct": "Bring the escort home with at least {value}% AP",
+  "wp_escort": "ESCORT"
 }

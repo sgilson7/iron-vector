@@ -1220,6 +1220,7 @@ pub fn hud(
             let mi = w.mission.as_ref();
             let label = match mi.and_then(|mi| mi.course.get(m.course_next)) {
                 _ if mi.is_some_and(|mi| mi.staged()) => "wp_objective",
+                _ if w.escort.is_some() => "wp_escort",
                 Some(g) => g.kind.label(),
                 None => "wp_checkpoint",
             };
