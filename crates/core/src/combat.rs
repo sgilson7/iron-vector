@@ -173,7 +173,8 @@ pub fn segment_sphere(a: V3, b: V3, c: V3, r: i32) -> Option<i32> {
         0
     } else {
         let proj = ac.x as i64 * d.x as i64 + ac.y as i64 * d.y as i64 + ac.z as i64 * d.z as i64;
-        ((proj << fx::FRAC_BITS) / dd).clamp(0, ONE as i64) as i32
+        // in i128: a long segment's projection, shifted, passes the i64 range
+        (((proj as i128) << fx::FRAC_BITS) / dd as i128).clamp(0, ONE as i128) as i32
     };
     let closest = a.add(d.scale(t));
     let off = closest.sub(c);
@@ -202,6 +203,8 @@ pub enum EffectKind {
     Debris,
     /// a melee strike's arc, facing `yaw`
     Slash,
+    /// a lancer's shot: a line from `pos` along `vel`
+    Beam,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -235,7 +238,15 @@ pub enum CraftKind {
     Generator,
     /// an ally's slow armoured carrier, driving its route
     Crawler,
+    /// a four-legged ground hunter: runs you down, circles, and fires blasting bursts
+    Stalker,
+    /// a sniper emplacement: tracks you with a beam, locks where you are heading, and fires
+    Lancer,
 }
+
+/// A lancer charges this long before it fires, and stops tracking for the last of it.
+pub const LANCER_CHARGE_TICKS: i32 = 96;
+pub const LANCER_LOCK_TICKS: i32 = 20;
 
 /// What a riding unit is mounted on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -278,6 +289,9 @@ pub struct Craft {
     pub mount: Option<(Host, V3)>,
     /// whose side it is on: almost always the enemy's
     pub team: Team,
+    /// a lancer's charge, in ticks left, and the point its beam is on
+    pub charge: i32,
+    pub aim: V3,
 }
 
 impl Weapon {
@@ -314,6 +328,10 @@ mod tests {
         assert!(segment_sphere(a, b, v3(int(5), int(3), 0), int(2)).is_none());
         // a fast shot that would step over a target between ticks still hits it
         assert!(segment_sphere(a, v3(int(12), 0, 0), v3(int(6), 0, 0), int(1)).is_some());
+        // a lancer's 900 m line still finds a frame on it
+        let far = v3(0, 0, -int(900));
+        assert!(segment_sphere(V3::ZERO, far, v3(0, 0, -int(220)), int(3)).is_some());
+        assert!(segment_sphere(V3::ZERO, far, v3(int(5), 0, -int(220)), int(3)).is_none());
     }
 
     #[test]

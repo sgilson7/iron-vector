@@ -305,6 +305,10 @@ planets = []
 
 # ---------------- 1 HALDEN ----------------
 yards = (-360, -300)
+vault = (350, -800)
+# lancers on towers beside the avenue, and on the vault's corners
+LANCER_TOWERS = [(-60, 460, 60), (60, 310, 70), (-60, 160, 55)]
+VAULT_TOWERS = [(vault[0] - 70, vault[1] - 70, 40), (vault[0] + 70, vault[1] - 60, 46)]
 planets.append(dict(
   id="halden", name="HALDEN", opens_at=0,
   blurb="An industrial world of foundries and freight yards, and home port. Its towers are lit all night.",
@@ -359,6 +363,28 @@ planets.append(dict(
       mechs=[dict(name="GATEKEEPER", pilot="brute", at=[0, -1105, 0], ap_pct=170, wave=3,
                   loadout=dict(head="hd-mantle", core="cr-citadel", arms="ar-bastion", legs="lg-bastion", booster="bt-titan",
                                generator="gn-forge", right_weapon="sg-brand", left_weapon="rf-marrow", shoulder_weapon="gc-anvil"))]),
+    m("halden-6", "LONG NIGHT", "The contractor holds Halden from end to end, and it has brought new hunters: lancers that snipe from the towers with a beam you can see coming, and stalkers that run you down on four legs. Take the city back in one night: the north checkpoint, the avenue's towers, the freight yards, the data vault, and out by the south lift.",
+      "assault", [0, 1150, 0], "lr-lancet", plus("under_seconds", 420, "lg-stalker"), requires=["halden-5"],
+      pads=[block(-30, 880, 20, 6, 8), block(30, 860, 20, 6, 8)] + [block(x, z, 16, 16, h) for x, z, h in LANCER_TOWERS]
+           + [block(x, z, 14, 14, h) for x, z, h in VAULT_TOWERS],
+      clear=[[x - 14, z - 14, x + 14, z + 14] for x, z, _ in LANCER_TOWERS],
+      resupply=[dict(at=[yards[0], yards[1] + 110, 0], r_m=12)],
+      units=[unit("tank", -20, 840, 0), unit("tank", 20, 830, 0), unit("tank", 0, 800, 0),
+             unit("turret", -30, 880, -1), unit("turret", 30, 860, -1), unit("heli", 0, 760, 70)]
+            + [unit("lancer", x, z, -1, 1) for x, z, _ in LANCER_TOWERS] + [unit("heli", -40, 300, 80, 1), unit("heli", 40, 200, 90, 1)]
+            + [unit("stalker", yards[0] + dx, yards[1] + dz, 0, 2) for dx, dz in [(-60, -40), (60, -30), (0, 70)]]
+            + [unit("tank", yards[0] - 30, yards[1] - 90, 0, 2), unit("tank", yards[0] + 40, yards[1] - 100, 0, 2)]
+            + [unit("lancer", x, z, -1, 3) for x, z, _ in VAULT_TOWERS]
+            + [unit("stalker", vault[0] - 60, vault[1] + 40, 0, 3), unit("stalker", vault[0] + 60, vault[1] + 30, 0, 3),
+               unit("turret", vault[0] - 20, vault[1] - 30, 0, 3), unit("turret", vault[0] + 20, vault[1] - 30, 0, 3)]
+            + [unit("stalker", vault[0] + dx, vault[1] + 120, 0, 4) for dx in (-40, 0, 40)]
+            + [unit("heli", -60, -1000, 80, 4), unit("heli", 60, -1050, 90, 4)],
+      stages=[stage("Take the north checkpoint"),
+              stage("Silence the lancers on the avenue towers", wave=1),
+              stage("Fight through the freight yards", wave=2, reach=[yards[0], yards[1], 10, 90]),
+              stage("Scan the data vault under its lancers", wave=3, reach=[vault[0], vault[1], 6, 16], hold=4),
+              stage("Reach the south lift: they are coming", wave=4, reach=[0, -1150, 10, 40], fight=False)],
+      time_limit_s=900, power_pct=110),
   ]))
 
 # ---------------- 2 SERE ----------------
@@ -735,7 +761,7 @@ assign = {
  "sere-1": ("lg-bastion", "ar-bastion"), "sere-2": ("hd-mantle", "cr-citadel"), "sere-3": ("bt-titan", "rj-hare"), "sere-4": ("gn-forge", "lr-glint"),
  "spindle-1": ("hd-osprey", "cr-spire"), "spindle-2": ("ar-heron", "lg-gale"), "spindle-3": ("bt-flare", "rf-gatling"), "spindle-4": ("bz-maul", "gn-corona"),
  "rime-1": ("hd-bastille", "cr-anvil"), "rime-2": ("ar-grip", "rj-lynx"), "rime-3": ("bt-ram", "gn-reactor"), "rime-4": ("sg-thunder", "mp-hydra"),
- "halden-5": ("lc-lance", "cr-rampart"),
+ "halden-5": ("lc-lance", "cr-rampart"), "halden-6": ("lr-lancet", "lg-stalker"),
  "cinder-1": ("hd-sentinel", "cr-lattice"), "cinder-2": ("ar-titan", "lg-monolith"), "cinder-3": ("bt-wisp", "lr-spear"), "cinder-4": ("gc-quake", "lc-halo"),
  "tethys-1": ("hd-argus", "cr-aegis"), "tethys-2": ("ar-talon", "lt-crawler"), "tethys-3": ("bt-nova", "pr-corona"),
  "tethys-4": ("gn-singularity", "pc-nova"), "tethys-5": ("pb-ramspike", "cr-ark"),

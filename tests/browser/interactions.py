@@ -14,8 +14,8 @@ copied from the game's own output:
   W in the test field the speed readout is between 90 and 96.
 - The test save (every mission cleared) leaves no part locked; a restart
   locks them again.
-- The star map has 6 planets and 26 missions (Halden and the arena have
-  five each): 32 places to click. The second
+- The star map has 6 planets and 27 missions (Halden six, with the wall
+  and the long night; the arena five): 33 places to click. The second
   planet, Sere, opens when 2 missions are cleared.
 """
 
@@ -93,7 +93,7 @@ def run(page, check, engine):
     # star map
     open_map(page)
     spots = len(page.query_selector_all(".spot:not([hidden])"))
-    check(spots == 32, f"the map shows 6 planets and 26 missions ({spots})")
+    check(spots == 33, f"the map shows 6 planets and 27 missions ({spots})")
     page.click(".spot.planet >> nth=1")
     check(page.inner_text("#planet-name") == "SERE", "clicking a planet shows it")
     check(page.inner_text("#planet-lock") == COPY["opens_at"].replace("{n}", "2"), "Sere opens after two clears")

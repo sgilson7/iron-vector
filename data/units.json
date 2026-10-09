@@ -1,5 +1,5 @@
 {
-  "_note": "Units that are not mechs. Speeds m/s, ranges m, times ms. A mission's power_pct scales ap and gun damage. A mine's gun is its burst: damage and blast_m; it bursts when a frame comes within half its blast. A generator holds up a shield dome.",
+  "_note": "Units that are not mechs. Speeds m/s, ranges m, times ms. A mission's power_pct scales ap and gun damage. A mine's gun is its burst: damage and blast_m; it bursts when a frame comes within half its blast. A generator holds up a shield dome. A stalker runs the player down and circles at shotgun range. A lancer charges for 1.6 s with a beam on the player, locks where the player is heading a third of a second before it fires, and its shot is instant: its gun gives damage, range and reload.",
   "drone": {
     "ap": 700,
     "radius_m": 3,
@@ -103,5 +103,37 @@
     "radius_m": 5,
     "speed_ms": 0,
     "orbit_m": 0
+  },
+  "stalker": {
+    "ap": 3200,
+    "radius_m": 5,
+    "speed_ms": 24,
+    "orbit_m": 0,
+    "gun": {
+      "damage": 110,
+      "speed_ms": 260,
+      "range_m": 120,
+      "burst": 3,
+      "burst_gap_ms": 140,
+      "reload_ms": 1600,
+      "spread_deg": 5,
+      "blast_m": 5
+    }
+  },
+  "lancer": {
+    "ap": 2400,
+    "radius_m": 5,
+    "speed_ms": 0,
+    "orbit_m": 0,
+    "gun": {
+      "damage": 1500,
+      "speed_ms": 1,
+      "range_m": 900,
+      "burst": 1,
+      "burst_gap_ms": 100,
+      "reload_ms": 3500,
+      "spread_deg": 0,
+      "blast_m": 0
+    }
   }
 }

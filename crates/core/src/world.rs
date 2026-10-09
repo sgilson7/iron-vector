@@ -4,7 +4,7 @@
 use crate::campaign::Planet;
 use crate::combat::{
     blast_damage, segment_sphere, Craft, CraftKind, Effect, EffectKind, Host, Shot, Target, Team, Weapon,
-    WeaponState,
+    WeaponState, LANCER_CHARGE_TICKS, LANCER_LOCK_TICKS,
 };
 use crate::content::Proving;
 use crate::course::{self, Machine};
@@ -81,6 +81,10 @@ pub struct Mech {
     /// pulse armour, if it has any
     pub pulse: Option<Pulse>,
 }
+
+/// A stalker closes in from beyond this, and backs off inside the second.
+const STALKER_FAR: i32 = int(70);
+const STALKER_NEAR: i32 = int(35);
 
 /// A melee strike lunges this long, lands on this tick, and is done by the last.
 pub const LUNGE_TICKS: i32 = 12;
@@ -697,6 +701,65 @@ impl World {
                 }
             }
         }
+    }
+
+    /// A lancer's shot: straight from the muzzle through its aim, out to its
+    /// range or the first building; the first of the player's side it meets is hit.
+    fn fire_beam(&mut self, muzzle: V3, aim: V3, g: &Gun) {
+        let dir = self.map_delta(muzzle, aim).norm();
+        let mut end = muzzle.add(dir.scale(int(g.range_m)));
+        if let Some(t) = self.map.segment_hit(muzzle, end) {
+            end = muzzle.lerp(end, t);
+        }
+        let mut hit: Option<(i32, Target)> = None;
+        for (i, m) in self
+            .mechs
+            .iter()
+            .enumerate()
+            .filter(|(_, m)| m.alive && m.team == Team::Player)
+        {
+            for (c, r) in m.spheres() {
+                if let Some(t) = segment_sphere(muzzle, end, c, r) {
+                    if hit.is_none_or(|(bt, _)| t < bt) {
+                        hit = Some((t, Target::Mech(i)));
+                    }
+                }
+            }
+        }
+        for (i, c) in self
+            .craft
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.alive && c.team == Team::Player)
+        {
+            if let Some(t) = segment_sphere(muzzle, end, c.pos, c.radius) {
+                if hit.is_none_or(|(bt, _)| t < bt) {
+                    hit = Some((t, Target::Craft(i)));
+                }
+            }
+        }
+        if let Some((t, who)) = hit {
+            end = muzzle.lerp(end, t);
+            self.hurt(who, g.damage, g.damage * 3 / 5);
+        }
+        self.effects.push(Effect {
+            kind: EffectKind::Beam,
+            pos: muzzle,
+            vel: end.sub(muzzle),
+            age: 0,
+            life: 12,
+            size: ONE,
+            yaw: 0,
+        });
+        self.effects.push(Effect {
+            kind: EffectKind::Blast,
+            pos: end,
+            vel: V3::ZERO,
+            age: 0,
+            life: 16,
+            size: int(5),
+            yaw: 0,
+        });
     }
 
     /// AP a second the ground or the lava takes from frame `i`, where it stands.
@@ -1325,6 +1388,7 @@ impl World {
             .map(|i| self.structure_centre(i))
             .collect();
         let mut volleys: Vec<(V3, V3, Gun)> = Vec::new();
+        let mut beams: Vec<(V3, V3, Gun)> = Vec::new();
         let mut craft = std::mem::take(&mut self.craft);
         for c in &mut craft {
             c.prev_pos = c.pos;
@@ -1428,7 +1492,47 @@ impl World {
                     }
                     c.yaw = crate::geom::yaw_pitch_of(flat).0;
                 }
+                CraftKind::Stalker => {
+                    // run it down, then circle at shotgun range, turning about every four seconds
+                    let to = self.map_delta(c.pos, target);
+                    let flat = v3(to.x, 0, to.z);
+                    let (d, dir) = (flat.len(), flat.norm());
+                    let side = if ((self.tick / 240) as i32 + c.phase).rem_euclid(2) == 0 {
+                        v3(-dir.z, 0, dir.x)
+                    } else {
+                        v3(dir.z, 0, -dir.x)
+                    };
+                    let want = if d > STALKER_FAR {
+                        dir
+                    } else if d < STALKER_NEAR {
+                        side.sub(dir).norm()
+                    } else {
+                        side.add(dir.scale(ONE / 4)).norm()
+                    };
+                    let step = want.scale(c.speed);
+                    let r = c.radius;
+                    let blocked = |p: V3| {
+                        self.map.box_blocked(
+                            v3(p.x - r, c.pos.y + ONE, p.z - r),
+                            v3(p.x + r, c.pos.y + int(4), p.z + r),
+                        )
+                    };
+                    c.vel = V3::ZERO;
+                    for next in [
+                        c.pos.add(step),
+                        c.pos.add(v3(step.x, 0, 0)),
+                        c.pos.add(v3(0, 0, step.z)),
+                    ] {
+                        if !blocked(next) {
+                            c.vel = next.sub(c.pos);
+                            c.pos = v3(self.map.wrap_x(next.x), next.y, next.z);
+                            break;
+                        }
+                    }
+                    c.yaw = crate::geom::yaw_pitch_of(flat).0;
+                }
                 CraftKind::Turret
+                | CraftKind::Lancer
                 | CraftKind::Battery
                 | CraftKind::Weak
                 | CraftKind::Core
@@ -1440,6 +1544,29 @@ impl World {
             let Some(g) = c.gun.filter(|_| c.kind != CraftKind::Mine) else {
                 continue;
             };
+            if c.kind == CraftKind::Lancer {
+                // charge with the beam on the target, lock where it is heading, then fire
+                c.cooldown -= 1;
+                let to = self.map_delta(c.pos, target);
+                let sees = target_alive && to.len() < int(g.range_m) && self.map.clear_line(c.pos, target);
+                if c.charge > 0 {
+                    c.charge -= 1;
+                    if c.charge > LANCER_LOCK_TICKS {
+                        c.aim = target;
+                    } else if c.charge == LANCER_LOCK_TICKS {
+                        c.aim = target.add(target_vel.scale(int(LANCER_LOCK_TICKS)));
+                    }
+                    if c.charge == 0 {
+                        beams.push((c.pos.add(v3(0, int(2), 0)), c.aim, g));
+                        c.cooldown = g.reload_ms * TICKS_PER_SECOND / 1000;
+                    }
+                } else if sees && c.cooldown <= 0 {
+                    c.charge = LANCER_CHARGE_TICKS;
+                    c.aim = target;
+                }
+                c.yaw = crate::geom::yaw_pitch_of(self.map_delta(c.pos, c.aim)).0;
+                continue;
+            }
             // fire at the structure in reach, or at the player in sight
             let at_structure = c.kind == CraftKind::Tank && c.goal.is_none() && aim_at != target;
             let (shoot_at, lead) = if at_structure {
@@ -1470,6 +1597,9 @@ impl World {
             }
         }
         self.craft = craft;
+        for (muzzle, aim, g) in beams {
+            self.fire_beam(muzzle, aim, &g);
+        }
         for (muzzle, aim, g) in volleys {
             let shots = Shot::fire(
                 &Weapon::from_gun(&g),

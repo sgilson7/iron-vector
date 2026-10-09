@@ -1213,6 +1213,27 @@
       "like": "gc-anvil",
       "scale_pct": 104,
       "stats": {"weight": 7800, "en_load": 250, "damage": 945, "impact": 800, "fire_ms": 2600, "speed_ms": 260, "ammo": 20, "range_m": 400, "blast_m": 22}
+    },
+    {
+      "id": "lr-lancet",
+      "slot": "right_weapon",
+      "name": "LR-40 LANCET",
+      "maker": "Contractor salvage",
+      "blurb": "Taken off a lancer emplacement: a slow laser that hits like a battery.",
+      "kind": "laser",
+      "like": "lr-glint",
+      "scale_pct": 106,
+      "stats": {"weight": 5640, "en_load": 494, "damage": 459, "impact": 170, "fire_ms": 1540, "speed_ms": 1400, "ammo": 54, "range_m": 480, "spread_deg": 0}
+    },
+    {
+      "id": "lg-stalker",
+      "slot": "legs",
+      "name": "LG-22 STALKER",
+      "maker": "Contractor salvage",
+      "blurb": "Four-jointed legs cut from a stalker: quick to turn, hard to shake.",
+      "like": "rj-hare",
+      "scale_pct": 106,
+      "stats": {"ap": 3300, "weight": 18375, "en_load": 380, "load_limit": 52000, "walk_kmh": 100, "jump_ms": 33, "stability": 560}
     }
   ]
 }

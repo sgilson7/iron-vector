@@ -45,8 +45,12 @@ fn default_far() -> i32 {
     3200
 }
 
+/// 40 cm: nothing a look shows is ever nearer the camera. The old 12 cm left
+/// too little depth precision far off, so surfaces a few centimetres apart
+/// fought through each other and moving platforms flickered (Sam, 2026-10-09;
+/// the same fix as Food Truck Circus's).
 fn default_near() -> i32 {
-    12
+    40
 }
 
 /// How a planet is drawn on the star map.

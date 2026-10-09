@@ -349,6 +349,21 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
         let root = Affine::translate(pos).then(&Affine::rot_y(yaw));
         let sealed = c.kind == CraftKind::Core && w.core_sealed(i);
         craft_model(&mut b, pal, c.kind, &root, w.tick, alpha, c.radius, sealed);
+        // a lancer's beam while it charges: red as it tracks, white once it has locked
+        if c.kind == CraftKind::Lancer && c.charge > 0 {
+            let from = pos.add(v3(0, int(2), 0));
+            let d = w.map_delta(from, c.aim);
+            let locked = c.charge <= crate::combat::LANCER_LOCK_TICKS;
+            let (col, thick) = if locked {
+                (colour(pal.hazard_trim), ONE / 2)
+            } else {
+                (colour(pal.hazard), ONE / 5)
+            };
+            let line = Affine::translate(from.add(d.scale(ONE / 2)))
+                .then(&Affine::looking(d.norm()))
+                .then(&Affine::scale(v3(thick, thick, d.len())));
+            b.push(Mesh::Cube, &line, col, ONE);
+        }
         if matches!(c.kind, CraftKind::Drone | CraftKind::Heli | CraftKind::Tank) {
             push_shadow(&mut b, w, pos, int(4), shadow);
         }
@@ -381,7 +396,7 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
     }
     // a race's machines: hazards in warning colours, lifts and doors in the course's
     for mc in &w.machines {
-        let at = mc.home.add(mc.prev_offset.lerp(mc.offset, alpha));
+        let at = mc.home.add(drawn_offset(mc, alpha));
         let size = mc.half.scale(int(2));
         let (body, trim) = match mc.role {
             Role::Sweeper | Role::Piston => (colour(pal.hazard), colour(pal.hazard_trim)),
@@ -395,9 +410,11 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
             body,
             if mc.role.hazard() { ONE / 3 } else { 0 },
         );
-        // a glowing band round the top edge, so its shape reads at speed
+        // a glowing band round the top edge, so its shape reads at speed; it
+        // stands a little proud of the top, so the two faces never coincide
+        // and fight in the depth buffer
         let band = boxed(
-            v3(at.x, at.y + mc.half.y - ONE / 4, at.z),
+            v3(at.x, at.y + mc.half.y - ONE / 8, at.z),
             v3(size.x + ONE / 4, ONE / 2, size.z + ONE / 4),
         );
         b.push(Mesh::Cube, &band, trim, ONE);
@@ -502,7 +519,7 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
         let next = w.player().course_next;
         for (k, g) in mi.course.iter().enumerate().skip(next).take(3) {
             let glow = if k == next { ONE } else { ONE / 4 };
-            let at = w.gate_point(g);
+            let at = gate_drawn_at(w, g, alpha);
             let c = match g.kind {
                 GateKind::Ring | GateKind::Pad => colour(pal.checkpoint),
                 GateKind::Boost => colour(pal.boost),
@@ -602,6 +619,14 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
                 );
             }
             EffectKind::Debris => b.push(Mesh::Cube, &place(ONE), dark, 0),
+            EffectKind::Beam => {
+                // a lancer's shot: a bright line that thins as it fades
+                let thick = fx::mul(int(2), ONE - k).max(ONE / 8);
+                let line = Affine::translate(e.pos.add(e.vel.scale(ONE / 2)))
+                    .then(&Affine::looking(e.vel.norm()))
+                    .then(&Affine::scale(v3(thick, thick, e.vel.len())));
+                b.push(Mesh::Cube, &line, colour(pal.hazard_trim), ONE);
+            }
             EffectKind::Slash => {
                 // an arc of light swept across the front, fading as it goes
                 let sweep = fx::mul(deg(120), k) - deg(60);
@@ -617,6 +642,20 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
         }
     }
     b
+}
+
+/// How far a machine is drawn from home, between its last tick and this one.
+fn drawn_offset(mc: &crate::course::Machine, alpha: i32) -> V3 {
+    mc.prev_offset.lerp(mc.offset, alpha)
+}
+
+/// Where a gate is drawn: one riding a machine moves with the machine as it is
+/// drawn, between ticks, so the pad's ring never runs a frame ahead of its lift.
+fn gate_drawn_at(w: &World, g: &crate::course::Gate, alpha: i32) -> V3 {
+    match g.ride.and_then(|r| w.machines.get(r)) {
+        Some(mc) => g.at.add(drawn_offset(mc, alpha)),
+        None => g.at,
+    }
 }
 
 /// A ring of glowing segments standing across the course at `at`.
@@ -811,6 +850,74 @@ fn craft_model(
                 Mesh::Cube,
                 &part(v3(0, int(9), -int(2)), v3(int(6), ONE, ONE)),
                 eye,
+                ONE,
+            );
+        }
+        CraftKind::Stalker => {
+            // a low armoured body on four splayed legs, a red eye forward
+            let body = colour(pal.turret);
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(3), 0), v3(int(6), int(2), int(8))),
+                body,
+                0,
+            );
+            b.push(
+                Mesh::Wedge,
+                &part(v3(0, int(3), -int(5)), v3(int(5), int(2), int(3))),
+                dark,
+                0,
+            );
+            let stride = fx::mul(fx::sin((tick as i32).wrapping_mul(deg(24))), ONE / 2);
+            for (k, (sx, sz)) in [(-1, -1), (1, -1), (-1, 1), (1, 1)].iter().enumerate() {
+                let lift = if k % 3 == 0 { stride } else { -stride };
+                let leg = root
+                    .then(&Affine::translate(v3(
+                        int(4) * sx,
+                        int(2) + lift.max(0),
+                        int(3) * sz,
+                    )))
+                    .then(&Affine::rot_z(deg(35) * sx))
+                    .then(&Affine::scale(v3(ONE, int(5), ONE)));
+                b.push(Mesh::Cube, &leg, dark, 0);
+            }
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(4), -int(6)), v3(int(3), ONE / 2, ONE / 2)),
+                colour(pal.hazard),
+                ONE,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(4), -int(3)), v3(ONE, ONE, int(5))),
+                dark,
+                0,
+            );
+        }
+        CraftKind::Lancer => {
+            // a braced mast with a long barrel and a lens that glows
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, ONE / 2, 0), v3(int(7), ONE, int(7))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(2), 0), v3(int(2), int(3), int(2))),
+                colour(pal.turret),
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(2), -int(5)), v3(ONE / 2, ONE / 2, int(10))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Octa,
+                &part(v3(0, int(2), -int(10)), v3(ONE, ONE, ONE)),
+                colour(pal.hazard),
                 ONE,
             );
         }
@@ -1331,6 +1438,53 @@ mod tests {
         palette().hangar
     }
 
+    #[test]
+    fn a_gate_riding_a_lift_is_drawn_with_the_lift_between_ticks() {
+        let mut w = crate::world::tests::mission_world("halden-2");
+        let g = w
+            .mission
+            .as_ref()
+            .unwrap()
+            .course
+            .iter()
+            .find(|g| g.ride.is_some())
+            .unwrap()
+            .clone();
+        let lift = g.ride.unwrap();
+        // run until the lift is moving
+        for _ in 0..600 {
+            w.tick(crate::mech::Controls::default());
+            if w.machines[lift].offset != w.machines[lift].prev_offset {
+                break;
+            }
+        }
+        let mc = &w.machines[lift];
+        assert_ne!(mc.offset, mc.prev_offset, "the lift moves");
+        for alpha in [0, ONE / 3, ONE] {
+            let pad = gate_drawn_at(&w, &g, alpha);
+            assert_eq!(
+                pad.sub(g.at),
+                drawn_offset(mc, alpha),
+                "the pad keeps to its lift at {alpha}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_look_tells_apart_surfaces_five_centimetres_apart_four_hundred_metres_off() {
+        // a 24-bit depth buffer resolves about z² / (near · 2²⁴) at distance z
+        let c = crate::campaign::tests::campaign();
+        for p in &c.planets {
+            let near_m = p.look.near_cm as i64;
+            let step_cm = 400 * 400 * 100 * 100 / (near_m * (1 << 24));
+            assert!(
+                step_cm < 5,
+                "{}: {step_cm} cm steps at 400 m with a {} cm near plane",
+                p.id,
+                p.look.near_cm
+            );
+        }
+    }
     #[test]
     fn instances_come_grouped_by_mesh_with_byte_offsets_that_follow_each_other() {
         let w = mission_world("halden-3");

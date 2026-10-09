@@ -1220,6 +1220,424 @@
        }
       }
      ]
+    },
+    {
+     "id": "halden-6",
+     "name": "LONG NIGHT",
+     "scene": "The contractor holds Halden from end to end, and it has brought new hunters: lancers that snipe from the towers with a beam you can see coming, and stalkers that run you down on four legs. Take the city back in one night: the north checkpoint, the avenue's towers, the freight yards, the data vault, and out by the south lift.",
+     "kind": "assault",
+     "start": [
+      0,
+      1150,
+      0
+     ],
+     "reward": "lr-lancet",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 420,
+      "reward": "lg-stalker"
+     },
+     "requires": [
+      "halden-5"
+     ],
+     "pads": [
+      {
+       "at": [
+        -30,
+        880
+       ],
+       "size": [
+        20,
+        6,
+        8
+       ]
+      },
+      {
+       "at": [
+        30,
+        860
+       ],
+       "size": [
+        20,
+        6,
+        8
+       ]
+      },
+      {
+       "at": [
+        -60,
+        460
+       ],
+       "size": [
+        16,
+        16,
+        60
+       ]
+      },
+      {
+       "at": [
+        60,
+        310
+       ],
+       "size": [
+        16,
+        16,
+        70
+       ]
+      },
+      {
+       "at": [
+        -60,
+        160
+       ],
+       "size": [
+        16,
+        16,
+        55
+       ]
+      },
+      {
+       "at": [
+        280,
+        -870
+       ],
+       "size": [
+        14,
+        14,
+        40
+       ]
+      },
+      {
+       "at": [
+        420,
+        -860
+       ],
+       "size": [
+        14,
+        14,
+        46
+       ]
+      }
+     ],
+     "clear": [
+      [
+       -74,
+       446,
+       -46,
+       474
+      ],
+      [
+       46,
+       296,
+       74,
+       324
+      ],
+      [
+       -74,
+       146,
+       -46,
+       174
+      ]
+     ],
+     "resupply": [
+      {
+       "at": [
+        -360,
+        -190,
+        0
+       ],
+       "r_m": 12
+      }
+     ],
+     "units": [
+      {
+       "type": "tank",
+       "at": [
+        -20,
+        840,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        20,
+        830,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        0,
+        800,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        -30,
+        880,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "turret",
+       "at": [
+        30,
+        860,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        0,
+        760,
+        70
+       ],
+       "wave": 0
+      },
+      {
+       "type": "lancer",
+       "at": [
+        -60,
+        460,
+        -1
+       ],
+       "wave": 1
+      },
+      {
+       "type": "lancer",
+       "at": [
+        60,
+        310,
+        -1
+       ],
+       "wave": 1
+      },
+      {
+       "type": "lancer",
+       "at": [
+        -60,
+        160,
+        -1
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        -40,
+        300,
+        80
+       ],
+       "wave": 1
+      },
+      {
+       "type": "heli",
+       "at": [
+        40,
+        200,
+        90
+       ],
+       "wave": 1
+      },
+      {
+       "type": "stalker",
+       "at": [
+        -420,
+        -340,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "stalker",
+       "at": [
+        -300,
+        -330,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "stalker",
+       "at": [
+        -360,
+        -230,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -390,
+        -390,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -320,
+        -400,
+        0
+       ],
+       "wave": 2
+      },
+      {
+       "type": "lancer",
+       "at": [
+        280,
+        -870,
+        -1
+       ],
+       "wave": 3
+      },
+      {
+       "type": "lancer",
+       "at": [
+        420,
+        -860,
+        -1
+       ],
+       "wave": 3
+      },
+      {
+       "type": "stalker",
+       "at": [
+        290,
+        -760,
+        0
+       ],
+       "wave": 3
+      },
+      {
+       "type": "stalker",
+       "at": [
+        410,
+        -770,
+        0
+       ],
+       "wave": 3
+      },
+      {
+       "type": "turret",
+       "at": [
+        330,
+        -830,
+        0
+       ],
+       "wave": 3
+      },
+      {
+       "type": "turret",
+       "at": [
+        370,
+        -830,
+        0
+       ],
+       "wave": 3
+      },
+      {
+       "type": "stalker",
+       "at": [
+        310,
+        -680,
+        0
+       ],
+       "wave": 4
+      },
+      {
+       "type": "stalker",
+       "at": [
+        350,
+        -680,
+        0
+       ],
+       "wave": 4
+      },
+      {
+       "type": "stalker",
+       "at": [
+        390,
+        -680,
+        0
+       ],
+       "wave": 4
+      },
+      {
+       "type": "heli",
+       "at": [
+        -60,
+        -1000,
+        80
+       ],
+       "wave": 4
+      },
+      {
+       "type": "heli",
+       "at": [
+        60,
+        -1050,
+        90
+       ],
+       "wave": 4
+      }
+     ],
+     "stages": [
+      {
+       "objective": "Take the north checkpoint",
+       "wave": 0
+      },
+      {
+       "objective": "Silence the lancers on the avenue towers",
+       "wave": 1
+      },
+      {
+       "objective": "Fight through the freight yards",
+       "wave": 2,
+       "reach": [
+        -360,
+        -300,
+        10,
+        90
+       ]
+      },
+      {
+       "objective": "Scan the data vault under its lancers",
+       "wave": 3,
+       "reach": [
+        350,
+        -800,
+        6,
+        16
+       ],
+       "hold_s": 4
+      },
+      {
+       "objective": "Reach the south lift: they are coming",
+       "wave": 4,
+       "reach": [
+        0,
+        -1150,
+        10,
+        40
+       ],
+       "fight": false
+      }
+     ],
+     "time_limit_s": 900,
+     "power_pct": 110
     }
    ]
   },

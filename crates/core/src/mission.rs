@@ -345,6 +345,8 @@ impl Units {
             "core",
             "mine",
             "generator",
+            "stalker",
+            "lancer",
         ] {
             if !u.contains_key(k) {
                 return Err(format!("units: no {k}"));
@@ -378,6 +380,8 @@ pub fn make_unit(
         "core" => CraftKind::Core,
         "mine" => CraftKind::Mine,
         "generator" => CraftKind::Generator,
+        "stalker" => CraftKind::Stalker,
+        "lancer" => CraftKind::Lancer,
         _ => CraftKind::Drone,
     };
     let ap = spec.ap * power / 100;
@@ -408,6 +412,8 @@ pub fn make_unit(
         wave,
         mount: None,
         team: Team::Enemy,
+        charge: 0,
+        aim: at,
     }
 }
 
@@ -1561,6 +1567,134 @@ mod tests {
             colossus.body.pos.y >> 16
         );
         kill_all(&mut w);
+        assert_eq!(outcome(&w), (Some(true), None));
+    }
+
+    /// Halden's avenue with nothing on it but one unit of `kind`, at `at`.
+    fn alone_with(kind: &str, at: V3) -> (World, usize) {
+        let mut w = mission_world("halden-1");
+        w.craft.clear();
+        let u = crate::world::tests::units();
+        w.craft.push(make_unit(kind, &u.0[kind], at, 0, None, 100, 3));
+        w.mission.as_mut().unwrap().time_limit = 0;
+        (w, 0)
+    }
+
+    #[test]
+    fn a_lancer_hits_a_frame_that_holds_its_line_and_misses_one_that_turns_at_the_lock() {
+        use crate::combat::{EffectKind, LANCER_CHARGE_TICKS, LANCER_LOCK_TICKS};
+        for turns in [false, true] {
+            let (mut w, k) = alone_with("lancer", v3(0, int(2), int(1000)));
+            w.mechs[0].body.pos = v3(-int(20), 0, int(780));
+            let ap = w.mechs[0].ap;
+            let mut fired = false;
+            let mut boosted = false;
+            for _ in 0..LANCER_CHARGE_TICKS * 3 {
+                let charge = w.craft[k].charge;
+                // strafe across its line; the dodger boosts back the other way as the beam locks
+                let back = turns && charge > 0 && charge <= LANCER_LOCK_TICKS;
+                let c = Controls {
+                    move_x: if back { -ONE } else { ONE },
+                    quick_boost: back && !boosted,
+                    ..Controls::default()
+                };
+                boosted |= c.quick_boost;
+                w.tick(c);
+                fired |= w.effects.iter().any(|e| e.kind == EffectKind::Beam);
+                if fired {
+                    break;
+                }
+            }
+            assert!(fired, "it fired");
+            if turns {
+                assert_eq!(w.mechs[0].ap, ap, "boosting back at the lock dodges it");
+            } else {
+                assert!(
+                    ap - w.mechs[0].ap >= 1400,
+                    "holding the line is hit hard: lost {}",
+                    ap - w.mechs[0].ap
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn a_stalker_runs_you_down_then_circles_and_never_sits_still() {
+        let (mut w, k) = alone_with("stalker", v3(0, 0, int(500)));
+        w.mechs[0].body.pos = v3(0, 0, int(800));
+        w.mechs[0].ap = i32::MAX / 200;
+        let mut closest = i32::MAX;
+        for _ in 0..20 * 60 {
+            w.mechs[0].body.pos = v3(0, 0, int(800));
+            w.tick(Controls::default());
+            closest = closest.min(w.craft[k].pos.sub(w.mechs[0].body.pos).len_xz());
+        }
+        assert!(closest < int(90), "it closed from 300 m to {}", closest >> 16);
+        let mut moved = 0;
+        for _ in 0..4 * 60 {
+            let before = w.craft[k].pos;
+            w.mechs[0].body.pos = v3(0, 0, int(800));
+            w.tick(Controls::default());
+            moved += w.craft[k].pos.sub(before).len_xz();
+            let d = w.craft[k].pos.sub(w.mechs[0].body.pos).len_xz();
+            assert!(
+                d > int(20) && d < int(110),
+                "it keeps to shotgun range: {}",
+                d >> 16
+            );
+        }
+        assert!(
+            moved > int(40),
+            "and keeps moving: {} m in four seconds",
+            moved >> 16
+        );
+    }
+
+    #[test]
+    fn the_long_night_crosses_all_of_halden_stage_by_stage() {
+        let c = crate::campaign::tests::campaign();
+        let (p, i) = c.find("halden-6").unwrap();
+        assert_eq!(
+            c.planets[p].missions[i].requires,
+            ["halden-5"],
+            "the last of Halden"
+        );
+        let mut w = mission_world("halden-6");
+        let start = w.mechs[0].body.pos;
+        let stages = w.mission.as_ref().unwrap().stages.clone();
+        let end = stages.last().unwrap().reach.unwrap().0;
+        assert!(
+            start.sub(end).len_xz() > int(2000),
+            "it runs the length of the map"
+        );
+        let kinds = |w: &World| {
+            let mut ks: Vec<CraftKind> = w.craft.iter().filter(|c| c.alive).map(|c| c.kind).collect();
+            ks.dedup();
+            ks
+        };
+        for (n, st) in stages.iter().enumerate() {
+            assert_eq!(stage(&w), n);
+            if n == 1 {
+                assert!(
+                    kinds(&w).contains(&CraftKind::Lancer),
+                    "the towers' lancers are up"
+                );
+            }
+            if n == 2 {
+                assert!(
+                    kinds(&w).contains(&CraftKind::Stalker),
+                    "the yards' stalkers are out"
+                );
+            }
+            if st.fight {
+                kill_all(&mut w);
+            }
+            if let Some((p, _)) = st.reach {
+                for _ in 0..=st.hold / 2 {
+                    put(&mut w, p.x >> 16, (p.y >> 16) - 5, p.z >> 16);
+                }
+            }
+        }
         assert_eq!(outcome(&w), (Some(true), None));
     }
 
