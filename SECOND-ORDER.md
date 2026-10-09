@@ -75,3 +75,14 @@ One row per assumption, surprise or open item. **Kind** is *divergence* (what wa
 | E6 | finding | The hidden planet. | Tethys opens at 11 clears and 8 plus challenges, and is left off the star map until then; the map's progress line says how many plus challenges it wants. Its five missions are duels against frames 2, 2.5, 4, 6 and 9 times standard size. | Tests: `the_hidden_planet_stays_off_the_map_until_enough_plus_challenges_are_met`, `every_planet_has_a_giant_and_the_hidden_ones_grow_mission_by_mission`. | done |
 | E7 | finding | The first screenshot of Tethys put the giants a kilometre off, specks in the haze. | | Starts moved in to about 450 m; giants painted in a light scheme with violet lights. | done |
 | E8 | worklist | Whether the giants and melee are fun, and whether The Ark is beatable. | | Sam's playtest. | person |
+
+## Milestone 5: arms forts, + markers
+
+| # | Kind | What was assumed or found | What is true | What changed | Status |
+| --- | --- | --- | --- | --- | --- |
+| F1 | divergence | Tethys's giants were 2–9 times a frame. | Sam wanted "hundreds or thousands times larger … arm forts". | The ramp is 10×, 30× (frames), then 100×, 300×, 1000× arms forts measured by hull length over a 7 m frame. Test `every_planet_has_a_giant_and_the_hidden_one_climbs_ten_thirty_hundred_three_hundred_thousand`. | done |
+| F2 | finding | A fortress could be a scaled mech. | At 100× and up it must be a place: a solid hull you land on, that carries you as it walks, with weak points and a sealed core. Its hull is moving blocks in the map (`Map.movers`) that every collision, floor and shot query sees. | Tests `a_frame_on_a_fortress_deck_is_carried_as_it_walks`, `a_fortress_core_turns_hits_until_its_weak_points_fall_and_then_brings_it_down`, `a_fortress_hull_stops_shots`. | done |
+| F3 | finding | The projection would hold at kilometre ranges. | `2·far·near` overflowed an i32 once the far plane passed about 16 km, and the ground's size overflowed at a 16 km map. | Both computed in i64 or clamped first. Test `a_far_plane_kilometres_away_does_not_overflow`. Looks now carry their own near and far planes. | done |
+| F4 | divergence | The colossus turret offsets were written in centimetres. | The generator multiplies them by 100, so they rode 6 km from their host. The test caught it. | Written in metres. | done |
+| F5 | divergence | The Ark's central tower was a sixth of its length. | That put its core 2.3 km up with nothing to climb. | Towers capped at 320 m (centre) and 200 m. | done |
+| F6 | finding | Sam: "how can you tell if youve gotten the plus mission condition cleared, the node should have some indicator". | A met plus showed only as a gold node with a thin ring, and "CLEARED +" in small type. | A cleared mission wears a + above its node on the hologram: bright gold once met, a dim outline while still to earn. The panel marks a met challenge with a tick in gold, a gold border, and a per-planet tally. | done |

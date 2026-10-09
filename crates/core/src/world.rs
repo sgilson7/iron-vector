@@ -3,7 +3,7 @@
 
 use crate::campaign::Planet;
 use crate::combat::{
-    blast_damage, segment_sphere, Craft, CraftKind, Effect, EffectKind, Shot, Target, Team, Weapon,
+    blast_damage, segment_sphere, Craft, CraftKind, Effect, EffectKind, Host, Shot, Target, Team, Weapon,
     WeaponState,
 };
 use crate::content::Proving;
@@ -11,7 +11,7 @@ use crate::fx::{self, deg, int, ONE};
 use crate::geom::{facing, v3, Affine, V3};
 use crate::map::{Block, Map};
 use crate::mech::{tuning_for, Body, Controls, Tuning, TICKS_PER_SECOND};
-use crate::mission::{make_unit, Gun, Mission, MissionSpec, Units};
+use crate::mission::{make_unit, FortressSpec, Gun, Mission, MissionSpec, Units};
 use crate::model::Rig;
 use crate::parts::{stats, Catalog, Loadout, Slot, Stats, WeaponKind};
 use crate::pilot::{Pilot, Pilots, Senses};
@@ -185,6 +185,36 @@ pub struct Structure {
     pub alive: bool,
 }
 
+/// An arms fort: a hull that walks a path and carries whatever stands on
+/// it, with weak points, a core and guns riding on it as craft.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Fortress {
+    pub name: String,
+    pub pos: V3,
+    pub prev_pos: V3,
+    pub path: Vec<V3>,
+    pub next: usize,
+    pub speed: i32,
+    pub size_x: i32,
+    /// its boxes in the map's movers: from this index, this many
+    pub movers: (usize, usize),
+    /// each box from the footprint, min and max, and its paint
+    pub hull: Vec<(V3, V3, u8)>,
+    pub weak: Vec<usize>,
+    pub core: usize,
+    pub alive: bool,
+}
+
+/// Paint names a hull box may use, in `Paint` order.
+fn hull_paint(name: &str) -> u8 {
+    match name {
+        "secondary" => 1,
+        "dark" => 2,
+        "glow" => 3,
+        _ => 0,
+    }
+}
+
 /// Where the camera stands for a pivot and an aim, pulled in front of any
 /// building between it and the pivot.
 pub fn camera_eye(map: &Map, pivot: V3, yaw: i32, pitch: i32) -> V3 {
@@ -213,6 +243,7 @@ pub struct World {
     pub tick: u32,
     pub kills: u32,
     pub mission: Option<Mission>,
+    pub fortresses: Vec<Fortress>,
 }
 
 fn empty_world(map: Map, player: Mech, seed: u64) -> World {
@@ -227,6 +258,7 @@ fn empty_world(map: Map, player: Mech, seed: u64) -> World {
         tick: 0,
         kills: 0,
         mission: None,
+        fortresses: Vec::new(),
     }
 }
 
@@ -367,7 +399,7 @@ impl World {
                         (k * 7 + j) as i32,
                     );
                     let cm = |n: i32| fx::ratio(n, 100);
-                    t.mount = Some((usize::MAX, v3(cm(*x), cm(*y), cm(*z))));
+                    t.mount = Some((Host::Mech(usize::MAX), v3(cm(*x), cm(*y), cm(*z))));
                     t
                 })
                 .collect();
@@ -377,8 +409,123 @@ impl World {
                 mission.reserve_mechs.push((ms.wave, m, riders));
             }
         }
+        for (fi, f) in spec.fortresses.iter().enumerate() {
+            w.add_fortress(fi, f, units, spec.power_pct);
+        }
         w.mission = Some(mission);
         w
+    }
+
+    /// Sets a fortress down: its hull as moving blocks, its weak points, core
+    /// and guns as craft riding on it.
+    fn add_fortress(&mut self, fi: usize, f: &FortressSpec, units: &Units, power: i32) {
+        let base = v3(int(f.at[0]), 0, int(f.at[1]));
+        let start = self.map.movers.len();
+        let mut hull = Vec::new();
+        for h in &f.hull {
+            let c = v3(int(h.at[0]), int(h.at[1]), int(h.at[2]));
+            let half = v3(int(h.size[0]) / 2, int(h.size[1]) / 2, int(h.size[2]) / 2);
+            let (lo, hi) = (c.sub(half), c.add(half));
+            let paint = hull_paint(&h.paint);
+            hull.push((lo, hi, paint));
+            self.map.movers.push(Block {
+                min: base.add(lo),
+                max: base.add(hi),
+                shade: paint,
+            });
+        }
+        let ride = |kind: &str, at: &[i32; 3], k: usize| {
+            let mut c = make_unit(kind, &units.0[kind], base, 0, None, power, (fi * 31 + k) as i32);
+            c.mount = Some((Host::Fortress(fi), v3(int(at[0]), int(at[1]), int(at[2]))));
+            c
+        };
+        let mut weak = Vec::new();
+        for (k, at) in f.weak_points.iter().enumerate() {
+            let mut c = ride("weak", at, k);
+            c.ap = f.weak_ap;
+            c.max_ap = f.weak_ap;
+            c.radius = int(f.weak_radius_m);
+            weak.push(self.craft.len());
+            self.craft.push(c);
+        }
+        let mut core = ride("core", &f.core, 99);
+        core.ap = f.core_ap;
+        core.max_ap = f.core_ap;
+        core.radius = int(f.core_radius_m);
+        let core_at = self.craft.len();
+        self.craft.push(core);
+        for (k, at) in f.turrets.iter().enumerate() {
+            self.craft.push(ride("turret", at, 200 + k));
+        }
+        for (k, at) in f.batteries.iter().enumerate() {
+            self.craft.push(ride("battery", at, 300 + k));
+        }
+        let path = f.path.iter().map(|[x, z]| v3(int(*x), 0, int(*z))).collect();
+        self.fortresses.push(Fortress {
+            name: f.name.clone(),
+            pos: base,
+            prev_pos: base,
+            path,
+            next: 0,
+            speed: fx::ratio(f.speed_ms, TICKS_PER_SECOND),
+            size_x: f.size_x,
+            movers: (start, f.hull.len()),
+            hull,
+            weak,
+            core: core_at,
+            alive: true,
+        });
+    }
+
+    /// Walks every live fortress one step along its path, carrying whatever
+    /// stands on its decks.
+    fn update_fortresses(&mut self) {
+        for fi in 0..self.fortresses.len() {
+            let f = &mut self.fortresses[fi];
+            f.prev_pos = f.pos;
+            if !f.alive || f.path.is_empty() {
+                continue;
+            }
+            let goal = f.path[f.next % f.path.len()];
+            let to = v3(goal.x - f.pos.x, 0, goal.z - f.pos.z);
+            if to.len() <= f.speed {
+                f.next = (f.next + 1) % f.path.len();
+            }
+            let step = to.norm().scale(f.speed);
+            f.pos = f.pos.add(step);
+            let (start, n) = f.movers;
+            // what stands on a deck is found before the deck moves
+            let riders: Vec<usize> = (0..self.mechs.len())
+                .filter(|&i| {
+                    let m = &self.mechs[i];
+                    let p = m.body.pos;
+                    m.alive
+                        && m.body.grounded
+                        && self.map.movers[start..start + n].iter().any(|b| {
+                            p.y == b.max.y
+                                && p.x >= b.min.x
+                                && p.x <= b.max.x
+                                && p.z >= b.min.z
+                                && p.z <= b.max.z
+                        })
+                })
+                .collect();
+            for b in &mut self.map.movers[start..start + n] {
+                b.min = b.min.add(step);
+                b.max = b.max.add(step);
+            }
+            for i in riders {
+                self.mechs[i].body.pos = self.mechs[i].body.pos.add(step);
+            }
+        }
+    }
+
+    /// Whether a fortress's core is still sealed by a live weak point.
+    pub fn core_sealed(&self, craft: usize) -> bool {
+        match self.craft[craft].mount {
+            Some((Host::Fortress(f), _)) => self.fortresses[f].weak.iter().any(|w| self.craft[*w].alive),
+            _ => false,
+        }
     }
 
     /// An empty bay with the player's frame standing in it, for the garage.
@@ -425,7 +572,7 @@ impl World {
         let idx = self.mechs.len();
         self.mechs.push(m);
         for mut t in riders {
-            t.mount = t.mount.map(|(_, off)| (idx, off));
+            t.mount = t.mount.map(|(_, off)| (Host::Mech(idx), off));
             self.craft.push(t);
         }
     }
@@ -532,6 +679,7 @@ impl World {
             }
             self.fire(i, &c);
         }
+        self.update_fortresses();
         self.update_craft();
         self.update_shots();
         self.update_effects();
@@ -799,14 +947,22 @@ impl World {
                 }
                 continue;
             }
-            // a rider goes where its mech goes, and falls with it
-            if let Some((j, off)) = c.mount {
-                let host = &self.mechs[j];
-                if !host.alive {
+            // a rider goes where its host goes, and falls with it
+            if let Some((host, off)) = c.mount {
+                let at = match host {
+                    Host::Mech(j) => {
+                        let h = &self.mechs[j];
+                        h.alive.then(|| h.frame(h.body.pos, h.body.yaw).apply(off))
+                    }
+                    Host::Fortress(f) => {
+                        let h = &self.fortresses[f];
+                        h.alive.then(|| h.pos.add(off))
+                    }
+                };
+                let Some(at) = at else {
                     c.alive = false;
                     continue;
-                }
-                let at = host.frame(host.body.pos, host.body.yaw).apply(off);
+                };
                 c.vel = at.sub(c.pos);
                 c.pos = at;
             }
@@ -869,7 +1025,7 @@ impl World {
                     }
                     c.yaw = crate::geom::yaw_pitch_of(flat).0;
                 }
-                CraftKind::Turret => {}
+                CraftKind::Turret | CraftKind::Battery | CraftKind::Weak | CraftKind::Core => {}
             }
             let Some(g) = c.gun else { continue };
             // fire at the structure in reach, or at the player in sight
@@ -1089,6 +1245,12 @@ impl World {
                 (m.chest(), gone)
             }
             Target::Craft(i) => {
+                // a sealed core turns every hit
+                let dmg = if self.craft[i].kind == CraftKind::Core && self.core_sealed(i) {
+                    0
+                } else {
+                    dmg
+                };
                 let c = &mut self.craft[i];
                 c.ap -= dmg;
                 let gone = c.alive && c.ap <= 0;
@@ -1114,6 +1276,29 @@ impl World {
                 (centre, gone)
             }
         };
+        // a fallen core brings its fortress down
+        if let (true, Target::Craft(i)) = (destroyed, t) {
+            if let Some((Host::Fortress(f), _)) = self.craft[i]
+                .mount
+                .filter(|_| self.craft[i].kind == CraftKind::Core)
+            {
+                self.fortresses[f].alive = false;
+                let (start, n) = self.fortresses[f].movers;
+                for b in &self.map.movers[start..start + n] {
+                    let c = v3((b.min.x + b.max.x) / 2, b.max.y, (b.min.z + b.max.z) / 2);
+                    let size = (b.max.x - b.min.x).min(int(120));
+                    self.effects.push(Effect {
+                        kind: EffectKind::Blast,
+                        pos: c,
+                        vel: V3::ZERO,
+                        age: 0,
+                        life: 90,
+                        size,
+                        yaw: 0,
+                    });
+                }
+            }
+        }
         if destroyed {
             let hostile = match t {
                 Target::Craft(_) => true,
@@ -1466,12 +1651,12 @@ pub(crate) mod tests {
 
     #[test]
     fn turrets_ride_their_giant_and_fall_with_it() {
-        let mut w = mission_world("tethys-3");
-        let g = w.mechs.iter().position(|m| m.name == "BASTION").unwrap();
+        let mut w = mission_world("tethys-2");
+        let g = w.mechs.iter().position(|m| m.name == "COLOSSUS ALPHA").unwrap();
         let riders: Vec<usize> = (0..w.craft.len())
-            .filter(|i| w.craft[*i].mount.is_some_and(|(j, _)| j == g))
+            .filter(|i| w.craft[*i].mount.is_some_and(|(h, _)| h == Host::Mech(g)))
             .collect();
-        assert_eq!(riders.len(), 4);
+        assert_eq!(riders.len(), 6);
         for _ in 0..120 {
             w.tick(Controls::default());
         }
@@ -1481,7 +1666,7 @@ pub(crate) mod tests {
                 w.craft[r].pos.dist(host.body.pos) < fx::mul(int(10), host.scale),
                 "turret {r} rides along"
             );
-            assert!(w.craft[r].pos.y > int(15), "high on its body");
+            assert!(w.craft[r].pos.y > int(60), "high on its body");
         }
         w.hurt(Target::Mech(g), 100_000_000, 0);
         w.tick(Controls::default());
@@ -1489,9 +1674,9 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn every_planet_has_a_giant_and_the_hidden_ones_grow_mission_by_mission() {
+    fn every_planet_has_a_giant_and_the_hidden_one_climbs_ten_thirty_hundred_three_hundred_thousand() {
         let camp = crate::campaign::tests::campaign();
-        for p in &camp.planets {
+        for p in camp.planets.iter().filter(|p| !p.hidden) {
             assert!(
                 p.missions
                     .iter()
@@ -1501,12 +1686,93 @@ pub(crate) mod tests {
             );
         }
         let tethys = camp.planets.iter().find(|p| p.hidden).unwrap();
+        // times a standard frame: frames by scale, fortresses by length over a 7 m frame
         let sizes: Vec<i32> = tethys
             .missions
             .iter()
-            .map(|m| m.mechs.iter().map(|ms| ms.scale_pct).max().unwrap_or(0))
+            .map(|m| {
+                let frames = m.mechs.iter().map(|ms| ms.scale_pct / 100).max().unwrap_or(0);
+                let forts = m
+                    .fortresses
+                    .iter()
+                    .map(|f| {
+                        let long = f.hull.iter().map(|h| h.size[2]).max().unwrap_or(0);
+                        assert!(
+                            (long - f.size_x * 7).abs() <= f.size_x * 7 / 10,
+                            "{} is {long} m long",
+                            f.name
+                        );
+                        f.size_x
+                    })
+                    .max()
+                    .unwrap_or(0);
+                frames.max(forts)
+            })
             .collect();
-        assert!(sizes.windows(2).all(|s| s[0] < s[1]), "{sizes:?}");
+        assert_eq!(sizes, vec![10, 30, 100, 300, 1000]);
+    }
+
+    fn deck_of(w: &World) -> Block {
+        let (start, n) = w.fortresses[0].movers;
+        // the deck: the box with the largest footprint (its glowing edges are as long, but thin)
+        *w.map.movers[start..start + n]
+            .iter()
+            .max_by_key(|b| (b.max.z - b.min.z) as i64 * (b.max.x - b.min.x) as i64)
+            .unwrap()
+    }
+
+    #[test]
+    fn a_frame_on_a_fortress_deck_is_carried_as_it_walks() {
+        let mut w = mission_world("tethys-3");
+        let deck = deck_of(&w);
+        // beside the central tower, inside the row of guns
+        w.mechs[0].body.pos = v3(int(60), deck.max.y + int(2), (deck.min.z + deck.max.z) / 2);
+        w.mechs[0].body.grounded = false;
+        for _ in 0..60 {
+            w.tick(Controls::default());
+        }
+        assert!(
+            w.mechs[0].body.grounded && w.mechs[0].body.pos.y == deck_of(&w).max.y,
+            "it landed on the deck"
+        );
+        let (before, fort) = (w.mechs[0].body.pos, w.fortresses[0].pos);
+        for _ in 0..120 {
+            w.tick(Controls::default());
+        }
+        let moved = w.fortresses[0].pos.sub(fort);
+        let carried = w.mechs[0].body.pos.sub(before);
+        assert!(moved.len() > int(15), "the fortress walked {}", moved.len());
+        assert!(
+            (carried.z - moved.z).abs() < ONE && (carried.x - moved.x).abs() < ONE,
+            "carried {carried:?} with {moved:?}"
+        );
+    }
+
+    #[test]
+    fn a_fortress_core_turns_hits_until_its_weak_points_fall_and_then_brings_it_down() {
+        let mut w = mission_world("tethys-3");
+        let core = w.fortresses[0].core;
+        let ap = w.craft[core].ap;
+        w.hurt(Target::Craft(core), 1_000_000, 0);
+        assert_eq!(w.craft[core].ap, ap, "sealed");
+        for i in w.fortresses[0].weak.clone() {
+            w.hurt(Target::Craft(i), 1_000_000, 0);
+        }
+        assert!(!w.core_sealed(core));
+        w.hurt(Target::Craft(core), 1_000_000, 0);
+        assert!(!w.fortresses[0].alive);
+        w.tick(Controls::default());
+        assert!(w.craft.iter().all(|c| !c.alive), "every gun on it fell with it");
+        assert_eq!(w.mission.as_ref().unwrap().success, Some(true));
+    }
+
+    #[test]
+    fn a_fortress_hull_stops_shots() {
+        let w = mission_world("tethys-3");
+        let deck = deck_of(&w);
+        let below = v3(0, deck.min.y - int(20), (deck.min.z + deck.max.z) / 2);
+        let above = v3(0, deck.max.y + int(20), below.z);
+        assert!(!w.map.clear_line(below, above));
     }
 
     #[test]

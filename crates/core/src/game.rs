@@ -461,7 +461,7 @@ impl Game {
     fn draw(&mut self) {
         let aspect = fx::div(self.css.0, self.css.1).max(1);
         let cam = self.camera();
-        let vp = render::view_projection(&cam, aspect);
+        let vp = render::view_projection_for(&cam, aspect, &self.look);
         let mut view = vp.0.to_vec();
         view.extend([cam.eye.x, cam.eye.y, cam.eye.z]);
         self.view = view;
@@ -674,7 +674,8 @@ impl Game {
                             "reward": part_name(&m.reward),
                             "plus": revealed.then(|| json!({"rule": m.plus.rule, "value": m.plus.value, "reward": part_name(&m.plus.reward)})),
                             "requires": m.requires.iter().filter_map(|r| c.mission(r).map(|x| x.name.clone())).collect::<Vec<_>>(),
-                            "level": c.level(p, i),
+                                                        "level": c.level(p, i),
+                            "plus_met": self.progress.plus.contains(&m.id),
                         })
                     })
                     .collect();
@@ -683,7 +684,9 @@ impl Game {
                     "blurb": pl.blurb,
                     "gimmick": pl.gimmick,
                     "opens_at": pl.opens_at,
-                    "open": self.progress.planet_open(c, p),
+                                        "open": self.progress.planet_open(c, p),
+                    "cleared": pl.missions.iter().filter(|m| self.progress.cleared.contains(&m.id)).count(),
+                    "plus": pl.missions.iter().filter(|m| self.progress.plus.contains(&m.id)).count(),
                     "missions": missions,
                 })
             })

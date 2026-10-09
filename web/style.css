@@ -186,3 +186,8 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 #d-rewards { list-style: none; padding: 0; margin: 12px 0 0; }
 #d-rewards li { color: #96ffaa; letter-spacing: 0.08em; margin: 3px 0; }
 #d-rewards li.plus { color: #ffd65a; }
+
+/* a met plus challenge, plainly marked */
+#mission-list li.plus { border-color: #ffd65a; box-shadow: inset 3px 0 0 #ffd65a; }
+#mission-list .m-plus.met { color: #ffd65a; font-weight: 700; }
+.tally { color: var(--hud); font-size: 12px; letter-spacing: 0.08em; }

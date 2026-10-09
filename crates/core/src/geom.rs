@@ -231,9 +231,11 @@ impl Mat4 {
         let mut m = [0i32; 16];
         m[0] = fx::div(f, aspect);
         m[5] = f;
-        m[10] = fx::div(far + near, near - far);
+        // in i64: at kilometre ranges far + near and 2·far·near overflow an i32
+        let (n, fr) = (near as i64, far as i64);
+        m[10] = (((fr + n) << fx::FRAC_BITS) / (n - fr)) as i32;
         m[11] = -ONE;
-        m[14] = fx::div(2 * fx::mul(far, near), near - far);
+        m[14] = (((2 * fr * n) >> fx::FRAC_BITS << fx::FRAC_BITS) / (n - fr)) as i32;
         Mat4(m)
     }
 
@@ -350,6 +352,14 @@ mod tests {
                 b.0[k]
             );
         }
+    }
+
+    #[test]
+    fn a_far_plane_kilometres_away_does_not_overflow() {
+        let p = Mat4::perspective(deg(72), ONE, ONE, int(20_000));
+        // (far + near) / (near − far) ≈ −1.0001, 2·far·near / (near − far) ≈ −2.0001
+        assert!((p.0[10] + ONE).abs() < 16, "{}", p.0[10]);
+        assert!((p.0[14] + 2 * ONE).abs() < 16, "{}", p.0[14]);
     }
 
     #[test]

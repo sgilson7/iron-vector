@@ -115,7 +115,7 @@
   "launch": "LAUNCH",
   "back": "BACK TO GARAGE",
   "abort": "ABORT TO GARAGE",
-  "obj_duel": "Defeat the enemy frame",
+  "obj_duel": "Defeat the enemy",
   "objective": "OBJECTIVE",
   "staggered": "STAGGERED",
   "ai_caption": "intent",
@@ -144,7 +144,7 @@
   "standing_locked": "LOCKED",
   "standing_open": "OPEN",
   "standing_cleared": "CLEARED",
-  "standing_plus": "CLEARED +",
+  "standing_plus": "CLEARED ✚",
   "kind_destroy": "DESTROY",
   "kind_race": "RACE",
   "kind_defend": "DEFEND",
@@ -188,5 +188,9 @@
   "stat_lunge_ms": "Lunge m/s",
   "stat_reach_m": "Reach m",
   "hidden_hint": "Something waits beyond the map: {plus} of {need} + challenges met.",
-  "infinite": "∞"
+  "infinite": "∞",
+  "plus_met_mark": "✓ +",
+  "planet_tally": "{cleared} of {total} cleared · {plus} of {total} +",
+  "weak_points": "weak points {up} / {all} — core sealed until they fall",
+  "core_sealed": "CORE SEALED"
 }

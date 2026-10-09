@@ -34,6 +34,19 @@ pub struct Look {
     pub stars: bool,
     /// the colour of buildings a mission asks you to protect
     pub structure: Rgb,
+    /// how far the view reaches, and how near it starts; giants need both larger
+    #[serde(default = "default_far")]
+    pub far_m: i32,
+    #[serde(default = "default_near")]
+    pub near_cm: i32,
+}
+
+fn default_far() -> i32 {
+    3200
+}
+
+fn default_near() -> i32 {
+    12
 }
 
 /// How a planet is drawn on the star map.

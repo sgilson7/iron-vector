@@ -87,7 +87,7 @@ export function makeHud(copy) {
       if (!k) return;
       m.style.transform = `translate(${k.x}px, ${k.y}px)`;
       m.classList.toggle("locked", k.locked);
-      m.firstChild.textContent = `${k.dist}${copy.metres}  ${copy.ap} ${k.ap_pct}%`;
+      m.firstChild.textContent = k.sealed ? `${k.dist}${copy.metres}  ${copy.core_sealed}` : `${k.dist}${copy.metres}  ${copy.ap} ${k.ap_pct}%`;
     });
   }
 
@@ -110,11 +110,13 @@ export function makeHud(copy) {
       if (!k) return;
       f.row.classList.toggle("racer", k.racer);
       f.name.textContent = k.name;
-      f.intent.textContent = k.intent ? `${copy.ai_caption}: ${k.intent}` : "";
+      f.intent.textContent = k.weak
+        ? copy.weak_points.replace("{up}", k.weak[0]).replace("{all}", k.weak[1])
+        : k.intent ? `${copy.ai_caption}: ${k.intent}` : "";
       f.ap.style.setProperty("--pct", k.ap_pct);
       f.st.style.setProperty("--pct", k.stagger_pct);
       f.st.classList.toggle("full", k.staggered);
-      f.st.hidden = k.racer;
+      f.st.hidden = k.racer || Boolean(k.weak);
     });
   }
 

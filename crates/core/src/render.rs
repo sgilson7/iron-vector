@@ -151,7 +151,11 @@ pub fn scene(w: &World, look: &Look) -> (Vec<i32>, Vec<u32>) {
     match warp {
         None => b.push(
             Mesh::Ground,
-            &boxed(V3::ZERO, v3(m.half_x * 8, ONE, m.half_z * 8)),
+            // four times the map, but never so large it overflows
+            &boxed(
+                V3::ZERO,
+                v3(m.half_x.min(int(3_750)) * 8, ONE, m.half_z.min(int(3_750)) * 8),
+            ),
             ground,
             glow,
         ),
@@ -199,7 +203,7 @@ pub fn scene(w: &World, look: &Look) -> (Vec<i32>, Vec<u32>) {
         }
     }
     if look.stars && warp.is_none() {
-        stars(&mut b, m);
+        stars(&mut b, look);
     }
     b.finish(STATIC_BUFFER)
 }
@@ -265,23 +269,19 @@ fn ring_floor(b: &mut Batch, m: &Map, ground: [i32; 3], grid: [i32; 3]) {
     }
 }
 
-/// A dome of stars far beyond the map.
-fn stars(b: &mut Batch, m: &Map) {
+/// A dome of stars far beyond the map: past the edge, inside the far plane.
+fn stars(b: &mut Batch, look: &Look) {
     let mut r = Rng::new(77);
-    let reach = int(2200);
+    let reach = int(2200).max(int(look.far_m) * 4 / 5);
+    let grow = reach / int(2200);
     for _ in 0..420 {
         let yaw = r.range(0, fx::TURN - 1);
         let pitch = r.range(deg(4), deg(85));
         let p = facing(yaw, pitch).scale(reach);
-        let s = ONE * r.range(3, 9);
+        let s = ONE * r.range(3, 9) * grow.max(1);
         let tint = r.range(70, 100);
         let c = shade([ONE, ONE, ONE], tint);
-        b.push_raw(
-            Mesh::Octa,
-            &boxed(v3(p.x, p.y, p.z + m.half_z / 4), v3(s, s, s)),
-            c,
-            ONE,
-        );
+        b.push_raw(Mesh::Octa, &boxed(p, v3(s, s, s)), c, ONE);
     }
 }
 
@@ -327,12 +327,28 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
         }
         push_shadow(&mut b, w, pos, fx::mul(int(4), m.scale), shadow);
     }
-    for c in w.craft.iter().filter(|c| c.alive) {
+    // fortress hulls, walking between ticks; a fallen one goes dark
+    let giant = pal.giant.paints();
+    for f in &w.fortresses {
+        let at = f.prev_pos.lerp(f.pos, alpha);
+        for (lo, hi, paint) in &f.hull {
+            let c = giant[*paint as usize];
+            let (c, glow) = match (f.alive, *paint) {
+                (false, _) => (shade(c, 30), 0),
+                (true, 3) => (c, ONE),
+                _ => (c, 0),
+            };
+            let centre = at.add(v3((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, (lo.z + hi.z) / 2));
+            b.push(Mesh::Cube, &boxed(centre, hi.sub(*lo)), c, glow);
+        }
+    }
+    for (i, c) in w.craft.iter().enumerate().filter(|(_, c)| c.alive) {
         let pos = c.prev_pos.lerp(c.pos, alpha);
         let yaw = fx::lerp_angle(c.prev_yaw, c.yaw, alpha);
         let root = Affine::translate(pos).then(&Affine::rot_y(yaw));
-        craft_model(&mut b, pal, c.kind, &root, w.tick, alpha);
-        if c.kind != CraftKind::Turret {
+        let sealed = c.kind == CraftKind::Core && w.core_sealed(i);
+        craft_model(&mut b, pal, c.kind, &root, w.tick, alpha, c.radius, sealed);
+        if matches!(c.kind, CraftKind::Drone | CraftKind::Heli | CraftKind::Tank) {
             push_shadow(&mut b, w, pos, int(4), shadow);
         }
     }
@@ -489,7 +505,17 @@ fn checkpoint(b: &mut Batch, at: V3, dir: V3, c: [i32; 3], glow: i32) {
     }
 }
 
-fn craft_model(b: &mut Batch, pal: &Palette, kind: CraftKind, root: &Affine, tick: u32, alpha: i32) {
+#[allow(clippy::too_many_arguments)]
+fn craft_model(
+    b: &mut Batch,
+    pal: &Palette,
+    kind: CraftKind,
+    root: &Affine,
+    tick: u32,
+    alpha: i32,
+    radius: i32,
+    sealed: bool,
+) {
     let part = |at: V3, size: V3| root.then(&boxed(at, size));
     let drone = colour(pal.drone);
     let eye = colour(pal.drone_eye);
@@ -590,6 +616,72 @@ fn craft_model(b: &mut Batch, pal: &Palette, kind: CraftKind, root: &Affine, tic
                 ONE,
             );
         }
+        CraftKind::Weak => {
+            // a pulsing beacon the size of its hit sphere
+            let pulse = ONE * 3 / 4 + fx::mul(fx::sin((tick as i32).wrapping_mul(deg(6))), ONE / 4);
+            let r = fx::mul(radius, pulse);
+            b.push(
+                Mesh::Octa,
+                &root.then(&Affine::scale(v3(r, r, r))),
+                colour(pal.enemy_shot),
+                ONE,
+            );
+            b.push(
+                Mesh::Cube,
+                &root.then(&Affine::scale(v3(radius * 2, radius / 8, radius / 8))),
+                dark,
+                0,
+            );
+        }
+        CraftKind::Core => {
+            let (c, glow) = if sealed {
+                (shade(colour(pal.plasma), 40), ONE / 5)
+            } else {
+                (colour(pal.plasma), ONE)
+            };
+            b.push(
+                Mesh::Sphere,
+                &root.then(&Affine::scale(v3(radius * 2, radius * 2, radius * 2))),
+                c,
+                glow,
+            );
+            if sealed {
+                let shell = radius * 9 / 4;
+                b.push(
+                    Mesh::Octa,
+                    &root.then(&Affine::scale(v3(shell, shell, shell))),
+                    dark,
+                    0,
+                );
+            }
+        }
+        CraftKind::Battery => {
+            let turret = colour(pal.turret);
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(2), 0), v3(int(14), int(6), int(14))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(6), 0), v3(int(10), int(5), int(10))),
+                turret,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(7), -int(12)), v3(int(2), int(2), int(18))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(9), -int(2)), v3(int(6), ONE, ONE)),
+                eye,
+                ONE,
+            );
+        }
         CraftKind::Turret => {
             let turret = colour(pal.turret);
             b.push(
@@ -680,7 +772,16 @@ pub fn player_camera(w: &World, alpha: i32) -> Camera {
 }
 
 pub fn view_projection(cam: &Camera, aspect: i32) -> Mat4 {
-    Mat4::perspective(FOV, aspect, NEAR, FAR).mul(&Mat4::look(cam.eye, cam.fwd, cam.up))
+    view_projection_to(cam, aspect, NEAR, FAR)
+}
+
+/// As `view_projection`, with the look's own near and far planes.
+pub fn view_projection_for(cam: &Camera, aspect: i32, look: &Look) -> Mat4 {
+    view_projection_to(cam, aspect, fx::ratio(look.near_cm, 100), int(look.far_m))
+}
+
+fn view_projection_to(cam: &Camera, aspect: i32, near: i32, far: i32) -> Mat4 {
+    Mat4::perspective(FOV, aspect, near, far).mul(&Mat4::look(cam.eye, cam.fwd, cam.up))
 }
 
 /// Scene-wide shader inputs, named in the order `UNIFORM_LAYOUT` lists them.
@@ -735,6 +836,8 @@ pub struct Mark {
     pub locked: bool,
     pub ap_pct: i32,
     pub dist: i32,
+    /// a fortress core that cannot be hurt yet
+    pub sealed: bool,
 }
 
 /// A marker for something the player should head for: on screen where it
@@ -758,6 +861,8 @@ pub struct FrameHud {
     /// what its pilot is doing
     pub intent: Option<String>,
     pub racer: bool,
+    /// a fortress: weak points standing, of how many
+    pub weak: Option<[usize; 2]>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -882,12 +987,13 @@ pub fn hud(
                 Target::Craft(i) => (w.craft[i].ap, w.craft[i].max_ap),
                 Target::Structure(_) => (0, 1),
             };
-            Some(Mark {
+                        Some(Mark {
                 x,
                 y,
                 locked: m.lock == Some(tg),
                 ap_pct: ap * 100 / max.max(1),
                 dist: w.map_delta(m.chest(), c).len() / ONE,
+                sealed: matches!(tg, Target::Craft(i) if w.craft[i].kind == CraftKind::Core && w.core_sealed(i)),
             })
         })
         .filter(|mk| mk.x >= 0 && mk.y >= 0 && mk.x <= css_w && mk.y <= css_h)
@@ -951,7 +1057,20 @@ pub fn hud(
             staggered: e.stagger > 0,
             intent: e.intent.clone().filter(|_| e.alive),
             racer: e.team == Team::Player,
+            weak: None,
         })
+        .chain(w.fortresses.iter().map(|f| {
+            let core = &w.craft[f.core];
+            FrameHud {
+                name: f.name.clone(),
+                ap_pct: core.ap * 100 / core.max_ap.max(1),
+                stagger_pct: 0,
+                staggered: false,
+                intent: None,
+                racer: false,
+                weak: Some([f.weak.iter().filter(|i| w.craft[**i].alive).count(), f.weak.len()]),
+            }
+        }))
         .collect();
     Hud {
         ap: m.ap,

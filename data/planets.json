@@ -3919,8 +3919,8 @@
    "opens_at": 11,
    "opens_at_plus": 8,
    "hidden": true,
-   "blurb": "A dead sea of black glass that no chart shows. The frames that walk here were built for wars between worlds, and they grow larger the further in you go.",
-   "gimmick": "Giants: every mission is a fight against a bigger frame than the last, some carrying their own gun batteries.",
+   "blurb": "A dead sea of black glass that no chart shows. The things that walk here were built for wars between worlds: frames the size of towers, and fortresses the size of cities.",
+   "gimmick": "Arms forts: past the first giants, each target is a walking fortress. Land on it, break its weak points, and the core opens.",
    "star": {
     "color": [
      60,
@@ -3996,15 +3996,17 @@
      100,
      40
     ],
-    "fog_near_m": 300,
-    "fog_far_m": 1700,
+    "fog_near_m": 1500,
+    "fog_far_m": 11000,
     "ground_glow_pct": 20,
     "stars": true,
     "structure": [
      190,
      120,
      255
-    ]
+    ],
+    "far_m": 14000,
+    "near_cm": 50
    },
    "climate": {
     "gravity_pct": 90,
@@ -4013,22 +4015,22 @@
    },
    "map": {
     "seed": 9090,
-    "width_m": 2400,
-    "length_m": 2400,
-    "cell_m": 160,
-    "street_m": 40,
-    "empty_pct": 82,
+    "width_m": 16000,
+    "length_m": 16000,
+    "cell_m": 500,
+    "street_m": 60,
+    "empty_pct": 88,
     "min_h_m": 10,
-    "max_h_m": 45,
+    "max_h_m": 60,
     "tall_pct": 6,
-    "tall_h_m": 90,
-    "ceiling_m": 600,
+    "tall_h_m": 120,
+    "ceiling_m": 2400,
     "style": "mesas",
     "clearings": [
      {
       "x_m": 0,
       "z_m": 0,
-      "r_m": 700
+      "r_m": 5200
      }
     ]
    },
@@ -4036,11 +4038,11 @@
     {
      "id": "tethys-1",
      "name": "FIRST GIANT",
-     "scene": "Something twice the size of a frame walks the glass. It is armed like one. Find out what it can take.",
+     "scene": "A frame ten times your height walks the glass, armed like any frame. Find out what it can take.",
      "kind": "duel",
      "start": [
       0,
-      260,
+      900,
       0
      ],
      "reward": "hd-argus",
@@ -4049,7 +4051,7 @@
       "value": 60,
       "reward": "cr-aegis"
      },
-     "time_limit_s": 360,
+     "time_limit_s": 420,
      "power_pct": 120,
      "mechs": [
       {
@@ -4057,13 +4059,13 @@
        "pilot": "giant",
        "at": [
         0,
-        -200,
+        0,
         180
        ],
-       "ap_pct": 350,
-       "scale_pct": 200,
-       "speed_pct": 70,
-       "damage_pct": 150,
+       "ap_pct": 900,
+       "scale_pct": 1000,
+       "speed_pct": 45,
+       "damage_pct": 220,
        "wave": 0,
        "loadout": {
         "head": "hd-mantle",
@@ -4083,37 +4085,37 @@
     {
      "id": "tethys-2",
      "name": "TWIN COLOSSI",
-     "scene": "Two of them now, each larger than the first. They walk together.",
+     "scene": "Two frames thirty times your height, each with guns riding its shoulders. They walk together.",
      "kind": "duel",
      "start": [
       0,
-      280,
+      1500,
       0
      ],
      "reward": "ar-talon",
      "plus": {
       "rule": "under_seconds",
-      "value": 200,
+      "value": 300,
       "reward": "lt-crawler"
      },
      "requires": [
       "tethys-1"
      ],
-     "time_limit_s": 420,
+     "time_limit_s": 540,
      "power_pct": 125,
      "mechs": [
       {
        "name": "COLOSSUS ALPHA",
        "pilot": "giant",
        "at": [
-        -160,
-        -220,
+        -320,
+        0,
         180
        ],
-       "ap_pct": 300,
-       "scale_pct": 250,
-       "speed_pct": 65,
-       "damage_pct": 160,
+       "ap_pct": 1500,
+       "scale_pct": 3000,
+       "speed_pct": 30,
+       "damage_pct": 280,
        "wave": 0,
        "loadout": {
         "head": "hd-mantle",
@@ -4126,20 +4128,51 @@
         "left_weapon": "rf-marrow",
         "shoulder_weapon": "gc-anvil"
        },
-       "turrets": []
+       "turrets": [
+        [
+         -200,
+         420,
+         0
+        ],
+        [
+         200,
+         420,
+         0
+        ],
+        [
+         -120,
+         680,
+         120
+        ],
+        [
+         120,
+         680,
+         120
+        ],
+        [
+         0,
+         740,
+         -60
+        ],
+        [
+         0,
+         260,
+         140
+        ]
+       ]
       },
       {
        "name": "COLOSSUS BETA",
        "pilot": "giant",
        "at": [
-        160,
-        -220,
+        320,
+        0,
         180
        ],
-       "ap_pct": 300,
-       "scale_pct": 250,
-       "speed_pct": 65,
-       "damage_pct": 160,
+       "ap_pct": 1500,
+       "scale_pct": 3000,
+       "speed_pct": 30,
+       "damage_pct": 280,
        "wave": 0,
        "loadout": {
         "head": "hd-mantle",
@@ -4152,18 +4185,49 @@
         "left_weapon": "rf-marrow",
         "shoulder_weapon": "gc-anvil"
        },
-       "turrets": []
+       "turrets": [
+        [
+         -200,
+         420,
+         0
+        ],
+        [
+         200,
+         420,
+         0
+        ],
+        [
+         -120,
+         680,
+         120
+        ],
+        [
+         120,
+         680,
+         120
+        ],
+        [
+         0,
+         740,
+         -60
+        ],
+        [
+         0,
+         260,
+         140
+        ]
+       ]
       }
      ]
     },
     {
      "id": "tethys-3",
      "name": "WALKING BASTION",
-     "scene": "A frame four times your height, with gun batteries bolted to its shoulders. Strip the guns or go for the heart.",
+     "scene": "An arms fort seven hundred metres long, on four legs. Climb its legs, break the joints, and the core on its tower opens.",
      "kind": "duel",
      "start": [
       0,
-      300,
+      1700,
       0
      ],
      "reward": "bt-nova",
@@ -4175,205 +4239,1067 @@
      "requires": [
       "tethys-2"
      ],
-     "time_limit_s": 480,
+     "time_limit_s": 720,
      "power_pct": 130,
-     "mechs": [
+     "fortresses": [
       {
-       "name": "BASTION",
-       "pilot": "giant",
+       "name": "BASTION · ARMS FORT",
        "at": [
         0,
-        -250,
-        180
+        0
        ],
-       "ap_pct": 700,
-       "scale_pct": 400,
-       "speed_pct": 55,
-       "damage_pct": 200,
-       "wave": 0,
-       "loadout": {
-        "head": "hd-mantle",
-        "core": "cr-citadel",
-        "arms": "ar-bastion",
-        "legs": "lg-bastion",
-        "booster": "bt-titan",
-        "generator": "gn-forge",
-        "right_weapon": "ml-hornet",
-        "left_weapon": "rf-marrow",
-        "shoulder_weapon": "gc-anvil"
-       },
+       "path": [
+        [
+         0,
+         0
+        ],
+        [
+         0,
+         -1500
+        ]
+       ],
+       "speed_ms": 10,
+       "size_x": 100,
+       "hull": [
+        {
+         "at": [
+          -65,
+          120,
+          -117
+         ],
+         "size": [
+          40,
+          240,
+          40
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -65,
+          110,
+          -117
+         ],
+         "size": [
+          80,
+          8,
+          80
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -65,
+          120,
+          116
+         ],
+         "size": [
+          40,
+          240,
+          40
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -65,
+          110,
+          116
+         ],
+         "size": [
+          80,
+          8,
+          80
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          65,
+          120,
+          -117
+         ],
+         "size": [
+          40,
+          240,
+          40
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          65,
+          110,
+          -117
+         ],
+         "size": [
+          80,
+          8,
+          80
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          65,
+          120,
+          116
+         ],
+         "size": [
+          40,
+          240,
+          40
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          65,
+          110,
+          116
+         ],
+         "size": [
+          80,
+          8,
+          80
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          250,
+          0
+         ],
+         "size": [
+          210,
+          20,
+          700
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          -105,
+          260,
+          0
+         ],
+         "size": [
+          6,
+          4,
+          700
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          105,
+          260,
+          0
+         ],
+         "size": [
+          6,
+          4,
+          700
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          318,
+          0
+         ],
+         "size": [
+          52,
+          116,
+          58
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          372,
+          0
+         ],
+         "size": [
+          56,
+          4,
+          62
+         ],
+         "paint": "glow"
+        }
+       ],
+       "weak_points": [
+        [
+         -105,
+         120,
+         -117
+        ],
+        [
+         -105,
+         120,
+         116
+        ],
+        [
+         105,
+         120,
+         -117
+        ],
+        [
+         105,
+         120,
+         116
+        ]
+       ],
+       "weak_ap": 6000,
+       "weak_radius_m": 25,
+       "core": [
+        0,
+        406,
+        0
+       ],
+       "core_ap": 30000,
+       "core_radius_m": 30,
        "turrets": [
         [
-         -160,
-         640,
-         40
+         -93,
+         262,
+         -210
         ],
         [
-         160,
-         640,
-         40
+         -93,
+         262,
+         -70
         ],
         [
-         0,
-         700,
-         100
+         -93,
+         262,
+         70
         ],
         [
-         0,
-         540,
-         -100
+         -93,
+         262,
+         210
+        ],
+        [
+         93,
+         262,
+         -210
+        ],
+        [
+         93,
+         262,
+         -70
+        ],
+        [
+         93,
+         262,
+         70
+        ],
+        [
+         93,
+         262,
+         210
+        ]
+       ],
+       "batteries": [
+        [
+         36,
+         380,
+         0
+        ],
+        [
+         -37,
+         380,
+         0
+        ],
+        [
+         -105,
+         262,
+         -350
+        ],
+        [
+         105,
+         262,
+         350
         ]
        ]
-      }
-     ],
-     "units": [
-      {
-       "type": "heli",
-       "at": [
-        -200,
-        -100,
-        120
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        200,
-        -100,
-        120
-       ],
-       "wave": 0
       }
      ]
     },
     {
      "id": "tethys-4",
      "name": "LEVIATHAN",
-     "scene": "Six times your height, six batteries, and gunships launching from the glass around it.",
+     "scene": "Two kilometres of fortress on six legs, with engines astern and guns end to end.",
      "kind": "duel",
      "start": [
       0,
-      340,
+      2900,
       0
      ],
      "reward": "gn-singularity",
      "plus": {
       "rule": "under_seconds",
-      "value": 300,
+      "value": 600,
       "reward": "pc-nova"
      },
      "requires": [
       "tethys-3"
      ],
-     "time_limit_s": 540,
+     "time_limit_s": 960,
      "power_pct": 135,
-     "mechs": [
+     "fortresses": [
       {
-       "name": "LEVIATHAN",
-       "pilot": "giant",
+       "name": "LEVIATHAN · ARMS FORT",
        "at": [
         0,
-        -300,
-        180
+        0
        ],
-       "ap_pct": 1100,
-       "scale_pct": 600,
-       "speed_pct": 45,
-       "damage_pct": 220,
-       "wave": 0,
-       "loadout": {
-        "head": "hd-mantle",
-        "core": "cr-citadel",
-        "arms": "ar-bastion",
-        "legs": "lg-bastion",
-        "booster": "bt-titan",
-        "generator": "gn-forge",
-        "right_weapon": "ml-hornet",
-        "left_weapon": "rf-marrow",
-        "shoulder_weapon": "gc-anvil"
-       },
+       "path": [
+        [
+         0,
+         0
+        ],
+        [
+         1500,
+         -800
+        ]
+       ],
+       "speed_ms": 7,
+       "size_x": 300,
+       "hull": [
+        {
+         "at": [
+          -240,
+          260,
+          -525
+         ],
+         "size": [
+          75,
+          520,
+          75
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -240,
+          110,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          230,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          350,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          470,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          260,
+          0
+         ],
+         "size": [
+          75,
+          520,
+          75
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -240,
+          110,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          230,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          350,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          470,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          260,
+          525
+         ],
+         "size": [
+          75,
+          520,
+          75
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -240,
+          110,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          230,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          350,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -240,
+          470,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          260,
+          -525
+         ],
+         "size": [
+          75,
+          520,
+          75
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          240,
+          110,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          230,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          350,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          470,
+          -525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          260,
+          0
+         ],
+         "size": [
+          75,
+          520,
+          75
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          240,
+          110,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          230,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          350,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          470,
+          0
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          260,
+          525
+         ],
+         "size": [
+          75,
+          520,
+          75
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          240,
+          110,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          230,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          350,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          240,
+          470,
+          525
+         ],
+         "size": [
+          150,
+          8,
+          150
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          531,
+          0
+         ],
+         "size": [
+          630,
+          23,
+          2100
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          -315,
+          543,
+          0
+         ],
+         "size": [
+          6,
+          4,
+          2100
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          315,
+          543,
+          0
+         ],
+         "size": [
+          6,
+          4,
+          2100
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          643,
+          -600
+         ],
+         "size": [
+          157,
+          200,
+          175
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          739,
+          -600
+         ],
+         "size": [
+          161,
+          4,
+          179
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          703,
+          0
+         ],
+         "size": [
+          157,
+          320,
+          175
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          859,
+          0
+         ],
+         "size": [
+          161,
+          4,
+          179
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          643,
+          600
+         ],
+         "size": [
+          157,
+          200,
+          175
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          739,
+          600
+         ],
+         "size": [
+          161,
+          4,
+          179
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          -210,
+          532,
+          1102
+         ],
+         "size": [
+          78,
+          46,
+          105
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          210,
+          532,
+          1102
+         ],
+         "size": [
+          78,
+          46,
+          105
+         ],
+         "paint": "dark"
+        }
+       ],
+       "weak_points": [
+        [
+         -315,
+         260,
+         -525
+        ],
+        [
+         -315,
+         260,
+         0
+        ],
+        [
+         -315,
+         260,
+         525
+        ],
+        [
+         315,
+         260,
+         -525
+        ],
+        [
+         315,
+         260,
+         0
+        ],
+        [
+         315,
+         260,
+         525
+        ],
+        [
+         -210,
+         543,
+         1155
+        ],
+        [
+         210,
+         543,
+         1155
+        ]
+       ],
+       "weak_ap": 9000,
+       "weak_radius_m": 42,
+       "core": [
+        0,
+        898,
+        0
+       ],
+       "core_ap": 50000,
+       "core_radius_m": 52,
        "turrets": [
         [
-         -200,
-         420,
+         -303,
+         545,
+         -817
+        ],
+        [
+         -303,
+         545,
+         -584
+        ],
+        [
+         -303,
+         545,
+         -350
+        ],
+        [
+         -303,
+         545,
+         -117
+        ],
+        [
+         -303,
+         545,
+         116
+        ],
+        [
+         -303,
+         545,
+         350
+        ],
+        [
+         -303,
+         545,
+         583
+        ],
+        [
+         -303,
+         545,
+         816
+        ],
+        [
+         303,
+         545,
+         -817
+        ],
+        [
+         303,
+         545,
+         -584
+        ],
+        [
+         303,
+         545,
+         -350
+        ],
+        [
+         303,
+         545,
+         -117
+        ],
+        [
+         303,
+         545,
+         116
+        ],
+        [
+         303,
+         545,
+         350
+        ],
+        [
+         303,
+         545,
+         583
+        ],
+        [
+         303,
+         545,
+         816
+        ]
+       ],
+       "batteries": [
+        [
+         88,
+         747,
+         -600
+        ],
+        [
+         -89,
+         747,
+         -600
+        ],
+        [
+         88,
+         867,
          0
         ],
         [
-         200,
-         420,
+         -89,
+         867,
          0
         ],
         [
-         -120,
-         680,
-         120
+         88,
+         747,
+         600
         ],
         [
-         120,
-         680,
-         120
+         -89,
+         747,
+         600
         ],
         [
-         0,
-         740,
-         -60
+         -315,
+         545,
+         -1050
         ],
         [
-         0,
-         260,
-         140
+         315,
+         545,
+         -1050
+        ],
+        [
+         -315,
+         545,
+         1050
+        ],
+        [
+         315,
+         545,
+         1050
         ]
        ]
-      }
-     ],
-     "units": [
-      {
-       "type": "heli",
-       "at": [
-        -260,
-        -150,
-        140
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        260,
-        -150,
-        140
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        -200,
-        -300,
-        160
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        200,
-        -300,
-        160
-       ],
-       "wave": 0
       }
      ]
     },
     {
      "id": "tethys-5",
      "name": "THE ARK",
-     "scene": "The largest frame ever walked, nine times your height, with two escorts at its feet. Whoever built it is not coming back for it.",
+     "scene": "Seven kilometres long and taller than any mountain on Halden, with escorts at its feet. Whoever built it is not coming back for it.",
      "kind": "duel",
      "start": [
       0,
-      380,
+      5000,
       0
      ],
      "reward": "pb-ramspike",
@@ -4385,85 +5311,1279 @@
      "requires": [
       "tethys-4"
      ],
-     "time_limit_s": 660,
+     "time_limit_s": 1500,
      "power_pct": 140,
-     "mechs": [
+     "fortresses": [
       {
-       "name": "THE ARK",
-       "pilot": "giant",
+       "name": "THE ARK · ARMS FORT",
        "at": [
         0,
-        -360,
-        180
+        0
        ],
-       "ap_pct": 1800,
-       "scale_pct": 900,
-       "speed_pct": 35,
-       "damage_pct": 250,
-       "wave": 0,
-       "loadout": {
-        "head": "hd-mantle",
-        "core": "cr-citadel",
-        "arms": "ar-bastion",
-        "legs": "lg-bastion",
-        "booster": "bt-titan",
-        "generator": "gn-forge",
-        "right_weapon": "ml-hornet",
-        "left_weapon": "rf-marrow",
-        "shoulder_weapon": "gc-anvil"
-       },
+       "path": [
+        [
+         0,
+         0
+        ],
+        [
+         0,
+         -2500
+        ]
+       ],
+       "speed_ms": 4,
+       "size_x": 1000,
+       "hull": [
+        {
+         "at": [
+          -800,
+          450,
+          -2100
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -800,
+          110,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          230,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          350,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          470,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          590,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          710,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          830,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          450,
+          -700
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -800,
+          110,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          230,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          350,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          470,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          590,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          710,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          830,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          450,
+          700
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -800,
+          110,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          230,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          350,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          470,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          590,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          710,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          830,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          450,
+          2100
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          -800,
+          110,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          230,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          350,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          470,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          590,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          710,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          -800,
+          830,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          450,
+          -2100
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          800,
+          110,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          230,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          350,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          470,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          590,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          710,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          830,
+          -2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          450,
+          -700
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          800,
+          110,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          230,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          350,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          470,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          590,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          710,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          830,
+          -700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          450,
+          700
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          800,
+          110,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          230,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          350,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          470,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          590,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          710,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          830,
+          700
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          450,
+          2100
+         ],
+         "size": [
+          250,
+          900,
+          250
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          800,
+          110,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          230,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          350,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          470,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          590,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          710,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          800,
+          830,
+          2100
+         ],
+         "size": [
+          500,
+          8,
+          500
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          938,
+          0
+         ],
+         "size": [
+          2100,
+          77,
+          7000
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          -1050,
+          977,
+          0
+         ],
+         "size": [
+          6,
+          4,
+          7000
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          1050,
+          977,
+          0
+         ],
+         "size": [
+          6,
+          4,
+          7000
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          1077,
+          -2200
+         ],
+         "size": [
+          525,
+          200,
+          583
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          1173,
+          -2200
+         ],
+         "size": [
+          529,
+          4,
+          587
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          1137,
+          0
+         ],
+         "size": [
+          525,
+          320,
+          583
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          1293,
+          0
+         ],
+         "size": [
+          529,
+          4,
+          587
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          1077,
+          2200
+         ],
+         "size": [
+          525,
+          200,
+          583
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          1173,
+          2200
+         ],
+         "size": [
+          529,
+          4,
+          587
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          -700,
+          939,
+          3675
+         ],
+         "size": [
+          262,
+          154,
+          350
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          0,
+          939,
+          3675
+         ],
+         "size": [
+          262,
+          154,
+          350
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          700,
+          939,
+          3675
+         ],
+         "size": [
+          262,
+          154,
+          350
+         ],
+         "paint": "dark"
+        }
+       ],
+       "weak_points": [
+        [
+         -1050,
+         450,
+         -2100
+        ],
+        [
+         -1050,
+         450,
+         -700
+        ],
+        [
+         -1050,
+         450,
+         700
+        ],
+        [
+         -1050,
+         450,
+         2100
+        ],
+        [
+         1050,
+         450,
+         -2100
+        ],
+        [
+         1050,
+         450,
+         -700
+        ],
+        [
+         1050,
+         450,
+         700
+        ],
+        [
+         1050,
+         450,
+         2100
+        ],
+        [
+         -700,
+         977,
+         3850
+        ],
+        [
+         0,
+         977,
+         3850
+        ],
+        [
+         700,
+         977,
+         3850
+        ]
+       ],
+       "weak_ap": 14000,
+       "weak_radius_m": 90,
+       "core": [
+        0,
+        1413,
+        0
+       ],
+       "core_ap": 80000,
+       "core_radius_m": 120,
        "turrets": [
         [
-         -200,
-         420,
+         -1038,
+         979,
+         -2962
+        ],
+        [
+         -1038,
+         979,
+         -2424
+        ],
+        [
+         -1038,
+         979,
+         -1885
+        ],
+        [
+         -1038,
+         979,
+         -1347
+        ],
+        [
+         -1038,
+         979,
+         -808
+        ],
+        [
+         -1038,
+         979,
+         -270
+        ],
+        [
+         -1038,
+         979,
+         269
+        ],
+        [
+         -1038,
+         979,
+         807
+        ],
+        [
+         -1038,
+         979,
+         1346
+        ],
+        [
+         -1038,
+         979,
+         1884
+        ],
+        [
+         -1038,
+         979,
+         2423
+        ],
+        [
+         -1038,
+         979,
+         2961
+        ],
+        [
+         1038,
+         979,
+         -2962
+        ],
+        [
+         1038,
+         979,
+         -2424
+        ],
+        [
+         1038,
+         979,
+         -1885
+        ],
+        [
+         1038,
+         979,
+         -1347
+        ],
+        [
+         1038,
+         979,
+         -808
+        ],
+        [
+         1038,
+         979,
+         -270
+        ],
+        [
+         1038,
+         979,
+         269
+        ],
+        [
+         1038,
+         979,
+         807
+        ],
+        [
+         1038,
+         979,
+         1346
+        ],
+        [
+         1038,
+         979,
+         1884
+        ],
+        [
+         1038,
+         979,
+         2423
+        ],
+        [
+         1038,
+         979,
+         2961
+        ]
+       ],
+       "batteries": [
+        [
+         272,
+         1181,
+         -2200
+        ],
+        [
+         -273,
+         1181,
+         -2200
+        ],
+        [
+         272,
+         1301,
          0
         ],
         [
-         200,
-         420,
+         -273,
+         1301,
          0
         ],
         [
-         -120,
-         680,
-         120
+         272,
+         1181,
+         2200
         ],
         [
-         120,
-         680,
-         120
+         -273,
+         1181,
+         2200
         ],
         [
-         0,
-         740,
-         -60
+         -1050,
+         979,
+         -3500
         ],
         [
-         0,
-         260,
-         140
+         1050,
+         979,
+         -3500
         ],
         [
-         -240,
-         560,
-         -100
+         -1050,
+         979,
+         0
         ],
         [
-         240,
-         560,
-         -100
+         1050,
+         979,
+         0
+        ],
+        [
+         -1050,
+         979,
+         3500
+        ],
+        [
+         1050,
+         979,
+         3500
         ]
        ]
-      },
+      }
+     ],
+     "mechs": [
       {
        "name": "ESCORT ONE",
        "pilot": "twin",
        "at": [
-        -120,
-        -200,
+        -150,
+        3800,
         180
        ],
-       "ap_pct": 80,
+       "ap_pct": 90,
        "loadout": {
         "head": "hd-kestrel",
         "core": "cr-vane",
@@ -4480,11 +6600,11 @@
        "name": "ESCORT TWO",
        "pilot": "twin",
        "at": [
-        120,
-        -200,
+        150,
+        3800,
         180
        ],
-       "ap_pct": 80,
+       "ap_pct": 90,
        "loadout": {
         "head": "hd-kestrel",
         "core": "cr-vane",

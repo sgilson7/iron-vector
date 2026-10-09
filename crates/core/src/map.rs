@@ -152,6 +152,9 @@ pub struct Map {
     pub climate: Climate,
     pub wrap: bool,
     pub style: Style,
+    /// buildings that move: a fortress's hull. Few, so every query looks at
+    /// all of them rather than filing them in cells.
+    pub movers: Vec<Block>,
 }
 impl Map {
     pub fn generate(spec: &MapSpec) -> Map {
@@ -229,6 +232,7 @@ impl Map {
             climate: Climate::default(),
             wrap: spec.wrap,
             style: spec.style,
+            movers: Vec::new(),
         }
     }
 
@@ -292,6 +296,9 @@ impl Map {
                 }
             }
         }
+        for b in &self.movers {
+            f(b);
+        }
     }
 
     /// The first point a segment hits a building or the ground, as a fraction
@@ -318,6 +325,13 @@ impl Map {
                             best = Some((t, Some(i as usize)));
                         }
                     }
+                }
+            }
+        }
+        for m in &self.movers {
+            if let Some(t) = m.segment_hit(a, b) {
+                if best.is_none_or(|(bt, _)| t < bt) {
+                    best = Some((t, None));
                 }
             }
         }

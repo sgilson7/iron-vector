@@ -270,14 +270,27 @@ pub fn push_cockpit(
                     q16(col),
                     glow,
                 );
-                if standing == Standing::Plus {
+                // a cleared mission wears a + above it: bright gold once its
+                // plus challenge is met, a dim outline while it is still to earn
+                if matches!(standing, Standing::Cleared | Standing::Plus) {
+                    let met = standing == Standing::Plus;
+                    let (c, glow, bar) = if met {
+                        (q16(pal.plus), ONE, cm(1) * 3 / 5)
+                    } else {
+                        (q16(pal.locked), ONE / 4, cm(1) / 3)
+                    };
+                    let above = Affine::translate(n.at.add(v3(0, cm(5), 0))).then(&Affine::rot_y(sway / 2));
                     b.push_raw(
                         Mesh::Cube,
-                        &holo
-                            .then(&turn)
-                            .then(&Affine::scale(v3(s * 3 / 2, cm(1) / 4, s * 3 / 2))),
-                        q16(pal.plus),
-                        ONE,
+                        &holo.then(&above).then(&Affine::scale(v3(cm(4), bar, bar))),
+                        c,
+                        glow,
+                    );
+                    b.push_raw(
+                        Mesh::Cube,
+                        &holo.then(&above).then(&Affine::scale(v3(bar, cm(4), bar))),
+                        c,
+                        glow,
                     );
                 }
             }

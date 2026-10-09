@@ -180,6 +180,46 @@ pub struct MissionSpec {
     /// rectangles x0, z0, x1, z1 (m) cleared of the planet's buildings first
     #[serde(default)]
     pub clear: Vec<[i32; 4]>,
+    #[serde(default)]
+    pub fortresses: Vec<FortressSpec>,
+}
+
+/// One box of a fortress's hull: centre and size in metres from its footprint.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HullBox {
+    pub at: [i32; 3],
+    pub size: [i32; 3],
+    #[serde(default)]
+    pub paint: String,
+}
+
+/// An arms fort: a walking hull to land on, weak points on its legs and
+/// engines, a core sealed until they fall, and guns along its decks.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FortressSpec {
+    pub name: String,
+    /// where its footprint starts, x, z (m)
+    pub at: [i32; 2],
+    /// the points it walks between, in a loop, x, z (m)
+    #[serde(default)]
+    pub path: Vec<[i32; 2]>,
+    pub speed_ms: i32,
+    /// how many standard frames long it is, for the record and the tests
+    pub size_x: i32,
+    pub hull: Vec<HullBox>,
+    /// x, y, z (m) from its footprint
+    pub weak_points: Vec<[i32; 3]>,
+    pub weak_ap: i32,
+    pub weak_radius_m: i32,
+    pub core: [i32; 3],
+    pub core_ap: i32,
+    pub core_radius_m: i32,
+    #[serde(default)]
+    pub turrets: Vec<[i32; 3]>,
+    #[serde(default)]
+    pub batteries: Vec<[i32; 3]>,
 }
 
 /// One kind of unit, from `data/units.json`.
@@ -217,7 +257,7 @@ impl Units {
             o.remove("_note");
         }
         let u: BTreeMap<String, UnitSpec> = serde_json::from_value(v).map_err(|e| format!("units: {e}"))?;
-        for k in ["drone", "heli", "tank", "turret"] {
+        for k in ["drone", "heli", "tank", "turret", "battery", "weak", "core"] {
             if !u.contains_key(k) {
                 return Err(format!("units: no {k}"));
             }
@@ -247,6 +287,9 @@ pub fn make_unit(
         "heli" => CraftKind::Heli,
         "tank" => CraftKind::Tank,
         "turret" => CraftKind::Turret,
+        "battery" => CraftKind::Battery,
+        "weak" => CraftKind::Weak,
+        "core" => CraftKind::Core,
         _ => CraftKind::Drone,
     };
     let ap = spec.ap * power / 100;

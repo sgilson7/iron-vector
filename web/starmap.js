@@ -74,6 +74,10 @@ export function makeStarMap(game, copy) {
     el("planet-name").textContent = p.name;
     el("planet-blurb").textContent = p.blurb;
     el("planet-gimmick").textContent = p.gimmick;
+    el("planet-tally").textContent = copy.planet_tally
+      .replace("{cleared}", p.cleared)
+      .replace("{plus}", p.plus)
+      .replace(/\{total\}/g, p.missions.length);
     el("planet-lock").textContent = p.open ? "" : copy.opens_at.replace("{n}", p.opens_at);
     el("mission-list").replaceChildren(
       ...p.missions.map((m, i) => {
@@ -84,7 +88,9 @@ export function makeStarMap(game, copy) {
         li.append(head, item("p", "m-scene", m.scene));
         li.append(item("div", "m-reward", `${copy.reward}: ${m.reward}`));
         const plus = m.plus ? `${plusText(copy, m.plus.rule, m.plus.value)} → ${m.plus.reward}` : copy.plus_hidden;
-        li.append(item("div", "m-plus", `${copy.plus_label} ${plus}`));
+        // a met plus challenge is marked plainly: a tick, in gold
+        const mark = m.plus_met ? copy.plus_met_mark : copy.plus_label;
+        li.append(item("div", m.plus_met ? "m-plus met" : "m-plus", `${mark} ${plus}`));
         if (m.standing === "locked" && m.requires.length) {
           li.append(item("div", "lock", copy.requires.replace("{list}", m.requires.join(", "))));
         }

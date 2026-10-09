@@ -223,6 +223,19 @@ pub enum CraftKind {
     Tank,
     /// stands where it was put and fires at the player
     Turret,
+    /// a fortress's heavy gun: a turret with a long reach and a burst
+    Battery,
+    /// a fortress's weak point: no gun, and the way to its core
+    Weak,
+    /// a fortress's core: sealed until every weak point is down
+    Core,
+}
+
+/// What a riding unit is mounted on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Host {
+    Mech(usize),
+    Fortress(usize),
 }
 
 /// A flying target that is not a mech: practice drones and helicopters.
@@ -254,8 +267,9 @@ pub struct Craft {
     /// where a fleeing unit is driving
     pub goal: Option<V3>,
     pub wave: u32,
-    /// riding on a mech: its index, and the place on its body, metres at standard size
-    pub mount: Option<(usize, V3)>,
+    /// riding on a mech or a fortress, at a place on its body: for a mech in
+    /// metres at standard size, for a fortress in metres from its footprint
+    pub mount: Option<(Host, V3)>,
 }
 
 impl Weapon {
