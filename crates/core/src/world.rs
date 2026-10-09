@@ -2290,7 +2290,8 @@ pub(crate) mod tests {
 
     #[test]
     fn burning_ground_costs_ap_and_a_pad_does_not() {
-        let mut w = mission_world("cinder-1");
+        // the race: Cinder's floor, with nobody shooting
+        let mut w = mission_world("cinder-2");
         let ap = w.mechs[0].ap;
         for _ in 0..60 {
             w.tick(Controls::default());
@@ -2312,6 +2313,32 @@ pub(crate) mod tests {
         // 240 AP a second
         let lost = ap - w.mechs[0].ap;
         assert!((230..=250).contains(&lost), "lost {lost}");
+    }
+
+    #[test]
+    fn the_lava_climbs_and_burns_whatever_it_reaches() {
+        let mut w = mission_world("cinder-1");
+        let lava = w.mission.as_ref().unwrap().lava.unwrap();
+        let start = w.mechs[0].body.pos;
+        assert!(start.y >= int(30), "the start is a column");
+        // at 30 m the frame stands clear until the lava passes 30 m
+        let clear_until = (30 * lava.over_s * 60 / lava.to_m) as u32;
+        let ap = w.mechs[0].ap;
+        let quiet = Controls::default();
+        for _ in 0..clear_until - 60 {
+            w.mechs[0].body.pos = start;
+            w.tick(quiet);
+        }
+        assert_eq!(w.mechs[0].ap, ap, "not reached yet");
+        for _ in 0..3 * 60 {
+            w.mechs[0].body.pos = start;
+            w.tick(quiet);
+        }
+        let lost = ap - w.mechs[0].ap;
+        assert!(
+            lost >= lava.dps,
+            "the lava has reached the column top: lost {lost}"
+        );
     }
 }
 #[cfg(test)]

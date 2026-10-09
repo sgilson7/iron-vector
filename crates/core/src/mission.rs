@@ -1196,7 +1196,7 @@ mod tests {
                 m.id
             );
             assert!(
-                w.hostiles_alive() > 0 || matches!(m.kind, Kind::Race | Kind::Recon),
+                w.hostiles_alive() > 0 || matches!(m.kind, Kind::Race | Kind::Recon | Kind::Sabotage),
                 "{} has nothing to fight",
                 m.id
             );
@@ -1407,6 +1407,54 @@ mod tests {
         run(&mut w, 1);
         assert!(w.mechs[0].ap < ap, "then it does");
         assert!(w.strikes.is_empty());
+    }
+
+    #[test]
+    fn an_alarm_in_the_foundry_seals_the_door_you_came_in_by() {
+        let mut w = mission_world("cinder-3");
+        let door = w.machines[0].block;
+        let open_bottom = w.map.movers[door].min.y;
+        assert!(open_bottom >= int(30), "open: up in the roof");
+        let spot = w.searchlights[0].spot;
+        put(&mut w, spot.x >> 16, 3, spot.z >> 16);
+        assert!(w.mission.as_ref().unwrap().alarm);
+        run(&mut w, 3 * 60);
+        assert!(
+            w.map.movers[door].min.y <= int(3),
+            "shut, at {}",
+            w.map.movers[door].min.y
+        );
+    }
+
+    #[test]
+    fn a_mine_bursts_when_a_frame_comes_near_and_not_before() {
+        let mut w = mission_world("cinder-3");
+        w.searchlights.clear();
+        let k = w.craft.iter().position(|c| c.kind == CraftKind::Mine).unwrap();
+        let at = w.craft[k].pos;
+        put(&mut w, (at.x >> 16) + 20, (at.y >> 16) + 1, at.z >> 16);
+        assert!(w.craft[k].alive, "twenty metres off");
+        let ap = w.mechs[0].ap;
+        put(&mut w, (at.x >> 16) + 2, (at.y >> 16) + 1, at.z >> 16);
+        assert!(!w.craft[k].alive, "it burst");
+        assert!(w.mechs[0].ap < ap - 500, "and hurt: {} of {ap}", w.mechs[0].ap);
+    }
+
+    #[test]
+    fn the_aces_pulse_armour_turns_hits_until_it_breaks_then_comes_back() {
+        let mut w = mission_world("cinder-4");
+        let ace = w.mechs.iter().position(|m| m.name.starts_with("ACE")).unwrap();
+        let ap = w.mechs[ace].ap;
+        let shield = w.mechs[ace].pulse.unwrap().max;
+        w.hurt(Target::Mech(ace), shield / 2, 400);
+        assert_eq!(w.mechs[ace].ap, ap, "turned");
+        assert_eq!(w.mechs[ace].impact, 0, "impact too");
+        w.hurt(Target::Mech(ace), shield, 0);
+        assert!(!w.mechs[ace].pulse.unwrap().up(), "broken");
+        w.hurt(Target::Mech(ace), 500, 0);
+        assert_eq!(w.mechs[ace].ap, ap - 500, "the window");
+        run(&mut w, 7 * 60 + 1);
+        assert!(w.mechs[ace].pulse.unwrap().up(), "whole again");
     }
 
     #[test]

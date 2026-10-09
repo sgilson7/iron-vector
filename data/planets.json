@@ -5287,7 +5287,7 @@
     {
      "id": "cinder-1",
      "name": "ASHFALL",
-     "scene": "Turrets on the columns are shelling the evacuation. Silence them without touching the floor more than you must.",
+     "scene": "The lava is rising through the column field, and turrets on the tallest columns are shelling the evacuation. Silence them before it reaches you; climb as it climbs.",
      "kind": "destroy",
      "start": [
       0,
@@ -5311,8 +5311,168 @@
         40,
         30
        ]
+      },
+      {
+       "at": [
+        0,
+        720
+       ],
+       "size": [
+        16,
+        16,
+        84
+       ]
+      },
+      {
+       "at": [
+        190,
+        610
+       ],
+       "size": [
+        16,
+        16,
+        90
+       ]
+      },
+      {
+       "at": [
+        190,
+        391
+       ],
+       "size": [
+        16,
+        16,
+        96
+       ]
+      },
+      {
+       "at": [
+        0,
+        280
+       ],
+       "size": [
+        16,
+        16,
+        84
+       ]
+      },
+      {
+       "at": [
+        -190,
+        390
+       ],
+       "size": [
+        16,
+        16,
+        90
+       ]
+      },
+      {
+       "at": [
+        -190,
+        610
+       ],
+       "size": [
+        16,
+        16,
+        96
+       ]
+      },
+      {
+       "at": [
+        0,
+        700
+       ],
+       "size": [
+        22,
+        22,
+        40
+       ]
+      },
+      {
+       "at": [
+        -90,
+        640
+       ],
+       "size": [
+        22,
+        22,
+        52
+       ]
+      },
+      {
+       "at": [
+        90,
+        620
+       ],
+       "size": [
+        22,
+        22,
+        58
+       ]
+      },
+      {
+       "at": [
+        -150,
+        520
+       ],
+       "size": [
+        22,
+        22,
+        64
+       ]
+      },
+      {
+       "at": [
+        150,
+        470
+       ],
+       "size": [
+        22,
+        22,
+        70
+       ]
+      },
+      {
+       "at": [
+        0,
+        500
+       ],
+       "size": [
+        22,
+        22,
+        76
+       ]
+      },
+      {
+       "at": [
+        -60,
+        360
+       ],
+       "size": [
+        22,
+        22,
+        78
+       ]
+      },
+      {
+       "at": [
+        80,
+        330
+       ],
+       "size": [
+        22,
+        22,
+        80
+       ]
       }
      ],
+     "lava": {
+      "from_m": 0,
+      "to_m": 74,
+      "over_s": 150,
+      "dps": 420
+     },
      "units": [
       {
        "type": "turret",
@@ -5336,7 +5496,7 @@
        "type": "turret",
        "at": [
         190,
-        390,
+        391,
         -1
        ],
        "wave": 0
@@ -5354,7 +5514,7 @@
        "type": "turret",
        "at": [
         -190,
-        389,
+        390,
         -1
        ],
        "wave": 0
@@ -5373,7 +5533,7 @@
        "at": [
         0,
         650,
-        90
+        100
        ],
        "wave": 1
       },
@@ -5382,7 +5542,7 @@
        "at": [
         129,
         425,
-        90
+        100
        ],
        "wave": 1
       },
@@ -5391,12 +5551,12 @@
        "at": [
         -129,
         424,
-        90
+        100
        ],
        "wave": 1
       }
      ],
-     "time_limit_s": 360
+     "time_limit_s": 240
     },
     {
      "id": "cinder-2",
@@ -5965,17 +6125,17 @@
     {
      "id": "cinder-3",
      "name": "LAST FOUNDRY",
-     "scene": "The last four foundries on Cinder are all that make frames like yours. Crawlers are coming through the lava for them.",
-     "kind": "defend",
+     "scene": "The contractor has taken Cinder's last foundry to build frames against us. Go inside: break its three reactors, stay out of the lights, and get out by the south vent. An alarm seals the door you came in by.",
+     "kind": "sabotage",
      "start": [
       -400,
-      -120,
+      -30,
       0
      ],
      "reward": "bt-wisp",
      "plus": {
-      "rule": "max_lost",
-      "value": 0,
+      "rule": "under_seconds",
+      "value": 140,
       "reward": "lr-spear"
      },
      "requires": [
@@ -5985,286 +6145,453 @@
       {
        "at": [
         -400,
-        -120
+        -200
        ],
        "size": [
-        40,
-        30,
-        20
+        160,
+        160,
+        2
        ]
-      }
-     ],
-     "protect": [
-      {
-       "at": [
-        -460,
-        -230
-       ],
-       "size": [
-        26,
-        26,
-        30
-       ],
-       "ap": 3200
       },
       {
        "at": [
-        -340,
-        -230
+        -455,
+        -120
        ],
        "size": [
-        26,
-        26,
-        30
+        50,
+        6,
+        36
+       ]
+      },
+      {
+       "at": [
+        -345,
+        -120
        ],
-       "ap": 3200
+       "size": [
+        50,
+        6,
+        36
+       ]
       },
       {
        "at": [
         -450,
-        -300
+        -280
        ],
        "size": [
-        26,
-        26,
-        24
-       ],
-       "ap": 3200
+        60,
+        6,
+        36
+       ]
       },
       {
        "at": [
         -350,
-        -300
+        -280
        ],
        "size": [
-        26,
-        26,
-        24
-       ],
-       "ap": 3200
-      }
-     ],
-     "may_lose": 1,
-     "units": [
-      {
-       "type": "tank",
-       "at": [
-        -400,
-        -60,
-        0
-       ],
-       "wave": 0
+        60,
+        6,
+        36
+       ]
       },
       {
-       "type": "tank",
        "at": [
-        -266,
-        -156,
-        0
+        -480,
+        -200
        ],
-       "wave": 0
+       "size": [
+        6,
+        160,
+        36
+       ]
       },
       {
-       "type": "tank",
-       "at": [
-        -317,
-        -313,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -482,
-        -313,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -533,
-        -156,
-        0
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        -400,
-        -90,
-        80
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        -304,
-        -254,
-        80
-       ],
-       "wave": 0
-      },
-      {
-       "type": "heli",
-       "at": [
-        -495,
-        -255,
-        80
-       ],
-       "wave": 0
-      },
-      {
-       "type": "tank",
-       "at": [
-        -358,
-        -66,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -263,
-        -168,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -304,
-        -302,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -441,
-        -333,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -536,
-        -231,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "tank",
-       "at": [
-        -495,
-        -97,
-        0
-       ],
-       "wave": 1
-      },
-      {
-       "type": "heli",
-       "at": [
-        -400,
-        -90,
-        90
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        -290,
-        -200,
-        90
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        -400,
-        -310,
-        90
-       ],
-       "wave": 2
-      },
-      {
-       "type": "heli",
-       "at": [
-        -510,
-        -200,
-        90
-       ],
-       "wave": 2
-      },
-      {
-       "type": "tank",
        "at": [
         -320,
-        -84,
-        0
+        -200
        ],
-       "wave": 2
+       "size": [
+        6,
+        160,
+        36
+       ]
       },
       {
-       "type": "tank",
        "at": [
-        -260,
-        -210,
-        0
+        -400,
+        -200
        ],
-       "wave": 2
+       "size": [
+        166,
+        166,
+        6
+       ],
+       "base": 36
       },
       {
-       "type": "tank",
        "at": [
-        -339,
-        -326,
-        0
+        -415,
+        -163
        ],
-       "wave": 2
+       "size": [
+        4,
+        74,
+        34
+       ],
+       "base": 2
       },
       {
-       "type": "tank",
        "at": [
-        -479,
-        -315,
-        0
+        -385,
+        -163
        ],
-       "wave": 2
+       "size": [
+        4,
+        74,
+        34
+       ],
+       "base": 2
       },
       {
-       "type": "tank",
        "at": [
-        -539,
-        -189,
-        0
+        -415,
+        -230
        ],
-       "wave": 2
+       "size": [
+        4,
+        46,
+        34
+       ],
+       "base": 2
       },
       {
-       "type": "tank",
+       "at": [
+        -385,
+        -230
+       ],
+       "size": [
+        4,
+        46,
+        34
+       ],
+       "base": 2
+      },
+      {
+       "at": [
+        -447,
+        -240
+       ],
+       "size": [
+        60,
+        4,
+        34
+       ],
+       "base": 2
+      },
+      {
+       "at": [
+        -353,
+        -240
+       ],
+       "size": [
+        60,
+        4,
+        34
+       ],
+       "base": 2
+      },
+      {
+       "at": [
+        -400,
+        -70
+       ],
+       "size": [
+        30,
+        100,
+        2
+       ]
+      }
+     ],
+     "searchlights": [
+      {
+       "at": [
+        -400,
+        -130,
+        30
+       ],
+       "path": [
+        [
+         -400,
+         -145
+        ],
+        [
+         -400,
+         -205
+        ]
+       ],
+       "r_m": 9,
+       "speed_ms": 7
+      },
+      {
+       "at": [
+        -470,
+        -130,
+        30
+       ],
+       "path": [
+        [
+         -455,
+         -160
+        ],
+        [
+         -455,
+         -220
+        ]
+       ],
+       "r_m": 9,
+       "speed_ms": 6
+      },
+      {
+       "at": [
+        -330,
+        -130,
+        30
+       ],
+       "path": [
+        [
+         -345,
+         -160
+        ],
+        [
+         -345,
+         -220
+        ]
+       ],
+       "r_m": 9,
+       "speed_ms": 8
+      },
+      {
        "at": [
         -460,
-        -73,
-        0
+        -275,
+        30
+       ],
+       "path": [
+        [
+         -430,
+         -260
+        ],
+        [
+         -370,
+         -260
+        ]
+       ],
+       "r_m": 9,
+       "speed_ms": 9
+      }
+     ],
+     "alarm_wave": 2,
+     "machines": [
+      {
+       "role": "door",
+       "at": [
+        -400,
+        -120,
+        36
+       ],
+       "size": [
+        22,
+        6,
+        34
+       ],
+       "path": [
+        [
+         0,
+         0,
+         0
+        ],
+        [
+         0,
+         0,
+         -34
+        ]
+       ],
+       "speed_ms": 30,
+       "on_alarm": true
+      }
+     ],
+     "units": [
+      {
+       "type": "core",
+       "at": [
+        -450,
+        -190,
+        10
+       ],
+       "ap": 4000,
+       "wave": 1
+      },
+      {
+       "type": "core",
+       "at": [
+        -350,
+        -190,
+        10
+       ],
+       "ap": 4000,
+       "wave": 1
+      },
+      {
+       "type": "core",
+       "at": [
+        -400,
+        -260,
+        10
+       ],
+       "ap": 4000,
+       "wave": 1
+      },
+      {
+       "type": "mine",
+       "at": [
+        -400,
+        -170,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        -435,
+        -200,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        -365,
+        -210,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        -400,
+        -225,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        -450,
+        -260,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "mine",
+       "at": [
+        -350,
+        -260,
+        -1
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        -450,
+        -170,
+        -1
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -350,
+        -170,
+        -1
+       ],
+       "wave": 2
+      },
+      {
+       "type": "tank",
+       "at": [
+        -400,
+        -260,
+        -1
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -520,
+        -330,
+        70
+       ],
+       "wave": 2
+      },
+      {
+       "type": "heli",
+       "at": [
+        -280,
+        -330,
+        70
        ],
        "wave": 2
       }
      ],
-     "time_limit_s": 480,
-     "power_pct": 130,
+     "stages": [
+      {
+       "objective": "Get inside the foundry",
+       "wave": 0,
+       "reach": [
+        -400,
+        -140,
+        6,
+        20
+       ],
+       "fight": false
+      },
+      {
+       "objective": "Break the three reactors",
+       "wave": 1
+      },
+      {
+       "objective": "Get out by the south vent",
+       "wave": 0,
+       "reach": [
+        -400,
+        -340,
+        10,
+        40
+       ],
+       "fight": false
+      }
+     ],
+     "clear": [
+      [
+       -520,
+       -320,
+       -280,
+       20
+      ]
+     ],
+     "time_limit_s": 300,
+     "power_pct": 110,
      "mechs": [
       {
        "name": "MAGMA TITAN",
@@ -6297,7 +6624,7 @@
     {
      "id": "cinder-4",
      "name": "IRON VECTOR",
-     "scene": "The contractor's ace, in the best frame money can buy, with two gunships at its shoulders. This is the job.",
+     "scene": "The contractor's ace, in the best frame money can buy, with two gunships at its shoulders. Its pulse armour turns every hit until it breaks; then you have seconds before it is whole again. This is the job.",
      "kind": "duel",
      "start": [
       300,
@@ -6347,7 +6674,9 @@
         -860,
         180
        ],
-       "ap_pct": 130,
+       "ap_pct": 110,
+       "pulse_ap": 2600,
+       "pulse_down_ms": 7000,
        "loadout": {
         "head": "hd-sentinel",
         "core": "cr-lattice",

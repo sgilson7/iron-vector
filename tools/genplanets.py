@@ -269,6 +269,30 @@ ESCAPE_SLABS = [slab(100, 230, 90, 12, 3), slab(350, 575, 90, 12, 8), slab(200, 
                 slab(-100, 1475, 90, 12, 25), slab(0, 1500, 50, 12, 30)]
 GENERATORS = [(300, 250), (-300, 250), (300, -250), (-300, -250)]
 
+# Cinder: a turret field the lava climbs through, and the foundry's insides
+ASH_GUNS = [(int(220 * math.sin(2 * math.pi * k / 6)), 500 + int(220 * math.cos(2 * math.pi * k / 6)), 84 + (k % 3) * 6) for k in range(6)]
+ASH_STEPS = [(0, 700, 40), (-90, 640, 52), (90, 620, 58), (-150, 520, 64), (150, 470, 70), (0, 500, 76),
+             (-60, 360, 78), (80, 330, 80)]
+ASH_BLOCKS = ([block(0, 800, 40, 40, 30)] + [block(x, z, 16, 16, h) for x, z, h in ASH_GUNS]
+              + [block(x, z, 22, 22, h) for x, z, h in ASH_STEPS])
+F = (-400, -200)
+def fx_(dx, dz): return (F[0] + dx, F[1] + dz)
+FOUNDRY = ([block(*fx_(0, 0), 160, 160, 2)]                                   # floor, above the burning ground
+           + [block(*fx_(-55, 80), 50, 6, 36), block(*fx_(55, 80), 50, 6, 36)]     # north wall, its door between
+           + [block(*fx_(-50, -80), 60, 6, 36), block(*fx_(50, -80), 60, 6, 36)]   # south wall, the vent between
+           + [block(*fx_(-80, 0), 6, 160, 36), block(*fx_(80, 0), 6, 160, 36)]     # west and east walls
+           + [block(*fx_(0, 0), 166, 166, 6, 36)]                                 # roof
+           + [block(*fx_(-15, 37), 4, 74, 34, 2), block(*fx_(15, 37), 4, 74, 34, 2)]   # corridor, north half
+           + [block(*fx_(-15, -30), 4, 46, 34, 2), block(*fx_(15, -30), 4, 46, 34, 2)] # corridor, south half
+           + [block(*fx_(-47, -40), 60, 4, 34, 2), block(*fx_(47, -40), 60, 4, 34, 2)] # rooms' south walls
+           + [block(*fx_(0, 130), 30, 100, 2)])                                   # the causeway to the door
+FOUNDRY_LIGHTS = [light(*fx_(0, 70), 30, [fx_(0, 55), fx_(0, -5)], r=9, speed=7),
+                  light(*fx_(-70, 70), 30, [fx_(-55, 40), fx_(-55, -20)], r=9, speed=6),
+                  light(*fx_(70, 70), 30, [fx_(55, 40), fx_(55, -20)], r=9, speed=8),
+                  light(*fx_(-60, -75), 30, [fx_(-30, -60), fx_(30, -60)], r=9, speed=9)]
+REACTORS = [fx_(-50, 10), fx_(50, 10), fx_(0, -60)]
+FOUNDRY_MINES = [fx_(0, 30), fx_(-35, 0), fx_(35, -10), fx_(0, -25), fx_(-50, -60), fx_(50, -60)]
+
 planets = []
 
 # ---------------- 1 HALDEN ----------------
@@ -493,10 +517,10 @@ planets.append(dict(
            tall_pct=10, tall_h_m=140, ceiling_m=480, style="pillars",
            clearings=[dict(x_m=foundry[0], z_m=foundry[1], r_m=140), dict(x_m=300, z_m=-700, r_m=180)]),
   missions=[
-    m("cinder-1", "ASHFALL", "Turrets on the columns are shelling the evacuation. Silence them without touching the floor more than you must.",
+    m("cinder-1", "ASHFALL", "The lava is rising through the column field, and turrets on the tallest columns are shelling the evacuation. Silence them before it reaches you; climb as it climbs.",
       "destroy", [0, 800, 0], "hd-sentinel", plus("max_floor_seconds", 3, "cr-lattice"),
-      pads=[dict(at=[0, 800], size=[40, 40, 30])],
-      units=ring(0, 500, 220, 6, "turret", -1) + ring(0, 500, 150, 3, "heli", 90, 1), time_limit_s=360),
+      pads=ASH_BLOCKS, lava=dict(from_m=0, to_m=74, over_s=150, dps=420),
+      units=[unit("turret", x, z, -1) for x, z, _ in ASH_GUNS] + ring(0, 500, 150, 3, "heli", 100, 1), time_limit_s=240),
     m("cinder-2", "EMBER RUN", "Column to column over the lava, up a rising lift, under the pistons and through a vault only a switch opens. Touch the lava and it will cost you more than time.",
       "race", [-14, 900, 0], "ar-titan", plus("under_seconds", 67, "lg-monolith"), weapons=False,
       pads=CINDER_BLOCKS,
@@ -504,21 +528,24 @@ planets.append(dict(
                   loadout=dict(head="hd-warden", core="cr-bulwark", arms="ar-lancer", legs="rj-hare", booster="bt-surge", generator="gn-kiln", right_weapon="rf-marrow", left_weapon="rf-marrow", shoulder_weapon="mp-swarm"))],
       course=CINDER_COURSE, machines=CINDER_MACHINES, time_limit_s=180,
       clear=corridors([0, 900], CINDER_COURSE, 35)),
-    m("cinder-3", "LAST FOUNDRY", "The last four foundries on Cinder are all that make frames like yours. Crawlers are coming through the lava for them.",
-      "defend", [foundry[0], foundry[1] + 80, 0], "bt-wisp", plus("max_lost", 0, "lr-spear"), requires=["cinder-1"],
-      pads=[dict(at=[foundry[0], foundry[1] + 80], size=[40, 30, 20])],
-      protect=[dict(at=[foundry[0] + dx, foundry[1] + dz], size=[26, 26, h], ap=3200) for dx, dz, h in
-               [(-60, -30, 30), (60, -30, 30), (-50, -100, 24), (50, -100, 24)]],
-      may_lose=1,
-      units=ring(foundry[0], foundry[1], 140, 5, "tank", 0, 0) + ring(foundry[0], foundry[1], 110, 3, "heli", 80, 0)
-            + ring(foundry[0], foundry[1], 140, 6, "tank", 0, 1, 0.3) + ring(foundry[0], foundry[1], 110, 4, "heli", 90, 2)
-            + ring(foundry[0], foundry[1], 140, 6, "tank", 0, 2, 0.6),
-      time_limit_s=480, power_pct=130),
-    m("cinder-4", "IRON VECTOR", "The contractor's ace, in the best frame money can buy, with two gunships at its shoulders. This is the job.",
+    m("cinder-3", "LAST FOUNDRY", "The contractor has taken Cinder's last foundry to build frames against us. Go inside: break its three reactors, stay out of the lights, and get out by the south vent. An alarm seals the door you came in by.",
+      "sabotage", [F[0], F[1] + 170, 0], "bt-wisp", plus("under_seconds", 140, "lr-spear"), requires=["cinder-1"],
+      pads=FOUNDRY, searchlights=FOUNDRY_LIGHTS, alarm_wave=2,
+      machines=[machine("door", F[0], F[1] + 80, 22, 6, 34, base=36, path=[(0, 0, 0), (0, 0, -34)], speed=30) | {"on_alarm": True}],
+      units=[dict(type="core", at=[x, z, 10], ap=4000, wave=1) for x, z in REACTORS]
+            + [unit("mine", x, z, -1) for x, z in FOUNDRY_MINES]
+            + [unit("tank", *fx_(-50, 30), -1, 2), unit("tank", *fx_(50, 30), -1, 2), unit("tank", *fx_(0, -60), -1, 2)]
+            + [unit("heli", *fx_(-120, -130), 70, 2), unit("heli", *fx_(120, -130), 70, 2)],
+      stages=[stage("Get inside the foundry", reach=[F[0], F[1] + 60, 6, 20], fight=False),
+              stage("Break the three reactors", wave=1),
+              stage("Get out by the south vent", reach=[F[0], F[1] - 140, 10, 40], fight=False)],
+      clear=[[F[0] - 120, F[1] - 120, F[0] + 120, F[1] + 220]],
+      time_limit_s=300, power_pct=110),
+    m("cinder-4", "IRON VECTOR", "The contractor's ace, in the best frame money can buy, with two gunships at its shoulders. Its pulse armour turns every hit until it breaks; then you have seconds before it is whole again. This is the job.",
       "duel", [300, -560, 0], "gc-quake", plus("min_ap_pct", 50, "bt-ram-x") if False else plus("min_ap_pct", 50, "gc-quake-x") if False else plus("min_ap_pct", 50, "lg-bastion-x") if False else plus("min_ap_pct", 50, "ar-titan-x") if False else plus("min_ap_pct", 50, "PLACEHOLDER"),
       requires=["cinder-2", "cinder-3"],
       pads=[dict(at=[300, -560], size=[50, 40, 30]), dict(at=[300, -860], size=[50, 40, 30])],
-      mechs=[dict(name="ACE · IRON VECTOR", pilot="ace", at=[300, -860, 180], ap_pct=130,
+      mechs=[dict(name="ACE · IRON VECTOR", pilot="ace", at=[300, -860, 180], ap_pct=110, pulse_ap=2600, pulse_down_ms=7000,
                   loadout=dict(head="hd-sentinel", core="cr-lattice", arms="ar-grip", legs="rj-lynx", booster="bt-ram",
                                generator="gn-reactor", right_weapon="lr-spear", left_weapon="rf-marrow", shoulder_weapon="mp-hydra"))],
       units=[unit("heli", 220, -820, 90), unit("heli", 380, -820, 90)], time_limit_s=420, power_pct=130),
