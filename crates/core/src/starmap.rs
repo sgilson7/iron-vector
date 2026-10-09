@@ -1,11 +1,14 @@
 //! The cockpit and the star map hologram above its console.
 //!
-//! The map is a Hasse diagram: each planet heads a column, in the order the
-//! planets open, and its missions hang beneath it by level, a mission's
-//! level being the length of its longest chain of requirements. Lines join
-//! each mission to what it requires and each planet to the next. Planets are
-//! drawn as globes in their own colours, with bands, rings and moons, so each
-//! is told apart at a glance.
+//! The map is a chart of the route: the planets, in the order they open,
+//! zigzag between two rows like stops on a star chart, the lower row set a
+//! little deeper, and each planet's missions hang beneath it as a
+//! constellation, by level, a mission's level being the length of its
+//! longest chain of requirements. Lines join each mission to what it requires
+//! and each planet to the next. The hologram zooms to fit the chart, so it
+//! draws further out as more planets are shown. Planets are drawn as globes
+//! in their own colours, with bands, rings and moons, so each is told apart
+//! at a glance.
 
 use crate::campaign::{Campaign, Progress, Standing};
 use crate::content::{q16, Palette};
@@ -31,10 +34,22 @@ pub struct Node {
 /// Lines between nodes, by index; `true` for a gate between planets.
 pub type Edge = (usize, usize, bool);
 
-const COLUMN: i32 = cm(26);
-const TOP: i32 = cm(22);
-const ROW: i32 = cm(11);
+/// Planets, one after the next along the route, this far apart across.
+const PITCH: i32 = cm(26);
+const ROW: i32 = cm(9);
 const SPREAD: i32 = cm(8);
+/// The lower row's planets clear the upper row's deepest constellation by this.
+const ROW_GAP: i32 = cm(14);
+/// The lower row sits this much further into the hologram.
+const DEPTH: i32 = cm(8);
+/// The chart is centred here in the hologram, and zoomed to fit inside this
+/// box, but never drawn larger than `MAX_ZOOM`.
+const CENTRE_Y: i32 = cm(1);
+const FIT_W: i32 = cm(200);
+const FIT_H: i32 = cm(76);
+const MAX_ZOOM: i32 = ONE * 6 / 5;
+/// Room kept round each node when measuring the chart: a planet's globe and moons.
+const MARGIN: i32 = cm(9);
 
 /// Every node and line of the diagram, hidden planets included.
 pub fn layout(c: &Campaign) -> (Vec<Node>, Vec<Edge>) {
@@ -49,22 +64,28 @@ pub fn layout_for(c: &Campaign, progress: Option<&Progress>) -> (Vec<Node>, Vec<
         .filter(|p| progress.is_none_or(|pr| pr.planet_shown(c, *p)))
         .collect();
     let n = shown.len() as i32;
+    let levels_of =
+        |p: usize| -> Vec<usize> { (0..c.planets[p].missions.len()).map(|i| c.level(p, i)).collect() };
+    // how far below a planet its constellation reaches
+    let depth = |p: usize| ROW * (levels_of(p).into_iter().max().map_or(0, |l| l as i32 + 1));
+    let upper_depth = shown.iter().step_by(2).map(|p| depth(*p)).max().unwrap_or(0);
+    let lower_y = -(upper_depth + ROW_GAP);
     let mut last_planet: Option<usize> = None;
-    for (col, &p) in shown.iter().enumerate() {
+    for (k, &p) in shown.iter().enumerate() {
         let planet = &c.planets[p];
-        let x = COLUMN * (2 * col as i32 - (n - 1)) / 2;
-        let z = if p % 2 == 0 { 0 } else { -cm(6) };
+        let x = PITCH * (2 * k as i32 - (n - 1)) / 2;
+        let (y, z) = if k % 2 == 0 { (0, 0) } else { (lower_y, -DEPTH) };
         let head = nodes.len();
         nodes.push(Node {
             planet: p,
             mission: None,
-            at: v3(x, TOP, z),
+            at: v3(x, y, z),
         });
         if let Some(prev) = last_planet {
             edges.push((prev, head, true));
         }
         last_planet = Some(head);
-        let levels: Vec<usize> = (0..planet.missions.len()).map(|i| c.level(p, i)).collect();
+        let levels = levels_of(p);
         let first = nodes.len();
         for (i, &lv) in levels.iter().enumerate() {
             let same: Vec<usize> = (0..levels.len()).filter(|j| levels[*j] == lv).collect();
@@ -74,7 +95,7 @@ pub fn layout_for(c: &Campaign, progress: Option<&Progress>) -> (Vec<Node>, Vec<
             nodes.push(Node {
                 planet: p,
                 mission: Some(i),
-                at: v3(mx, TOP - ROW * (lv as i32 + 1), z),
+                at: v3(mx, y - ROW * (lv as i32 + 1), z),
             });
         }
         for (i, m) in planet.missions.iter().enumerate() {
@@ -88,7 +109,36 @@ pub fn layout_for(c: &Campaign, progress: Option<&Progress>) -> (Vec<Node>, Vec<
             }
         }
     }
+    // centre the chart where the hologram draws it
+    let (lo, hi) = bounds(&nodes);
+    let shift = v3(-(lo.x + hi.x) / 2, CENTRE_Y - (lo.y + hi.y) / 2, 0);
+    for nd in &mut nodes {
+        nd.at = nd.at.add(shift);
+    }
     (nodes, edges)
+}
+
+/// The box the chart's nodes take up, with room for the globes round them.
+fn bounds(nodes: &[Node]) -> (V3, V3) {
+    let m = v3(MARGIN, MARGIN, 0);
+    let lo = nodes.iter().fold(v3(i32::MAX, i32::MAX, 0), |a, n| {
+        v3(a.x.min(n.at.x), a.y.min(n.at.y), 0)
+    });
+    let hi = nodes.iter().fold(v3(i32::MIN, i32::MIN, 0), |a, n| {
+        v3(a.x.max(n.at.x), a.y.max(n.at.y), 0)
+    });
+    if nodes.is_empty() {
+        return (V3::ZERO, V3::ZERO);
+    }
+    (lo.sub(m), hi.add(m))
+}
+
+/// How much the hologram is zoomed so the whole chart fits: the more
+/// planets are shown, the further out it draws.
+pub fn zoom(nodes: &[Node]) -> i32 {
+    let (lo, hi) = bounds(nodes);
+    let (w, h) = ((hi.x - lo.x).max(1), (hi.y - lo.y).max(1));
+    fx::div(FIT_W, w).min(fx::div(FIT_H, h)).min(MAX_ZOOM)
 }
 
 /// What the star map has picked out.
@@ -143,12 +193,13 @@ pub fn push_cockpit(
     part(b, at(0, 71, -96), at(180, 2, 3), lamp, lit);
     // the map: grown from the emitter, turning gently
     let sway = fx::mul(fx::sin(power.clock / 6), deg(12));
+    let (nodes, edges) = layout_for(c, Some(progress));
+    let size = fx::mul(power.grow.max(1), zoom(&nodes));
     let holo = frame
         .then(&Affine::translate(at(-14, -2, -105)))
         .then(&Affine::rot_y(sway))
         .then(&Affine::rot_x(-deg(8)))
-        .then(&Affine::scale(v3(ONE, ONE, ONE).scale(power.grow.max(1) * 6 / 5)));
-    let (nodes, edges) = layout_for(c, Some(progress));
+        .then(&Affine::scale(v3(size, size, size)));
     let placed: Vec<V3> = nodes.iter().map(|n| holo.apply(n.at)).collect();
     if power.grow <= ONE / 50 {
         return placed;
@@ -317,6 +368,53 @@ mod tests {
             edges.iter().filter(|e| e.2).count(),
             c.planets.len() - 1,
             "one gate between each pair of planets"
+        );
+    }
+
+    #[test]
+    fn the_planets_zigzag_between_two_rows_and_no_constellations_overlap() {
+        let c = campaign();
+        let (nodes, _) = layout(&c);
+        let heads: Vec<&Node> = nodes.iter().filter(|n| n.mission.is_none()).collect();
+        for w in heads.windows(2) {
+            assert_ne!(w[0].at.y, w[1].at.y, "each planet on the other row from the last");
+        }
+        // each planet's group: its globe and every mission under it
+        let group = |p: usize| {
+            let g: Vec<Node> = nodes.iter().filter(|n| n.planet == p).copied().collect();
+            bounds(&g)
+        };
+        let planets: Vec<usize> = heads.iter().map(|h| h.planet).collect();
+        for (i, a) in planets.iter().enumerate() {
+            for b in &planets[i + 1..] {
+                let ((alo, ahi), (blo, bhi)) = (group(*a), group(*b));
+                let apart = ahi.x <= blo.x || bhi.x <= alo.x || ahi.y <= blo.y || bhi.y <= alo.y;
+                assert!(apart, "{} and {} overlap", c.planets[*a].id, c.planets[*b].id);
+            }
+        }
+    }
+
+    #[test]
+    fn the_hologram_zooms_out_as_planets_are_added_and_always_fits() {
+        let c = campaign();
+        let mut zooms = Vec::new();
+        for shown in 1..=c.planets.len() {
+            let mut fewer = c.clone();
+            fewer.planets.truncate(shown);
+            let (nodes, _) = layout(&fewer);
+            let z = zoom(&nodes);
+            let (lo, hi) = bounds(&nodes);
+            assert!(fx::mul(hi.x - lo.x, z) <= FIT_W + 1, "{shown} planets fit across");
+            assert!(fx::mul(hi.y - lo.y, z) <= FIT_H + 1, "{shown} planets fit down");
+            zooms.push(z);
+        }
+        assert!(
+            zooms.windows(2).all(|w| w[1] <= w[0]),
+            "never zooms in as planets are added: {zooms:?}"
+        );
+        assert!(
+            zooms.last() < zooms.first(),
+            "seven planets are drawn further out than one"
         );
     }
 
