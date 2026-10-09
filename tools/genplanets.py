@@ -224,6 +224,42 @@ CINDER_BLOCKS = ([block(0, 900, 60, 40, 25), block(0, 780, 20, 20, 30), block(-6
                     block(100, 40, 36, 44, 30)]
                  + [block(-140, -260, 20, 20, 34), block(-60, -400, 24, 120, 30), block(140, -560, 30, 30, 36)])
 
+# ---- mission objects ----
+def train(name, z0, z1, cars, car_ap, engine_ap, speed):
+    """An armoured train: a locomotive and its cars, running the canyon once.
+    The cars are its weak points; the engine is sealed until they fall."""
+    hull = [dict(at=[0, 5, 0], size=[12, 10, 22], paint="dark"),
+            dict(at=[0, 11, -4], size=[8, 3, 10], paint="secondary"),
+            dict(at=[0, 10, -11], size=[13, 1, 1], paint="glow")]
+    weak, tur = [], []
+    for k in range(cars):
+        z = 27 + 26 * k
+        hull.append(dict(at=[0, 4, z], size=[11, 8, 23], paint="primary"))
+        hull.append(dict(at=[0, 8, z], size=[12, 1, 24], paint="glow" if k % 2 else "secondary"))
+        weak.append([0, 12, z])
+        if k % 2 == 0:
+            tur.append([0, 10, z + 8])
+    return dict(name=name, at=[0, z0], path=[[0, z1]], speed_ms=speed, size_x=4 + 3 * cars, hull=hull,
+                weak_points=weak, weak_ap=car_ap, weak_radius_m=5, core=[0, 13, 2], core_ap=engine_ap, core_radius_m=6,
+                turrets=tur, escapes=True)
+
+def light(x, z, h, path, r=14, speed=10):
+    return dict(at=[x, z, h], path=[list(p) for p in path], r_m=r, speed_ms=speed)
+
+def stage(objective, wave=0, reach=None, fight=True, hold=0):
+    d = dict(objective=objective, wave=wave)
+    if reach: d["reach"] = list(reach)
+    if not fight: d["fight"] = False
+    if hold: d["hold_s"] = hold
+    return d
+
+nest = (-450, 100)
+NEST_LIGHTS = [light(nest[0] - 110, nest[1] - 60, 40, [(nest[0] - 60, nest[1] - 40), (nest[0] - 60, nest[1] + 70)], speed=9),
+               light(nest[0] + 110, nest[1] - 40, 40, [(nest[0] + 70, nest[1] - 50), (nest[0] + 10, nest[1] + 20)], speed=11),
+               light(nest[0], nest[1] + 150, 44, [(nest[0] - 40, nest[1] + 90), (nest[0] + 50, nest[1] + 100)], speed=8),
+               light(nest[0], nest[1] - 150, 44, [(nest[0] - 30, nest[1] - 80), (nest[0] + 40, nest[1] - 90)], speed=12)]
+NEST_TOWERS = [block(l["at"][0], l["at"][1], 6, 6, l["at"][2] - 3) for l in NEST_LIGHTS]
+
 planets = []
 
 # ---------------- 1 HALDEN ----------------
@@ -298,24 +334,37 @@ planets.append(dict(
            tall_pct=8, tall_h_m=110, ceiling_m=420, avenue_m=90, style="mesas",
            clearings=[dict(x_m=0, z_m=1000, r_m=80), dict(x_m=-450, z_m=100, r_m=120), dict(x_m=450, z_m=-800, r_m=200)]),
   missions=[
-    m("sere-1", "CONVOY BREAK", "A tank convoy is running the canyon road south with stolen reactor cores. Stop every one before it reaches the gate.",
-      "destroy", [0, 1000, 0], "lg-bastion", plus("under_seconds", 80, "ar-bastion"),
-      units=[unit("tank", (k % 2) * 20 - 10, 700 - k * 40, 0, 0, goal=[0, -1100]) for k in range(8)], time_limit_s=240),
-    m("sere-2", "GLASS NEST", "Turrets dug into the mesa tops have closed the western pass. Break the nest; the gunships will come.",
-      "destroy", [-450, 260, 0], "hd-mantle", plus("min_ap_pct", 80, "cr-citadel"),
-      units=ring(-450, 100, 170, 6, "turret", -1) + [unit("heli", -500, 60, 80, 1), unit("heli", -400, 140, 90, 1)], time_limit_s=360),
+    m("sere-1", "CONVOY BREAK", "An armoured train is running the canyon south with stolen reactor cores. Break its four cars before it reaches the tunnel; land on its roof to keep pace. The engine opens when the cars are gone.",
+      "intercept", [0, 1000, 0], "lg-bastion", plus("under_seconds", 80, "ar-bastion"),
+      fortresses=[train("IRON SERPENT · TRAIN", 760, -1040, 4, 2600, 4200, 15)],
+      units=[unit("heli", -60, 600, 70), unit("heli", 60, 500, 80)],
+      clear=[[-30, -1100, 30, 1000]],
+      pads=[block(-60, -1090, 90, 40, 60), block(60, -1090, 90, 40, 60), block(0, -1090, 30, 40, 36, 24)],
+      time_limit_s=240),
+    m("sere-2", "GLASS NEST", "Searchlights sweep the turret nest that closed the western pass. Slip in under the storm, scan its three caches, and get clear. If a light finds you, the nest wakes, and so does what sleeps under it.",
+      "recon", [-330, 330, 200], "hd-mantle", plus("max_alarms", 0, "cr-citadel"),
+      units=ring(-450, 100, 170, 6, "turret", -1, 1) + [unit("heli", -500, 60, 80, 1), unit("heli", -400, 140, 90, 1)],
+      searchlights=NEST_LIGHTS, alarm_wave=1, pads=NEST_TOWERS,
+      stages=[stage("Scan the east cache", reach=[nest[0] + 60, nest[1] + 10, 4, 12], fight=False, hold=3),
+              stage("Scan the south cache", reach=[nest[0] - 10, nest[1] - 70, 4, 12], fight=False, hold=3),
+              stage("Scan the west cache", reach=[nest[0] - 70, nest[1] + 60, 4, 12], fight=False, hold=3),
+              stage("Get clear of the nest", reach=[nest[0], nest[1] + 380, 10, 70], fight=False)],
+      time_limit_s=300),
     m("sere-3", "DUNE GAUNTLET", "The canyon racers of Sere run a gauntlet: pistons that slam the canyon floor, a slalom of walls, a mesa stair to land your way up. One has challenged you.",
       "race", [-14, 1050, 0], "bt-titan", plus("under_seconds", 44, "rj-hare"), weapons=False, requires=["sere-1"],
       mechs=[dict(name="DUST · RIVAL", pilot="racer_hot", speed_pct=82, at=[14, 1050, 0], ap_pct=100, racer=True,
                   loadout=dict(head="hd-kestrel", core="cr-vane", arms="ar-reed", legs="lg-wisp", booster="bt-ram",
                                generator="gn-ember", right_weapon="rf-marrow", left_weapon="rf-marrow", shoulder_weapon="mp-swarm"))],
       course=SERE_COURSE, machines=SERE_MACHINES, pads=SERE_BLOCKS, clear=corridors([-14, 1050], SERE_COURSE, 50), time_limit_s=180),
-    m("sere-4", "THE SCORPION", "A heavy shotgun frame has been taking convoys apart up close, and a light missile frame keeps watch for it from above. Two at once.",
-      "duel", [450, -640, 0], "gn-forge", plus("under_seconds", 110, "lr-glint"), requires=["sere-2", "sere-3"],
-      mechs=[dict(name="SCORPION", pilot="brute", at=[450, -960, 180], ap_pct=110,
+    m("sere-4", "THE SCORPION", "A routine job: survey drones have strayed over the southern pass. Shoot them down and come home.",
+      "ambush", [450, -640, 0], "gn-forge", plus("under_seconds", 130, "lr-glint"), requires=["sere-2", "sere-3"],
+      units=ring(450, -820, 90, 6, "drone", 30) + [unit("tank", 420, -900, 0), unit("tank", 480, -900, 0)],
+      stages=[stage("Shoot down the stray drones"),
+              stage("AMBUSH — the Scorpion and its spotter", wave=1)],
+      mechs=[dict(name="SCORPION", pilot="brute", at=[450, -960, 180], ap_pct=110, wave=1,
                   loadout=dict(head="hd-mantle", core="cr-citadel", arms="ar-bastion", legs="lg-bastion", booster="bt-titan",
                                generator="gn-forge", right_weapon="sg-brand", left_weapon="rf-marrow", shoulder_weapon="gc-anvil")),
-             dict(name="STINGER", pilot="keeper", at=[560, -940, 180], ap_pct=65,
+             dict(name="STINGER", pilot="keeper", at=[560, -940, 180], ap_pct=65, wave=1,
                   loadout=dict(head="hd-kestrel", core="cr-vane", arms="ar-reed", legs="rj-hare", booster="bt-comet",
                                generator="gn-ember", right_weapon="ml-hornet", left_weapon="rf-marrow", shoulder_weapon="mp-swarm"))],
       time_limit_s=360),

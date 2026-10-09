@@ -18,6 +18,7 @@ pub mod mech;
 pub mod mesh;
 pub mod mission;
 pub mod model;
+pub mod objects;
 pub mod parts;
 pub mod pilot;
 pub mod render;

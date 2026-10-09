@@ -14,6 +14,7 @@ use crate::map::{Block, Map};
 use crate::mech::{tuning_for, Body, Controls, Tuning, TICKS_PER_SECOND};
 use crate::mission::{make_unit, FortressSpec, Gun, Mission, MissionSpec, Units};
 use crate::model::Rig;
+use crate::objects::{self, Escort, Pulse, Resupply, Searchlight, Shield, Strike};
 use crate::parts::{stats, Catalog, Loadout, Slot, Stats, WeaponKind};
 use crate::pilot::{Pilot, Pilots, Senses};
 use crate::rng::Rng;
@@ -77,6 +78,8 @@ pub struct Mech {
     pub scale: i32,
     /// a melee strike under way: weapon slot, tick, and what it lunges at
     pub melee: Option<(usize, i32, Option<Target>)>,
+    /// pulse armour, if it has any
+    pub pulse: Option<Pulse>,
 }
 
 /// A melee strike lunges this long, lands on this tick, and is done by the last.
@@ -121,6 +124,7 @@ impl Mech {
             burn: 0,
             scale: ONE,
             melee: None,
+            pulse: None,
         }
     }
 
@@ -213,6 +217,9 @@ pub struct Fortress {
     pub weak: Vec<usize>,
     pub core: usize,
     pub alive: bool,
+    /// runs its path once; arrived when it gets to the end
+    pub escapes: bool,
+    pub arrived: bool,
 }
 
 /// Paint names a hull box may use, in `Paint` order.
@@ -256,6 +263,12 @@ pub struct World {
     pub fortresses: Vec<Fortress>,
     /// a race's moving parts
     pub machines: Vec<Machine>,
+    pub searchlights: Vec<Searchlight>,
+    pub shields: Vec<Shield>,
+    /// shells marked on the ground and on their way
+    pub strikes: Vec<Strike>,
+    pub resupply: Vec<Resupply>,
+    pub escort: Option<Escort>,
 }
 
 fn empty_world(map: Map, player: Mech, seed: u64) -> World {
@@ -272,6 +285,11 @@ fn empty_world(map: Map, player: Mech, seed: u64) -> World {
         mission: None,
         fortresses: Vec::new(),
         machines: Vec::new(),
+        searchlights: Vec::new(),
+        shields: Vec::new(),
+        strikes: Vec::new(),
+        resupply: Vec::new(),
+        escort: None,
     }
 }
 
@@ -406,6 +424,9 @@ impl World {
             if ms.scale_pct != 100 || ms.speed_pct != 100 || ms.damage_pct != 100 {
                 m.grow(ms.scale_pct, ms.speed_pct, ms.damage_pct);
             }
+            if ms.pulse_ap > 0 {
+                m.pulse = Some(Pulse::new(ms.pulse_ap, ms.pulse_down_ms));
+            }
             let riders: Vec<Craft> = ms
                 .turrets
                 .iter()
@@ -433,6 +454,63 @@ impl World {
         }
         for (fi, f) in spec.fortresses.iter().enumerate() {
             w.add_fortress(fi, f, units, spec.power_pct);
+        }
+        w.searchlights = spec.searchlights.iter().map(Searchlight::new).collect();
+        for (k, sh) in spec.shields.iter().enumerate() {
+            let mut gens = Vec::new();
+            for (j, [x, z, alt]) in sh.generators.iter().enumerate() {
+                let y = if *alt < 0 {
+                    on_top(&w.map, *x, *z)
+                } else {
+                    int(*alt)
+                };
+                let c = make_unit(
+                    "generator",
+                    &units.0["generator"],
+                    v3(int(*x), y, int(*z)),
+                    0,
+                    None,
+                    spec.power_pct,
+                    (k * 13 + j) as i32,
+                );
+                gens.push(w.craft.len());
+                w.craft.push(c);
+            }
+            w.shields.push(Shield {
+                centre: v3(int(sh.at[0]), int(sh.at[2]), int(sh.at[1])),
+                r: int(sh.r_m),
+                gens,
+                up: true,
+            });
+        }
+        w.resupply = spec
+            .resupply
+            .iter()
+            .map(|r| Resupply {
+                at: v3(int(r.at[0]), int(r.at[2]), int(r.at[1])),
+                fortress: r.fortress,
+                r: int(r.r_m),
+                used: false,
+            })
+            .collect();
+        if let Some(e) = &spec.escort {
+            let route: Vec<V3> = e.route.iter().map(|[x, z]| v3(int(*x), 0, int(*z))).collect();
+            let mut c = make_unit("tank", &units.0["tank"], route[0], 0, None, 100, 7);
+            c.kind = CraftKind::Crawler;
+            c.team = Team::Player;
+            c.gun = None;
+            c.ap = e.ap;
+            c.max_ap = e.ap;
+            c.radius = int(e.radius_m);
+            c.speed = fx::ratio(e.speed_ms, TICKS_PER_SECOND);
+            w.escort = Some(Escort {
+                name: e.name.clone(),
+                craft: w.craft.len(),
+                route,
+                next: 1,
+                arrived: false,
+            });
+            w.craft.push(c);
         }
         w.mission = Some(mission);
         w
@@ -496,6 +574,8 @@ impl World {
             weak,
             core: core_at,
             alive: true,
+            escapes: f.escapes,
+            arrived: false,
         });
     }
 
@@ -508,12 +588,24 @@ impl World {
             if !f.alive || f.path.is_empty() {
                 continue;
             }
+            if f.arrived {
+                continue;
+            }
             let goal = f.path[f.next % f.path.len()];
             let to = v3(goal.x - f.pos.x, 0, goal.z - f.pos.z);
+            let last = f.next + 1 == f.path.len();
             if to.len() <= f.speed {
-                f.next = (f.next + 1) % f.path.len();
+                if f.escapes && last {
+                    f.arrived = true;
+                } else {
+                    f.next = (f.next + 1) % f.path.len();
+                }
             }
-            let step = to.norm().scale(f.speed);
+            let step = if to.len() <= f.speed && f.arrived {
+                to
+            } else {
+                to.norm().scale(f.speed)
+            };
             f.pos = f.pos.add(step);
             let (start, n) = f.movers;
             self.carry(start, n, step);
@@ -547,6 +639,12 @@ impl World {
     /// Moves every machine of a race a step. A frame a hazard touches is
     /// thrown aside and stunned; one a lift or door closes on is lifted onto it.
     fn update_machines(&mut self) {
+        let (ticks, alarm) = self.mission.as_ref().map_or((0, false), |m| (m.ticks, m.alarm));
+        for mc in &mut self.machines {
+            if mc.after.is_some_and(|a| ticks >= a) || (mc.on_alarm && alarm) {
+                mc.open = true;
+            }
+        }
         for k in 0..self.machines.len() {
             let step = self.machines[k].step();
             let block = self.machines[k].block;
@@ -571,7 +669,8 @@ impl World {
                     continue;
                 }
                 let m = &mut self.mechs[i];
-                if role.hazard() {
+                // a slab at rest is only a block
+                if role.hazard() && (role != course::Role::Slab || step != V3::ZERO) {
                     if m.stagger == 0 {
                         m.body.vel = course::knock(centre, m.body.pos, step);
                         m.body.grounded = false;
@@ -594,6 +693,199 @@ impl World {
                 }
             }
         }
+    }
+
+    /// AP a second the ground or the lava takes from frame `i`, where it stands.
+    /// A giant's feet are armoured for it.
+    pub fn burn_rate(&self, i: usize) -> i32 {
+        let m = &self.mechs[i];
+        if !m.alive || m.scale != ONE {
+            return 0;
+        }
+        let lava = self
+            .mission
+            .as_ref()
+            .and_then(|mi| mi.lava.map(|l| (l, mi.ticks)))
+            .filter(|(l, t)| m.body.pos.y < l.level(*t));
+        match lava {
+            Some((l, _)) => l.dps,
+            None if m.body.grounded && m.body.pos.y == 0 => self.map.climate.floor_dps,
+            None => 0,
+        }
+    }
+
+    /// Whether the player stands in a jamming field.
+    pub fn jammed(&self) -> bool {
+        let p = self.player().chest();
+        self.mission
+            .as_ref()
+            .is_some_and(|m| m.jam.iter().any(|j| j.covers(p, |a, b| self.map_delta(a, b))))
+    }
+
+    /// Searchlights and the alarm, artillery, mines, jamming, resupply, the
+    /// escort's drive, pulse armour and shield domes: one tick of each.
+    fn update_objects(&mut self) {
+        let Some(mut m) = self.mission.take() else { return };
+        let me = self.mechs[0].clone();
+        let chest = me.chest();
+        // searchlights: the first sighting raises the alarm and its wave
+        let mut seen_now = false;
+        for k in 0..self.searchlights.len() {
+            let chase = m.alarm.then_some(me.body.pos);
+            self.searchlights[k].step(chase);
+            let l = &self.searchlights[k];
+            let sees = me.alive && l.lights(chest) && self.map.clear_line(l.lamp, chest);
+            if sees && !l.saw {
+                m.alarms += 1;
+                seen_now = true;
+            }
+            self.searchlights[k].saw = sees;
+        }
+        if seen_now && !m.alarm {
+            m.alarm = true;
+            if let Some(w) = m.alarm_wave {
+                self.release_wave(&mut m, w);
+            }
+        }
+        // artillery: mark where the player is heading, land a while later
+        for s in &mut self.strikes {
+            s.ticks -= 1;
+        }
+        let landed: Vec<Strike> = self.strikes.iter().filter(|s| s.ticks <= 0).copied().collect();
+        self.strikes.retain(|s| s.ticks > 0);
+        for s in landed {
+            for i in 0..self.mechs.len() {
+                let mm = &self.mechs[i];
+                if mm.alive && mm.team == Team::Player {
+                    let d = blast_damage(s.damage, self.map_delta(s.at, mm.body.pos).len(), s.r);
+                    if d > 0 {
+                        self.hurt(Target::Mech(i), d, d);
+                    }
+                }
+            }
+            self.effects.push(Effect {
+                kind: EffectKind::Blast,
+                pos: s.at,
+                vel: V3::ZERO,
+                age: 0,
+                life: 30,
+                size: s.r,
+                yaw: 0,
+            });
+        }
+        if let Some(a) = &m.artillery {
+            let every = (a.every_ms * TICKS_PER_SECOND / 1000).max(1) as u32;
+            let started = !m.staged() || m.stage >= a.from_stage;
+            if started && me.alive && m.ended_at.is_none() && m.ticks % every == every - 1 {
+                let warn = a.warn_ms * TICKS_PER_SECOND / 1000;
+                // led by half the way the player is moving
+                let lead = v3(me.body.vel.x, 0, me.body.vel.z).scale(int(warn / 2));
+                let p = me.body.pos.add(lead);
+                let at = v3(self.map.wrap_x(p.x), 0, p.z);
+                let at = v3(
+                    at.x,
+                    self.map.floor_under(v3(at.x, me.body.pos.y + ONE, at.z)),
+                    at.z,
+                );
+                self.strikes.push(Strike {
+                    at,
+                    ticks: warn,
+                    warn,
+                    r: int(a.radius_m),
+                    damage: a.damage,
+                });
+            }
+        }
+        // mines burst when a frame comes near
+        for k in 0..self.craft.len() {
+            let c = &self.craft[k];
+            if !(c.alive && c.kind == CraftKind::Mine) {
+                continue;
+            }
+            let Some(g) = c.gun else { continue };
+            let reach = int(g.blast_m) / 2;
+            if me.alive && self.map_delta(c.pos, chest).len() < reach + c.radius {
+                let (at, blast) = (c.pos, int(g.blast_m));
+                self.craft[k].alive = false;
+                let d = blast_damage(g.damage, self.map_delta(at, chest).len(), blast);
+                self.hurt(Target::Mech(0), d, d);
+                self.effects.push(Effect {
+                    kind: EffectKind::Blast,
+                    pos: at,
+                    vel: V3::ZERO,
+                    age: 0,
+                    life: 24,
+                    size: blast,
+                    yaw: 0,
+                });
+            }
+        }
+        // a jamming field drains EN
+        if self.jammed() {
+            let drain: i32 = m.jam.iter().map(|j| j.drain_pct).max().unwrap_or(0);
+            let b = &mut self.mechs[0];
+            b.body.en = (b.body.en - b.tuning.en_capacity * drain / 100 / TICKS_PER_SECOND).max(0);
+        }
+        // resupply: land on a pad once to refill
+        for k in 0..self.resupply.len() {
+            let r = self.resupply[k].clone();
+            if r.used {
+                continue;
+            }
+            let at = match r.fortress {
+                Some(f) => self.fortresses[f].pos.add(r.at),
+                None => r.at,
+            };
+            let d = self.map_delta(at, me.body.pos);
+            if me.alive && me.body.grounded && d.y.abs() <= int(3) && d.len_xz() < r.r {
+                self.resupply[k].used = true;
+                let p = &mut self.mechs[0];
+                for (st, w) in p.wstate.iter_mut().zip(p.weapons.iter()) {
+                    st.ammo = w.ammo;
+                }
+                p.ap = (p.ap + p.stats.ap * objects::RESUPPLY_AP_PCT / 100).min(p.stats.ap);
+            }
+        }
+        // the escort drives its route
+        if let Some(e) = self.escort.as_mut() {
+            let c = &mut self.craft[e.craft];
+            if c.alive && !e.arrived {
+                let goal = e.route[e.next];
+                let to = v3(goal.x - c.pos.x, 0, goal.z - c.pos.z);
+                c.prev_pos = c.pos;
+                if to.len() <= c.speed {
+                    c.pos = v3(goal.x, c.pos.y, goal.z);
+                    e.next += 1;
+                    e.arrived = e.next == e.route.len();
+                    if e.arrived {
+                        e.next -= 1;
+                    }
+                } else {
+                    c.pos = c.pos.add(to.norm().scale(c.speed));
+                    c.yaw = crate::geom::yaw_pitch_of(to).0;
+                }
+                c.vel = c.pos.sub(c.prev_pos);
+            }
+        }
+        for mm in &mut self.mechs {
+            if let Some(p) = mm.pulse.as_mut() {
+                p.tick();
+            }
+        }
+        // a dome stands while any of its generators does, and keeps the player out
+        for k in 0..self.shields.len() {
+            let up = self.shields[k].gens.iter().any(|g| self.craft[*g].alive);
+            self.shields[k].up = up;
+            let sh = &self.shields[k];
+            let d = self.map_delta(sh.centre, self.mechs[0].body.pos);
+            if up && d.len() < sh.r {
+                let out = if d == V3::ZERO { v3(0, 0, ONE) } else { d.norm() };
+                let p = &mut self.mechs[0];
+                p.body.pos = sh.centre.add(out.scale(sh.r + ONE));
+                p.body.vel = out.scale(fx::ratio(10, TICKS_PER_SECOND));
+            }
+        }
+        self.mission = Some(m);
     }
 
     /// Whether a fortress's core is still sealed by a live weak point.
@@ -709,7 +1001,7 @@ impl World {
             .craft
             .iter()
             .enumerate()
-            .filter(|(_, c)| c.alive)
+            .filter(|(_, c)| c.alive && c.team == Team::Enemy)
             .map(|(i, _)| Target::Craft(i));
         mechs.chain(craft).collect()
     }
@@ -723,7 +1015,6 @@ impl World {
         let (eye, dir) = self.player_view();
         self.mechs[0].aim_point = self.aim_ray(eye, dir);
         self.update_lock(eye, dir);
-        let burning = self.map.climate.floor_dps;
         for i in 0..self.mechs.len() {
             if !self.mechs[i].alive {
                 continue;
@@ -744,8 +1035,9 @@ impl World {
             }
             m.body.step(&c, &m.tuning, &self.map);
             m.hit_flash = (m.hit_flash - 1).max(0);
-            // the burning floor hurts a standard frame; a giant's feet are armoured for it
-            if burning > 0 && m.body.grounded && m.body.pos.y == 0 && m.scale == ONE {
+            let burning = self.burn_rate(i);
+            let m = &mut self.mechs[i];
+            if burning > 0 {
                 m.burn += burning;
                 let owed = m.burn / TICKS_PER_SECOND;
                 m.burn %= TICKS_PER_SECOND;
@@ -757,6 +1049,7 @@ impl World {
         }
         self.update_fortresses();
         self.update_machines();
+        self.update_objects();
         self.update_craft();
         self.update_shots();
         self.update_effects();
@@ -797,7 +1090,7 @@ impl World {
             glide: me.body.glide,
             staggered: me.stagger > 0,
             airborne: !me.body.grounded,
-            floor_burning: self.map.climate.floor_dps > 0 && me.body.grounded && me.body.pos.y == 0,
+            floor_burning: self.burn_rate(i) > 0,
             to_target: self.map_delta(my_chest, target.chest()),
             target_vel: target.body.vel,
             target_ap_pct: target.ap * 100 / target.stats.ap.max(1),
@@ -843,6 +1136,10 @@ impl World {
     }
 
     fn update_lock(&mut self, eye: V3, dir: V3) {
+        if self.jammed() {
+            self.mechs[0].lock = None;
+            return;
+        }
         let m = &self.mechs[0];
         let held = m.lock;
         let from = m.chest();
@@ -1009,7 +1306,12 @@ impl World {
     /// One tick of every unit that is not a mech.
     fn update_craft(&mut self) {
         let player = self.player();
-        let (target, target_vel, target_alive) = (player.chest(), player.body.vel, player.alive);
+        // what the enemy shoots at: the player, or an ally it is escorting, whichever is nearer
+        let mut friends = vec![(player.chest(), player.body.vel, player.alive)];
+        if let Some(e) = &self.escort {
+            let c = &self.craft[e.craft];
+            friends.push((c.pos, c.vel, c.alive));
+        }
         let live_structures: Vec<V3> = (0..self.structures.len())
             .filter(|i| self.structures[*i].alive)
             .map(|i| self.structure_centre(i))
@@ -1050,6 +1352,15 @@ impl World {
                 c.vel = at.sub(c.pos);
                 c.pos = at;
             }
+            if c.team == Team::Player {
+                continue;
+            }
+            let (target, target_vel, target_alive) = friends
+                .iter()
+                .filter(|f| f.2)
+                .min_by_key(|f| self.map_delta(c.pos, f.0).len())
+                .copied()
+                .unwrap_or(friends[0]);
             // what this unit is after: its goal, a structure, or the player
             let aim_at = match c.kind {
                 CraftKind::Tank => c
@@ -1109,9 +1420,18 @@ impl World {
                     }
                     c.yaw = crate::geom::yaw_pitch_of(flat).0;
                 }
-                CraftKind::Turret | CraftKind::Battery | CraftKind::Weak | CraftKind::Core => {}
+                CraftKind::Turret
+                | CraftKind::Battery
+                | CraftKind::Weak
+                | CraftKind::Core
+                | CraftKind::Mine
+                | CraftKind::Generator
+                | CraftKind::Crawler => {}
             }
-            let Some(g) = c.gun else { continue };
+            // a mine's gun is its burst, set off in update_objects
+            let Some(g) = c.gun.filter(|_| c.kind != CraftKind::Mine) else {
+                continue;
+            };
             // fire at the structure in reach, or at the player in sight
             let at_structure = c.kind == CraftKind::Tank && c.goal.is_none() && aim_at != target;
             let (shoot_at, lead) = if at_structure {
@@ -1196,12 +1516,21 @@ impl World {
                     }
                 }
             }
-            if s.team == Team::Player {
+            {
                 for (i, c) in self.craft.iter().enumerate() {
-                    if c.alive {
+                    if c.alive && c.team != s.team {
                         if let Some(t) = segment_sphere(s.pos, next, c.pos, c.radius) {
                             consider(t, Target::Craft(i));
                         }
+                    }
+                }
+            }
+            // a dome turns what is fired into it from outside
+            for sh in self.shields.iter().filter(|sh| sh.up) {
+                let outside = self.map_delta(sh.centre, s.pos).len() > sh.r;
+                if let (true, Some(t)) = (outside, segment_sphere(s.pos, next, sh.centre, sh.r)) {
+                    if hit.is_none_or(|(bt, _)| t < bt) {
+                        hit = Some((t, None));
                     }
                 }
             }
@@ -1280,21 +1609,19 @@ impl World {
             .enumerate()
             .filter(|(_, m)| m.alive && m.team != team)
             .map(|(i, _)| Target::Mech(i));
-        let others: Vec<Target> = if team == Team::Player {
-            self.craft
-                .iter()
-                .enumerate()
-                .filter(|(_, c)| c.alive)
-                .map(|(i, _)| Target::Craft(i))
-                .collect()
-        } else {
-            self.structures
-                .iter()
-                .enumerate()
-                .filter(|(_, s)| s.alive)
-                .map(|(i, _)| Target::Structure(i))
-                .collect()
-        };
+        let craft = self
+            .craft
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.alive && c.team != team)
+            .map(|(i, _)| Target::Craft(i));
+        let structures = self
+            .structures
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.alive && team == Team::Enemy)
+            .map(|(i, _)| Target::Structure(i));
+        let others: Vec<Target> = craft.chain(structures).collect();
         mechs.chain(others).collect()
     }
 
@@ -1304,6 +1631,14 @@ impl World {
         let (pos, destroyed) = match t {
             Target::Mech(i) => {
                 let m = &mut self.mechs[i];
+                // pulse armour turns the hit, and its impact, until it breaks
+                let (dmg, impact) = match m.pulse.as_mut() {
+                    Some(p) if p.up() => {
+                        let through = p.absorb(dmg);
+                        (through, if through > 0 { impact } else { 0 })
+                    }
+                    _ => (dmg, impact),
+                };
                 let dmg = if m.stagger > 0 {
                     dmg * STAGGER_DAMAGE_PCT / 100
                 } else {
@@ -1385,7 +1720,7 @@ impl World {
         }
         if destroyed {
             let hostile = match t {
-                Target::Craft(_) => true,
+                Target::Craft(i) => self.craft[i].team == Team::Enemy,
                 Target::Mech(i) => self.mechs[i].team == Team::Enemy,
                 Target::Structure(_) => false,
             };
@@ -1933,7 +2268,7 @@ pub(crate) mod tests {
 
     #[test]
     fn a_turret_fires_at_a_player_in_reach() {
-        let mut w = mission_world("sere-2");
+        let mut w = mission_world("halden-5");
         let t = w.craft.iter().position(|c| c.kind == CraftKind::Turret).unwrap();
         let at = w.craft[t].pos;
         // hover in the open beside it

@@ -7,6 +7,9 @@ use crate::course::{self, Gate, GateKind, GateSpec, MachineSpec};
 use crate::fx::{deg, int};
 use crate::geom::{v3, V3};
 use crate::mech::TICKS_PER_SECOND;
+use crate::objects::{
+    ArtillerySpec, EscortSpec, JamSpec, LavaSpec, ResupplySpec, SearchlightSpec, ShieldSpec,
+};
 use crate::parts::Slot;
 use crate::world::World;
 use serde::{Deserialize, Serialize};
@@ -27,6 +30,20 @@ pub enum Kind {
     Survive,
     /// take a fortified position stage by stage
     Assault,
+    /// stop a moving target before it gets away
+    Intercept,
+    /// find and scan, unseen if you can
+    Recon,
+    /// a simple job that turns into a fight
+    Ambush,
+    /// get out before the place comes down
+    Escape,
+    /// get to the top
+    Climb,
+    /// keep an ally alive to the end of its route
+    Escort,
+    /// get inside, break what matters, get out
+    Sabotage,
 }
 
 impl Kind {
@@ -38,7 +55,22 @@ impl Kind {
             Kind::Duel => "obj_duel",
             Kind::Survive => "obj_survive",
             Kind::Assault => "obj_assault",
+            Kind::Intercept => "obj_intercept",
+            Kind::Recon => "obj_recon",
+            Kind::Ambush => "obj_ambush",
+            Kind::Escape => "obj_escape",
+            Kind::Climb => "obj_climb",
+            Kind::Escort => "obj_escort",
+            Kind::Sabotage => "obj_sabotage",
         }
+    }
+
+    /// Whether the mission is won by finishing its stages.
+    pub fn staged(self) -> bool {
+        matches!(
+            self,
+            Kind::Assault | Kind::Recon | Kind::Ambush | Kind::Escape | Kind::Climb | Kind::Sabotage
+        )
     }
 }
 
@@ -72,6 +104,11 @@ pub struct MechSpawn {
     /// a friendly rival in a race, not a hostile
     #[serde(default)]
     pub racer: bool,
+    /// pulse armour: a shield that turns this much damage, then is down a while
+    #[serde(default)]
+    pub pulse_ap: i32,
+    #[serde(default = "pulse_down")]
+    pub pulse_down_ms: i32,
     /// a giant: percent of standard size, of its parts' speed, of its weapons' damage
     #[serde(default = "hundred")]
     pub scale_pct: i32,
@@ -108,6 +145,12 @@ pub struct Stage {
     /// x, z, altitude, radius (m)
     #[serde(default)]
     pub reach: Option<[i32; 4]>,
+    /// whether its hostiles must be down too; a scan or a run need not
+    #[serde(default = "yes")]
+    pub fight: bool,
+    /// seconds to stay at the place, scanning
+    #[serde(default)]
+    pub hold_s: i32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -123,6 +166,8 @@ pub enum PlusRule {
     MaxLost,
     /// spend no more than this many seconds on burning ground
     MaxFloorSeconds,
+    /// be seen by a searchlight no more than this many times
+    MaxAlarms,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -139,6 +184,10 @@ fn yes() -> bool {
 
 fn hundred() -> i32 {
     100
+}
+
+fn pulse_down() -> i32 {
+    6000
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -186,6 +235,23 @@ pub struct MissionSpec {
     pub clear: Vec<[i32; 4]>,
     #[serde(default)]
     pub fortresses: Vec<FortressSpec>,
+    /// lights that raise the alarm, and the wave the alarm brings
+    #[serde(default)]
+    pub searchlights: Vec<SearchlightSpec>,
+    #[serde(default)]
+    pub alarm_wave: Option<u32>,
+    #[serde(default)]
+    pub shields: Vec<ShieldSpec>,
+    #[serde(default)]
+    pub artillery: Option<ArtillerySpec>,
+    #[serde(default)]
+    pub lava: Option<LavaSpec>,
+    #[serde(default)]
+    pub jam: Vec<JamSpec>,
+    #[serde(default)]
+    pub resupply: Vec<ResupplySpec>,
+    #[serde(default)]
+    pub escort: Option<EscortSpec>,
 }
 
 /// One box of a fortress's hull: centre and size in metres from its footprint.
@@ -224,6 +290,9 @@ pub struct FortressSpec {
     pub turrets: Vec<[i32; 3]>,
     #[serde(default)]
     pub batteries: Vec<[i32; 3]>,
+    /// it runs its path once, and the mission fails if it gets to the end
+    #[serde(default)]
+    pub escapes: bool,
 }
 
 /// One kind of unit, from `data/units.json`.
@@ -261,7 +330,17 @@ impl Units {
             o.remove("_note");
         }
         let u: BTreeMap<String, UnitSpec> = serde_json::from_value(v).map_err(|e| format!("units: {e}"))?;
-        for k in ["drone", "heli", "tank", "turret", "battery", "weak", "core"] {
+        for k in [
+            "drone",
+            "heli",
+            "tank",
+            "turret",
+            "battery",
+            "weak",
+            "core",
+            "mine",
+            "generator",
+        ] {
             if !u.contains_key(k) {
                 return Err(format!("units: no {k}"));
             }
@@ -292,6 +371,8 @@ pub fn make_unit(
         "battery" => CraftKind::Battery,
         "weak" => CraftKind::Weak,
         "core" => CraftKind::Core,
+        "mine" => CraftKind::Mine,
+        "generator" => CraftKind::Generator,
         _ => CraftKind::Drone,
     };
     let ap = spec.ap * power / 100;
@@ -321,6 +402,7 @@ pub fn make_unit(
         goal,
         wave,
         mount: None,
+        team: Team::Enemy,
     }
 }
 
@@ -358,8 +440,17 @@ pub fn rank(success: bool, seconds: i32, ap_kept_pct: i32, par_s: i32) -> &'stat
     }
 }
 
-/// A stage as flown: its objective, its wave, and where to reach and how near.
-pub type StageNow = (String, u32, Option<(V3, i32)>);
+/// A stage as flown.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StageNow {
+    pub objective: String,
+    pub wave: u32,
+    /// where to reach, and how near
+    pub reach: Option<(V3, i32)>,
+    pub fight: bool,
+    /// ticks to stay there
+    pub hold: u32,
+}
 
 /// A mission under way.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -386,6 +477,15 @@ pub struct Mission {
     pub course: Vec<Gate>,
     pub stages: Vec<StageNow>,
     pub stage: usize,
+    /// ticks spent at the current stage's place
+    pub held: u32,
+    /// whether a searchlight has raised the alarm, and how many times one has seen the player
+    pub alarm: bool,
+    pub alarms: i32,
+    pub alarm_wave: Option<u32>,
+    pub artillery: Option<ArtillerySpec>,
+    pub lava: Option<LavaSpec>,
+    pub jam: Vec<JamSpec>,
 }
 
 impl Mission {
@@ -419,15 +519,22 @@ impl Mission {
             stages: spec
                 .stages
                 .iter()
-                .map(|s| {
-                    (
-                        s.objective.clone(),
-                        s.wave,
-                        s.reach.map(|[x, z, a, r]| (v3(int(x), int(a), int(z)), int(r))),
-                    )
+                .map(|s| StageNow {
+                    objective: s.objective.clone(),
+                    wave: s.wave,
+                    reach: s.reach.map(|[x, z, a, r]| (v3(int(x), int(a), int(z)), int(r))),
+                    fight: s.fight,
+                    hold: (s.hold_s * TICKS_PER_SECOND) as u32,
                 })
                 .collect(),
             stage: 0,
+            held: 0,
+            alarm: false,
+            alarms: 0,
+            alarm_wave: spec.alarm_wave,
+            artillery: spec.artillery.clone(),
+            lava: spec.lava,
+            jam: spec.jam.clone(),
         }
     }
 
@@ -460,6 +567,7 @@ impl Mission {
                 PlusRule::MinApPct => p.ap * 100 >= p.stats.ap * v,
                 PlusRule::MaxLost => w.structures_lost() <= v,
                 PlusRule::MaxFloorSeconds => self.floor_ticks <= v * TICKS_PER_SECOND,
+                PlusRule::MaxAlarms => self.alarms <= v,
             }
     }
 
@@ -472,6 +580,7 @@ impl Mission {
             PlusRule::MinApPct => p.ap * 100 / p.stats.ap.max(1),
             PlusRule::MaxLost => w.structures_lost(),
             PlusRule::MaxFloorSeconds => self.floor_ticks / TICKS_PER_SECOND,
+            PlusRule::MaxAlarms => self.alarms,
         }
     }
 
@@ -502,9 +611,13 @@ impl Mission {
 }
 
 impl World {
-    /// Hostiles still fighting: enemy frames and craft.
+    /// Hostiles still fighting: enemy frames and craft. Mines lie in wait and
+    /// need not be cleared.
     pub fn hostiles_alive(&self) -> usize {
-        self.craft.iter().filter(|c| c.alive).count()
+        self.craft
+            .iter()
+            .filter(|c| c.alive && c.team == Team::Enemy && c.kind != CraftKind::Mine)
+            .count()
             + self
                 .mechs
                 .iter()
@@ -519,7 +632,7 @@ impl World {
         m.ticks += 1;
         if m.ended_at.is_none() {
             let p = self.player();
-            if p.alive && p.body.grounded && p.body.pos.y == 0 && self.map.climate.floor_dps > 0 {
+            if p.alive && self.burn_rate(0) > 0 {
                 m.floor_ticks += 1;
             }
             if m.staged() {
@@ -540,7 +653,7 @@ impl World {
         self.mission = Some(m);
     }
 
-    fn release_wave(&mut self, m: &mut Mission, w: u32) {
+    pub fn release_wave(&mut self, m: &mut Mission, w: u32) {
         let (now, later): (Vec<Craft>, Vec<Craft>) = m.reserve_craft.drain(..).partition(|c| c.wave == w);
         m.reserve_craft = later;
         self.craft.extend(now);
@@ -551,18 +664,28 @@ impl World {
         }
     }
 
-    /// A stage is done when its hostiles are down and, if it names a place,
-    /// the player has got there; then the next stage's wave rises.
+    /// A stage is done when its hostiles are down (unless it is a run or a
+    /// scan) and the player has got to its place, if it names one, and stayed
+    /// there long enough; then the next stage's wave rises.
     fn update_stage(&mut self, m: &mut Mission) {
-        let Some((_, _, reach)) = m.stages.get(m.stage).cloned() else {
+        let Some(st) = m.stages.get(m.stage).cloned() else {
             return;
         };
-        let there = reach.is_none_or(|(p, r)| self.map_delta(self.player().chest(), p).len() < r);
-        if self.hostiles_alive() == 0 && there {
+        let there = st
+            .reach
+            .is_none_or(|(p, r)| self.map_delta(self.player().chest(), p).len() < r);
+        m.held = if there && st.reach.is_some() {
+            m.held + 1
+        } else {
+            0
+        };
+        let stayed = m.held >= st.hold;
+        if (!st.fight || self.hostiles_alive() == 0) && there && stayed {
             m.stage += 1;
-            if let Some((_, w, _)) = m.stages.get(m.stage).cloned() {
-                m.wave = w;
-                self.release_wave(m, w);
+            m.held = 0;
+            if let Some(next) = m.stages.get(m.stage).cloned() {
+                m.wave = next.wave;
+                self.release_wave(m, next.wave);
             }
         }
     }
@@ -630,8 +753,17 @@ impl World {
                 && c.goal
                     .is_some_and(|g| self.map_delta(c.pos, v3(g.x, c.pos.y, g.z)).len() < ESCAPE_RADIUS)
         });
-        if escaped {
+        let got_away = self.fortresses.iter().any(|f| f.alive && f.escapes && f.arrived);
+        if escaped || got_away {
             return Some((false, Some("fail_escaped")));
+        }
+        if let Some(e) = &self.escort {
+            if !self.craft[e.craft].alive {
+                return Some((false, Some("fail_escort")));
+            }
+            if e.arrived {
+                return Some((true, None));
+            }
         }
         if m.kind == Kind::Race {
             if p.finished_at.is_some() {
@@ -655,7 +787,12 @@ impl World {
         if m.staged() {
             return (m.stage >= m.stages.len()).then_some((true, None));
         }
-        if cleared && matches!(m.kind, Kind::Destroy | Kind::Defend | Kind::Duel) {
+        if cleared
+            && matches!(
+                m.kind,
+                Kind::Destroy | Kind::Defend | Kind::Duel | Kind::Intercept
+            )
+        {
             return Some((true, None));
         }
         None
@@ -667,8 +804,11 @@ impl World {
         if m.ended_at.is_some() {
             return None;
         }
-        if let Some((_, _, Some((p, _)))) = m.stages.get(m.stage) {
-            return Some(*p);
+        if let Some((p, _)) = m.stages.get(m.stage).and_then(|st| st.reach) {
+            return Some(p);
+        }
+        if let Some(e) = &self.escort {
+            return Some(self.craft[e.craft].pos);
         }
         if m.kind != Kind::Race {
             return None;
@@ -924,12 +1064,77 @@ mod tests {
     }
 
     #[test]
-    fn a_convoy_that_reaches_its_gate_fails_the_mission() {
+    fn a_train_that_reaches_the_tunnel_fails_the_intercept() {
         let mut w = mission_world("sere-1");
-        let goal = w.craft[0].goal.unwrap();
-        w.craft[0].pos = v3(goal.x, 0, goal.z + int(5));
-        run(&mut w, 1);
+        let end = *w.fortresses[0].path.last().unwrap();
+        run(&mut w, 60);
+        assert_eq!(outcome(&w).0, None, "still running");
+        assert!(w.fortresses[0].pos.z < int(760), "it runs south");
+        w.fortresses[0].pos = end.add(v3(0, 0, ONE / 8));
+        run(&mut w, 2);
+        assert!(w.fortresses[0].arrived, "arrived at {:?}", w.fortresses[0].pos);
         assert_eq!(outcome(&w), (Some(false), Some("fail_escaped")));
+    }
+
+    #[test]
+    fn breaking_the_trains_cars_opens_its_engine_and_breaking_that_wins() {
+        let mut w = mission_world("sere-1");
+        let core = w.fortresses[0].core;
+        w.hurt(Target::Craft(core), 1_000_000, 0);
+        assert!(w.craft[core].alive, "sealed while a car stands");
+        kill_all(&mut w);
+        assert!(!w.craft[core].alive);
+        assert_eq!(outcome(&w), (Some(true), None));
+    }
+
+    #[test]
+    fn a_searchlight_that_finds_you_raises_the_alarm_and_wakes_the_nest() {
+        let mut w = mission_world("sere-2");
+        run(&mut w, 30);
+        assert_eq!(w.hostiles_alive(), 0, "the nest sleeps");
+        assert!(!w.mission.as_ref().unwrap().alarm);
+        let spot = w.searchlights[0].spot;
+        put(&mut w, spot.x >> 16, 0, spot.z >> 16);
+        let m = w.mission.as_ref().unwrap();
+        assert!(m.alarm, "seen standing in the light");
+        assert_eq!(m.alarms, 1);
+        assert!(
+            w.hostiles_alive() >= 8,
+            "the turrets, the gunships and the strider are out"
+        );
+    }
+
+    #[test]
+    fn a_scan_needs_the_player_to_stay_and_needs_no_fight() {
+        let mut w = mission_world("sere-2");
+        w.searchlights.clear();
+        let (at, _) = w.mission.as_ref().unwrap().stages[0].reach.unwrap();
+        let p = at.sub(w.mechs[0].rig.chest());
+        w.mechs[0].body.pos = p;
+        run(&mut w, 60);
+        assert_eq!(stage(&w), 0, "a second is not enough");
+        w.mechs[0].body.pos = p.add(v3(int(40), 0, 0));
+        run(&mut w, 1);
+        w.mechs[0].body.pos = p;
+        run(&mut w, 2 * 60);
+        assert_eq!(stage(&w), 0, "stepping away starts it over");
+        run(&mut w, 70);
+        assert_eq!(stage(&w), 1, "three seconds in one go");
+    }
+
+    #[test]
+    fn the_scorpion_waits_until_the_routine_job_is_done() {
+        let mut w = mission_world("sere-4");
+        assert!(
+            w.mechs.iter().all(|m| m.team == crate::combat::Team::Player),
+            "no frame yet"
+        );
+        kill_all(&mut w);
+        let frames: Vec<&str> = w.mechs.iter().skip(1).map(|m| m.name.as_str()).collect();
+        assert_eq!(frames, ["SCORPION", "STINGER"], "the ambush");
+        assert_eq!(outcome(&w).0, None);
+        kill_all(&mut w);
+        assert_eq!(outcome(&w), (Some(true), None));
     }
 
     #[test]
@@ -985,7 +1190,7 @@ mod tests {
                 m.id
             );
             assert!(
-                w.hostiles_alive() > 0 || m.kind == Kind::Race,
+                w.hostiles_alive() > 0 || matches!(m.kind, Kind::Race | Kind::Recon),
                 "{} has nothing to fight",
                 m.id
             );
@@ -1088,11 +1293,16 @@ mod tests {
     fn some_fights_put_several_enemy_frames_against_you_at_once() {
         for (id, frames) in [("sere-4", 2), ("spindle-4", 3), ("rime-4", 2)] {
             let w = mission_world(id);
+            let held = &w.mission.as_ref().unwrap().reserve_mechs;
             let n = w
                 .mechs
                 .iter()
                 .filter(|m| m.team == crate::combat::Team::Enemy)
-                .count();
+                .count()
+                + held
+                    .iter()
+                    .filter(|(_, m, _)| m.team == crate::combat::Team::Enemy)
+                    .count();
             assert_eq!(n, frames, "{id}");
         }
     }

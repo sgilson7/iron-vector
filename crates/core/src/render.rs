@@ -387,6 +387,7 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
             Role::Sweeper | Role::Piston => (colour(pal.hazard), colour(pal.hazard_trim)),
             Role::Lift => (shade(colour(pal.checkpoint), 30), colour(pal.checkpoint)),
             Role::Door => (shade(colour(pal.switch), 30), colour(pal.switch)),
+            Role::Slab => (shade(colour(pal.hazard), 45), colour(pal.hazard_trim)),
         };
         b.push(
             Mesh::Cube,
@@ -400,6 +401,102 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
             v3(size.x + ONE / 4, ONE / 2, size.z + ONE / 4),
         );
         b.push(Mesh::Cube, &band, trim, ONE);
+    }
+    // searchlights: a lamp, a beam to its spot, and the spot on the ground
+    let alarm = w.mission.as_ref().is_some_and(|m| m.alarm);
+    for l in &w.searchlights {
+        let spot = l.prev_spot.lerp(l.spot, alpha);
+        let c = if alarm {
+            colour(pal.hazard)
+        } else {
+            colour(pal.searchlight)
+        };
+        b.push(Mesh::Octa, &boxed(l.lamp, v3(int(3), int(3), int(3))), c, ONE);
+        let axis = spot.sub(l.lamp);
+        let mid = l.lamp.add(axis.scale(ONE / 2));
+        let beam = Affine::translate(mid)
+            .then(&Affine::looking(axis.norm()))
+            .then(&Affine::scale(v3(l.r / 3, l.r / 3, axis.len())));
+        b.push(Mesh::Cube, &beam, shade(c, 60), ONE / 3);
+        checkpoint(&mut b, spot.add(v3(0, ONE / 2, 0)), V3::UP, l.r, c, ONE);
+    }
+    // shield domes: three turning rings of light while their generators stand
+    for sh in w.shields.iter().filter(|sh| sh.up) {
+        let turn = (w.tick as i32).wrapping_mul(deg(1) / 2);
+        for k in 0..3 {
+            let a = turn + k * fx::TURN / 3;
+            let n = v3(fx::cos(a), fx::sin(k * deg(30)), fx::sin(a)).norm();
+            checkpoint(&mut b, sh.centre, n, sh.r, colour(pal.shield), ONE / 2);
+        }
+        checkpoint(&mut b, sh.centre, V3::UP, sh.r, colour(pal.shield), ONE / 2);
+    }
+    // artillery marks: a ring that brightens, and an inner ring closing on the moment it lands
+    for s in &w.strikes {
+        let left = fx::ratio(s.ticks, s.warn.max(1));
+        let at = s.at.add(v3(0, ONE / 2, 0));
+        checkpoint(&mut b, at, V3::UP, s.r, colour(pal.hazard), ONE - left / 2);
+        checkpoint(
+            &mut b,
+            at,
+            V3::UP,
+            fx::mul(s.r, left).max(ONE),
+            colour(pal.hazard_trim),
+            ONE,
+        );
+    }
+    // resupply pads not yet used: a green ring and a beacon
+    for r in w.resupply.iter().filter(|r| !r.used) {
+        let at = match r.fortress {
+            Some(f) => w.fortresses[f]
+                .prev_pos
+                .lerp(w.fortresses[f].pos, alpha)
+                .add(r.at),
+            None => r.at,
+        };
+        checkpoint(
+            &mut b,
+            at.add(v3(0, ONE / 2, 0)),
+            V3::UP,
+            r.r,
+            colour(pal.resupply),
+            ONE,
+        );
+        b.push(
+            Mesh::Cube,
+            &boxed(at.add(v3(0, int(40), 0)), v3(ONE, int(80), ONE)),
+            colour(pal.resupply),
+            ONE,
+        );
+    }
+    // rising lava: a glowing sheet at its surface
+    if let Some((l, t)) = w.mission.as_ref().and_then(|m| m.lava.map(|l| (l, m.ticks))) {
+        let level = l.level(t);
+        if level > 0 {
+            let sheet = boxed(v3(0, level / 2, 0), v3(w.map.half_x * 2, level, w.map.half_z * 2));
+            b.push(Mesh::Cube, &sheet, colour(pal.lava), ONE);
+        }
+    }
+    // pulse armour: two rings round a frame while its shield is up
+    for m in w.mechs.iter().filter(|m| m.alive) {
+        if let Some(p) = m.pulse.filter(|p| p.up()) {
+            let at = m
+                .body
+                .prev_pos
+                .lerp(m.body.pos, alpha)
+                .add(m.rig.chest().scale(m.scale));
+            let r = fx::mul(int(6), m.scale);
+            let spin = (w.tick as i32).wrapping_mul(deg(3));
+            let glow = ONE / 3 + fx::ratio(p.ap, p.max.max(1)) * 2 / 3;
+            checkpoint(&mut b, at, facing(spin, 0), r, colour(pal.plasma), glow);
+            checkpoint(
+                &mut b,
+                at,
+                facing(spin + fx::QUARTER, deg(40)),
+                r,
+                colour(pal.plasma),
+                glow,
+            );
+        }
     }
     if let Some(mi) = &w.mission {
         let next = w.player().course_next;
@@ -717,6 +814,75 @@ fn craft_model(
                 ONE,
             );
         }
+        CraftKind::Mine => {
+            // a flat dark disc with a light that blinks
+            b.push(Mesh::Cube, &part(V3::ZERO, v3(int(3), ONE / 2, int(3))), dark, 0);
+            let on = (tick / 15).is_multiple_of(2);
+            b.push(
+                Mesh::Octa,
+                &part(v3(0, ONE / 2, 0), v3(ONE, ONE, ONE)),
+                colour(pal.hazard_trim),
+                if on { ONE } else { ONE / 6 },
+            );
+        }
+        CraftKind::Generator => {
+            // a pylon with bands of light that fade as it is hurt
+            let tower = colour(pal.turret);
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, ONE, 0), v3(int(8), int(2), int(8))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(7), 0), v3(int(3), int(10), int(3))),
+                tower,
+                0,
+            );
+            for k in 0..3 {
+                b.push(
+                    Mesh::Cube,
+                    &part(v3(0, int(4 + 3 * k), 0), v3(int(4), ONE / 2, int(4))),
+                    colour(pal.shield),
+                    ONE,
+                );
+            }
+        }
+        CraftKind::Crawler => {
+            // a friendly armoured carrier, in the player's first paint, with a green lamp
+            let body = pal.scheme(0).paints()[Paint::Primary as usize];
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(3), 0), v3(int(10), int(4), int(16))),
+                body,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(-int(5), int(1), 0), v3(int(2), int(2), int(17))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(int(5), int(1), 0), v3(int(2), int(2), int(17))),
+                dark,
+                0,
+            );
+            b.push(
+                Mesh::Cube,
+                &part(v3(0, int(6), -int(4)), v3(int(6), int(2), int(5))),
+                shade(body, 80),
+                0,
+            );
+            b.push(
+                Mesh::Octa,
+                &part(v3(0, int(8), int(4)), v3(ONE, ONE, ONE)),
+                colour(pal.resupply),
+                ONE,
+            );
+        }
         CraftKind::Turret => {
             let turret = colour(pal.turret);
             b.push(
@@ -898,6 +1064,8 @@ pub struct FrameHud {
     pub racer: bool,
     /// a fortress: weak points standing, of how many
     pub weak: Option<[usize; 2]>,
+    /// pulse armour left, in percent; zero while it is down
+    pub shield_pct: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -918,6 +1086,12 @@ pub struct MissionHud {
     pub success: Option<bool>,
     /// a staged mission's current objective, and its step of how many
     pub stage: Option<(String, usize, usize)>,
+    /// whether a searchlight has raised the alarm
+    pub alarm: bool,
+    /// how far a scan has got, in percent
+    pub scan: Option<i32>,
+    /// the ally being escorted, and its AP in percent
+    pub escort: Option<(String, i32)>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -940,6 +1114,8 @@ pub struct Hud {
     pub stagger_pct: i32,
     pub staggered: bool,
     pub burning: bool,
+    /// in a jamming field: no lock
+    pub jammed: bool,
     pub mission: Option<MissionHud>,
     pub waypoint: Option<Pointer>,
     pub frames: Vec<FrameHud>,
@@ -1077,7 +1253,17 @@ pub fn hud(
         stage: mi
             .stages
             .get(mi.stage)
-            .map(|(text, _, _)| (text.clone(), mi.stage + 1, mi.stages.len())),
+            .map(|st| (st.objective.clone(), mi.stage + 1, mi.stages.len())),
+        alarm: mi.alarm,
+        scan: mi
+            .stages
+            .get(mi.stage)
+            .filter(|st| st.hold > 0 && mi.held > 0)
+            .map(|st| (mi.held * 100 / st.hold).min(100) as i32),
+        escort: w.escort.as_ref().map(|e| {
+            let c = &w.craft[e.craft];
+            (e.name.clone(), c.ap * 100 / c.max_ap.max(1))
+        }),
     });
     let frames = w
         .mechs
@@ -1091,6 +1277,7 @@ pub fn hud(
             intent: e.intent.clone().filter(|_| e.alive),
             racer: e.team == Team::Player,
             weak: None,
+            shield_pct: e.pulse.map(|p| p.ap * 100 / p.max.max(1)),
         })
         .chain(w.fortresses.iter().map(|f| {
             let core = &w.craft[f.core];
@@ -1102,6 +1289,7 @@ pub fn hud(
                 intent: None,
                 racer: false,
                 weak: Some([f.weak.iter().filter(|i| w.craft[**i].alive).count(), f.weak.len()]),
+                shield_pct: None,
             }
         }))
         .collect();
@@ -1123,7 +1311,8 @@ pub fn hud(
         mode: crate::game::Mode::Garage,
         stagger_pct: m.stagger_pct(),
         staggered: m.stagger > 0,
-        burning: w.map.climate.floor_dps > 0 && m.body.grounded && m.body.pos.y == 0,
+        burning: w.burn_rate(0) > 0,
+        jammed: w.jammed(),
         mission,
         waypoint,
         frames,

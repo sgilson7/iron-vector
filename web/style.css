@@ -199,3 +199,9 @@ button.danger { color: var(--warn); border-color: var(--warn); }
 button.danger.armed { background: var(--warn); color: #111; }
 #save-status { min-height: 1.2em; color: var(--glow); font-size: 11px; }
 #save-status.bad { color: var(--warn); }
+
+/* mission objects on the HUD */
+#alarm { margin-top: 4px; letter-spacing: 0.2em; }
+#scan, #escort { margin-top: 4px; font-size: 11px; }
+#escort .bar { width: 160px; margin: 2px auto 0; }
+.frame-row .bar.shield i { background: var(--glow); }

@@ -85,11 +85,18 @@ pub enum Role {
     Piston,
     /// a wall that moves out of the way once its switch is touched
     Door,
+    /// a slab that falls once, at a set time or on the alarm, crushing what is under it
+    Slab,
 }
 
 impl Role {
     pub fn hazard(self) -> bool {
-        matches!(self, Role::Sweeper | Role::Piston)
+        matches!(self, Role::Sweeper | Role::Piston | Role::Slab)
+    }
+
+    /// Whether it moves only once, when triggered.
+    pub fn once(self) -> bool {
+        matches!(self, Role::Door | Role::Slab)
     }
 }
 
@@ -110,6 +117,12 @@ pub struct MachineSpec {
     /// how long it waits at each point
     #[serde(default)]
     pub wait_ms: i32,
+    /// a door or slab that moves this long after the mission starts
+    #[serde(default)]
+    pub after_ms: i32,
+    /// a door or slab that moves when the alarm is raised
+    #[serde(default)]
+    pub on_alarm: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -169,8 +182,11 @@ pub struct Machine {
     pub speed: i32,
     pub wait: i32,
     pub waiting: i32,
-    /// a door: whether its switch has been touched
+    /// a door or slab: whether it has been set moving
     pub open: bool,
+    /// ticks into the mission it sets itself moving, if it does
+    pub after: Option<u32>,
+    pub on_alarm: bool,
 }
 
 impl Machine {
@@ -195,6 +211,8 @@ impl Machine {
             wait: s.wait_ms * TICKS_PER_SECOND / 1000,
             waiting: 0,
             open: false,
+            after: (s.after_ms > 0).then(|| (s.after_ms * TICKS_PER_SECOND / 1000) as u32),
+            on_alarm: s.on_alarm,
         }
     }
 
@@ -208,8 +226,8 @@ impl Machine {
         if self.path.is_empty() || self.speed == 0 {
             return V3::ZERO;
         }
-        if self.role == Role::Door {
-            // shut until opened; then to its last point, and it stays
+        if self.role.once() {
+            // still until set moving; then to its last point, and it stays
             if !self.open {
                 return V3::ZERO;
             }
@@ -222,7 +240,7 @@ impl Machine {
         let goal = self.path[self.next];
         let to = goal.sub(self.offset);
         let step = if to.len() <= self.speed {
-            if self.role != Role::Door {
+            if !self.role.once() {
                 self.next = (self.next + 1) % self.path.len();
                 self.waiting = self.wait;
             }
@@ -341,6 +359,8 @@ mod tests {
             path: vec![[0, 0, 0], [0, 0, -11]],
             speed_ms: 30,
             wait_ms: 0,
+            after_ms: 0,
+            on_alarm: false,
         };
         let mut door = Machine::new(&spec, 0);
         for _ in 0..60 {

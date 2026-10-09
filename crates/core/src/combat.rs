@@ -229,6 +229,12 @@ pub enum CraftKind {
     Weak,
     /// a fortress's core: sealed until every weak point is down
     Core,
+    /// lies still until a frame comes near, then bursts
+    Mine,
+    /// holds up a shield dome
+    Generator,
+    /// an ally's slow armoured carrier, driving its route
+    Crawler,
 }
 
 /// What a riding unit is mounted on.
@@ -270,6 +276,8 @@ pub struct Craft {
     /// riding on a mech or a fortress, at a place on its body: for a mech in
     /// metres at standard size, for a fortress in metres from its footprint
     pub mount: Option<(Host, V3)>,
+    /// whose side it is on: almost always the enemy's
+    pub team: Team,
 }
 
 impl Weapon {

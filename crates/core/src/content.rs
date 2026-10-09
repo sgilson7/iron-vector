@@ -70,6 +70,10 @@ pub struct Palette {
     pub switch: Rgb,
     pub hazard: Rgb,
     pub hazard_trim: Rgb,
+    pub searchlight: Rgb,
+    pub shield: Rgb,
+    pub resupply: Rgb,
+    pub lava: Rgb,
     pub slash: Rgb,
     pub plasma: Rgb,
     /// the cockpit and its star map

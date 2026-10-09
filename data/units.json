@@ -1,5 +1,5 @@
 {
-  "_note": "Units that are not mechs. Speeds m/s, ranges m, times ms. A mission's power_pct scales ap and gun damage.",
+  "_note": "Units that are not mechs. Speeds m/s, ranges m, times ms. A mission's power_pct scales ap and gun damage. A mine's gun is its burst: damage and blast_m; it bursts when a frame comes within half its blast. A generator holds up a shield dome.",
   "drone": {
     "ap": 700,
     "radius_m": 3,
@@ -79,6 +79,28 @@
   "core": {
     "ap": 20000,
     "radius_m": 40,
+    "speed_ms": 0,
+    "orbit_m": 0
+  },
+  "mine": {
+    "ap": 300,
+    "radius_m": 2,
+    "speed_ms": 0,
+    "orbit_m": 0,
+    "gun": {
+      "damage": 1400,
+      "speed_ms": 1,
+      "range_m": 1,
+      "burst": 1,
+      "burst_gap_ms": 100,
+      "reload_ms": 100000,
+      "spread_deg": 0,
+      "blast_m": 14
+    }
+  },
+  "generator": {
+    "ap": 2600,
+    "radius_m": 5,
     "speed_ms": 0,
     "orbit_m": 0
   }

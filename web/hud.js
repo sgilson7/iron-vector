@@ -41,6 +41,14 @@ export function makeHud(copy) {
     kills: el("kills"),
     glide: el("glide"),
     burning: el("burning"),
+    jammed: el("jammed"),
+    alarm: el("alarm"),
+    scan: el("scan"),
+    scanValue: q("#scan b"),
+    escort: el("escort"),
+    escortName: q("#escort .name"),
+    escortAp: q("#escort b"),
+    escortBar: q("#escort .bar"),
     ap: el("ap"),
     apBar: el("ap-bar"),
     enBar: el("en-bar"),
@@ -98,11 +106,13 @@ export function makeHud(copy) {
       head.append(item("span", "name"), item("span", "intent"));
       const ap = item("div", "bar ap");
       ap.append(item("i"));
+      const shield = item("div", "bar thin shield");
+      shield.append(item("i"));
       const st = item("div", "bar thin stagger");
       st.append(item("i"));
-      row.append(head, ap, st);
+      row.append(head, shield, ap, st);
       nodes.frames.append(row);
-      framePool.push({ row, name: head.firstChild, intent: head.lastChild, ap, st });
+      framePool.push({ row, name: head.firstChild, intent: head.lastChild, ap, st, shield });
     }
     framePool.forEach((f, i) => {
       const k = list[i];
@@ -117,6 +127,8 @@ export function makeHud(copy) {
       f.st.style.setProperty("--pct", k.stagger_pct);
       f.st.classList.toggle("full", k.staggered);
       f.st.hidden = k.racer || Boolean(k.weak);
+      f.shield.hidden = k.shield_pct === null;
+      if (k.shield_pct !== null) f.shield.style.setProperty("--pct", k.shield_pct);
     });
   }
 
@@ -139,6 +151,15 @@ export function makeHud(copy) {
       set(nodes.gate, "gate", `${gate}/${of}`, text);
       set(nodes.place, "place", place, text);
     }
+    set(nodes.alarm, "alarm", m.alarm, show);
+    set(nodes.scan, "hasScan", m.scan !== null, show);
+    if (m.scan !== null) set(nodes.scanValue, "scan", `${m.scan}%`, text);
+    set(nodes.escort, "hasEscort", Boolean(m.escort), show);
+    if (m.escort) {
+      set(nodes.escortName, "escortName", m.escort[0], text);
+      set(nodes.escortAp, "escortAp", `${copy.ap} ${m.escort[1]}%`, text);
+      set(nodes.escortBar, "escortBar", m.escort[1], pct);
+    }
     set(nodes.time, "time", m.seconds, text);
     set(nodes.leftBox, "hasLeft", m.time_left !== null, show);
     if (m.time_left !== null) set(nodes.left, "left", m.time_left, text);
@@ -159,6 +180,7 @@ export function makeHud(copy) {
       set(nodes.kills, "kills", h.kills, text);
       set(nodes.glide, "glide", h.glide, show);
       set(nodes.burning, "burning", h.burning, show);
+      set(nodes.jammed, "jammed", h.jammed, show);
       set(nodes.ap, "ap", h.ap, text);
       set(nodes.apBar, "apBar", h.ap_pct, pct);
       set(nodes.enBar, "enBar", h.en_pct, pct);

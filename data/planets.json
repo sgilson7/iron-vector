@@ -1355,8 +1355,8 @@
     {
      "id": "sere-1",
      "name": "CONVOY BREAK",
-     "scene": "A tank convoy is running the canyon road south with stolen reactor cores. Stop every one before it reaches the gate.",
-     "kind": "destroy",
+     "scene": "An armoured train is running the canyon south with stolen reactor cores. Break its four cars before it reaches the tunnel; land on its roof to keep pace. The engine opens when the cars are gone.",
+     "kind": "intercept",
      "start": [
       0,
       1000,
@@ -1368,110 +1368,274 @@
       "value": 80,
       "reward": "ar-bastion"
      },
+     "fortresses": [
+      {
+       "name": "IRON SERPENT · TRAIN",
+       "at": [
+        0,
+        760
+       ],
+       "path": [
+        [
+         0,
+         -1040
+        ]
+       ],
+       "speed_ms": 15,
+       "size_x": 16,
+       "hull": [
+        {
+         "at": [
+          0,
+          5,
+          0
+         ],
+         "size": [
+          12,
+          10,
+          22
+         ],
+         "paint": "dark"
+        },
+        {
+         "at": [
+          0,
+          11,
+          -4
+         ],
+         "size": [
+          8,
+          3,
+          10
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          10,
+          -11
+         ],
+         "size": [
+          13,
+          1,
+          1
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          4,
+          27
+         ],
+         "size": [
+          11,
+          8,
+          23
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          0,
+          8,
+          27
+         ],
+         "size": [
+          12,
+          1,
+          24
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          4,
+          53
+         ],
+         "size": [
+          11,
+          8,
+          23
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          0,
+          8,
+          53
+         ],
+         "size": [
+          12,
+          1,
+          24
+         ],
+         "paint": "glow"
+        },
+        {
+         "at": [
+          0,
+          4,
+          79
+         ],
+         "size": [
+          11,
+          8,
+          23
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          0,
+          8,
+          79
+         ],
+         "size": [
+          12,
+          1,
+          24
+         ],
+         "paint": "secondary"
+        },
+        {
+         "at": [
+          0,
+          4,
+          105
+         ],
+         "size": [
+          11,
+          8,
+          23
+         ],
+         "paint": "primary"
+        },
+        {
+         "at": [
+          0,
+          8,
+          105
+         ],
+         "size": [
+          12,
+          1,
+          24
+         ],
+         "paint": "glow"
+        }
+       ],
+       "weak_points": [
+        [
+         0,
+         12,
+         27
+        ],
+        [
+         0,
+         12,
+         53
+        ],
+        [
+         0,
+         12,
+         79
+        ],
+        [
+         0,
+         12,
+         105
+        ]
+       ],
+       "weak_ap": 2600,
+       "weak_radius_m": 5,
+       "core": [
+        0,
+        13,
+        2
+       ],
+       "core_ap": 4200,
+       "core_radius_m": 6,
+       "turrets": [
+        [
+         0,
+         10,
+         35
+        ],
+        [
+         0,
+         10,
+         87
+        ]
+       ],
+       "escapes": true
+      }
+     ],
      "units": [
       {
-       "type": "tank",
+       "type": "heli",
        "at": [
-        -10,
-        700,
-        0
+        -60,
+        600,
+        70
        ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
-       ]
+       "wave": 0
       },
       {
-       "type": "tank",
+       "type": "heli",
        "at": [
-        10,
-        660,
-        0
-       ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
-       ]
-      },
-      {
-       "type": "tank",
-       "at": [
-        -10,
-        620,
-        0
-       ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
-       ]
-      },
-      {
-       "type": "tank",
-       "at": [
-        10,
-        580,
-        0
-       ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
-       ]
-      },
-      {
-       "type": "tank",
-       "at": [
-        -10,
-        540,
-        0
-       ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
-       ]
-      },
-      {
-       "type": "tank",
-       "at": [
-        10,
+        60,
         500,
-        0
+        80
        ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
+       "wave": 0
+      }
+     ],
+     "clear": [
+      [
+       -30,
+       -1100,
+       30,
+       1000
+      ]
+     ],
+     "pads": [
+      {
+       "at": [
+        -60,
+        -1090
+       ],
+       "size": [
+        90,
+        40,
+        60
        ]
       },
       {
-       "type": "tank",
        "at": [
-        -10,
-        460,
-        0
+        60,
+        -1090
        ],
-       "wave": 0,
-       "goal": [
-        0,
-        -1100
+       "size": [
+        90,
+        40,
+        60
        ]
       },
       {
-       "type": "tank",
        "at": [
-        10,
-        420,
-        0
-       ],
-       "wave": 0,
-       "goal": [
         0,
-        -1100
-       ]
+        -1090
+       ],
+       "size": [
+        30,
+        40,
+        36
+       ],
+       "base": 24
       }
      ],
      "time_limit_s": 240
@@ -1479,17 +1643,17 @@
     {
      "id": "sere-2",
      "name": "GLASS NEST",
-     "scene": "Turrets dug into the mesa tops have closed the western pass. Break the nest; the gunships will come.",
-     "kind": "destroy",
+     "scene": "Searchlights sweep the turret nest that closed the western pass. Slip in under the storm, scan its three caches, and get clear. If a light finds you, the nest wakes, and so does what sleeps under it.",
+     "kind": "recon",
      "start": [
-      -450,
-      260,
-      0
+      -330,
+      330,
+      200
      ],
      "reward": "hd-mantle",
      "plus": {
-      "rule": "min_ap_pct",
-      "value": 80,
+      "rule": "max_alarms",
+      "value": 0,
       "reward": "cr-citadel"
      },
      "units": [
@@ -1500,7 +1664,7 @@
         270,
         -1
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "turret",
@@ -1509,7 +1673,7 @@
         185,
         -1
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "turret",
@@ -1518,7 +1682,7 @@
         15,
         -1
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "turret",
@@ -1527,7 +1691,7 @@
         -70,
         -1
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "turret",
@@ -1536,7 +1700,7 @@
         14,
         -1
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "turret",
@@ -1545,7 +1709,7 @@
         185,
         -1
        ],
-       "wave": 0
+       "wave": 1
       },
       {
        "type": "heli",
@@ -1566,7 +1730,181 @@
        "wave": 1
       }
      ],
-     "time_limit_s": 360,
+     "searchlights": [
+      {
+       "at": [
+        -560,
+        40,
+        40
+       ],
+       "path": [
+        [
+         -510,
+         60
+        ],
+        [
+         -510,
+         170
+        ]
+       ],
+       "r_m": 14,
+       "speed_ms": 9
+      },
+      {
+       "at": [
+        -340,
+        60,
+        40
+       ],
+       "path": [
+        [
+         -380,
+         50
+        ],
+        [
+         -440,
+         120
+        ]
+       ],
+       "r_m": 14,
+       "speed_ms": 11
+      },
+      {
+       "at": [
+        -450,
+        250,
+        44
+       ],
+       "path": [
+        [
+         -490,
+         190
+        ],
+        [
+         -400,
+         200
+        ]
+       ],
+       "r_m": 14,
+       "speed_ms": 8
+      },
+      {
+       "at": [
+        -450,
+        -50,
+        44
+       ],
+       "path": [
+        [
+         -480,
+         20
+        ],
+        [
+         -410,
+         10
+        ]
+       ],
+       "r_m": 14,
+       "speed_ms": 12
+      }
+     ],
+     "alarm_wave": 1,
+     "pads": [
+      {
+       "at": [
+        -560,
+        40
+       ],
+       "size": [
+        6,
+        6,
+        37
+       ]
+      },
+      {
+       "at": [
+        -340,
+        60
+       ],
+       "size": [
+        6,
+        6,
+        37
+       ]
+      },
+      {
+       "at": [
+        -450,
+        250
+       ],
+       "size": [
+        6,
+        6,
+        41
+       ]
+      },
+      {
+       "at": [
+        -450,
+        -50
+       ],
+       "size": [
+        6,
+        6,
+        41
+       ]
+      }
+     ],
+     "stages": [
+      {
+       "objective": "Scan the east cache",
+       "wave": 0,
+       "reach": [
+        -390,
+        110,
+        4,
+        12
+       ],
+       "fight": false,
+       "hold_s": 3
+      },
+      {
+       "objective": "Scan the south cache",
+       "wave": 0,
+       "reach": [
+        -460,
+        30,
+        4,
+        12
+       ],
+       "fight": false,
+       "hold_s": 3
+      },
+      {
+       "objective": "Scan the west cache",
+       "wave": 0,
+       "reach": [
+        -520,
+        160,
+        4,
+        12
+       ],
+       "fight": false,
+       "hold_s": 3
+      },
+      {
+       "objective": "Get clear of the nest",
+       "wave": 0,
+       "reach": [
+        -450,
+        480,
+        10,
+        70
+       ],
+       "fight": false
+      }
+     ],
+     "time_limit_s": 300,
      "mechs": [
       {
        "name": "DUNE STRIDER",
@@ -2214,8 +2552,8 @@
     {
      "id": "sere-4",
      "name": "THE SCORPION",
-     "scene": "A heavy shotgun frame has been taking convoys apart up close, and a light missile frame keeps watch for it from above. Two at once.",
-     "kind": "duel",
+     "scene": "A routine job: survey drones have strayed over the southern pass. Shoot them down and come home.",
+     "kind": "ambush",
      "start": [
       450,
       -640,
@@ -2224,12 +2562,96 @@
      "reward": "gn-forge",
      "plus": {
       "rule": "under_seconds",
-      "value": 110,
+      "value": 130,
       "reward": "lr-glint"
      },
      "requires": [
       "sere-2",
       "sere-3"
+     ],
+     "units": [
+      {
+       "type": "drone",
+       "at": [
+        450,
+        -730,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        527,
+        -775,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        527,
+        -865,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        450,
+        -910,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        372,
+        -865,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "drone",
+       "at": [
+        372,
+        -775,
+        30
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        420,
+        -900,
+        0
+       ],
+       "wave": 0
+      },
+      {
+       "type": "tank",
+       "at": [
+        480,
+        -900,
+        0
+       ],
+       "wave": 0
+      }
+     ],
+     "stages": [
+      {
+       "objective": "Shoot down the stray drones",
+       "wave": 0
+      },
+      {
+       "objective": "AMBUSH — the Scorpion and its spotter",
+       "wave": 1
+      }
      ],
      "mechs": [
       {
@@ -2241,6 +2663,7 @@
         180
        ],
        "ap_pct": 110,
+       "wave": 1,
        "loadout": {
         "head": "hd-mantle",
         "core": "cr-citadel",
@@ -2262,6 +2685,7 @@
         180
        ],
        "ap_pct": 65,
+       "wave": 1,
        "loadout": {
         "head": "hd-kestrel",
         "core": "cr-vane",
