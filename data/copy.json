@@ -35,7 +35,7 @@
     ],
     [
       "Right button",
-      "Right-hand weapon"
+      "Right-hand weapon (a blade lunges at your lock)"
     ],
     [
       "E or F",
@@ -181,5 +181,12 @@
   "racing": "racing",
   "wp_objective": "OBJECTIVE",
   "kind_assault": "ASSAULT",
-  "obj_assault": "Take the position"
+  "obj_assault": "Take the position",
+  "kind_melee": "Melee",
+  "kind_plasma": "Plasma",
+  "stat_lunge_m": "Lunge range m",
+  "stat_lunge_ms": "Lunge m/s",
+  "stat_reach_m": "Reach m",
+  "hidden_hint": "Something waits beyond the map: {plus} of {need} + challenges met.",
+  "infinite": "∞"
 }

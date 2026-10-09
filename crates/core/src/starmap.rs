@@ -36,14 +36,23 @@ const TOP: i32 = cm(22);
 const ROW: i32 = cm(11);
 const SPREAD: i32 = cm(8);
 
-/// Every node and line of the diagram.
+/// Every node and line of the diagram, hidden planets included.
 pub fn layout(c: &Campaign) -> (Vec<Node>, Vec<Edge>) {
+    layout_for(c, None)
+}
+
+/// The diagram as a player sees it: a hidden planet appears once it opens.
+pub fn layout_for(c: &Campaign, progress: Option<&Progress>) -> (Vec<Node>, Vec<Edge>) {
     let mut nodes = Vec::new();
     let mut edges = Vec::new();
-    let n = c.planets.len() as i32;
+    let shown: Vec<usize> = (0..c.planets.len())
+        .filter(|p| progress.is_none_or(|pr| pr.planet_shown(c, *p)))
+        .collect();
+    let n = shown.len() as i32;
     let mut last_planet: Option<usize> = None;
-    for (p, planet) in c.planets.iter().enumerate() {
-        let x = COLUMN * (2 * p as i32 - (n - 1)) / 2;
+    for (col, &p) in shown.iter().enumerate() {
+        let planet = &c.planets[p];
+        let x = COLUMN * (2 * col as i32 - (n - 1)) / 2;
         let z = if p % 2 == 0 { 0 } else { -cm(6) };
         let head = nodes.len();
         nodes.push(Node {
@@ -139,7 +148,7 @@ pub fn push_cockpit(
         .then(&Affine::rot_y(sway))
         .then(&Affine::rot_x(-deg(8)))
         .then(&Affine::scale(v3(ONE, ONE, ONE).scale(power.grow.max(1) * 6 / 5)));
-    let (nodes, edges) = layout(c);
+    let (nodes, edges) = layout_for(c, Some(progress));
     let placed: Vec<V3> = nodes.iter().map(|n| holo.apply(n.at)).collect();
     if power.grow <= ONE / 50 {
         return placed;

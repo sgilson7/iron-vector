@@ -10,6 +10,7 @@
     "left_weapon": "rf-marrow",
     "shoulder_weapon": "gc-anvil"
   },
+  "starters": ["bl-emberline"],
   "parts": [
     {
       "id": "hd-warden",
@@ -921,6 +922,193 @@
       "like": "cr-citadel",
       "scale_pct": 110,
       "stats": {"ap": 5600, "weight": 31000, "en_load": 400, "stability": 1150}
+    },
+    {
+      "id": "bl-emberline",
+      "slot": "right_weapon",
+      "name": "BL-2 EMBERLINE",
+      "maker": "Calder Works",
+      "blurb": "A laser blade. Fire to lunge at a locked target and cut. Right arm only.",
+      "kind": "melee",
+      "stats": {
+        "weight": 3600,
+        "en_load": 320,
+        "damage": 1300,
+        "impact": 700,
+        "fire_ms": 1200,
+        "speed_ms": 150,
+        "ammo": 999,
+        "range_m": 60,
+        "blast_m": 10
+      },
+      "mounts": {"muzzle": [0, 0, -150]},
+      "boxes": [
+        {"mesh": "cube", "at": [0, 0, -20], "size": [30, 34, 60], "paint": "dark"},
+        {"mesh": "cube", "at": [0, 0, -56], "size": [44, 12, 14], "paint": "secondary"},
+        {"mesh": "cube", "at": [0, 0, -150], "size": [8, 10, 170], "paint": "glow"}
+      ]
+    },
+    {
+      "id": "pb-ramspike",
+      "slot": "right_weapon",
+      "name": "PB-9 RAMSPIKE",
+      "maker": "Rook Heavy",
+      "blurb": "A pile driver: a short lunge and one enormous blow. Right arm only.",
+      "kind": "melee",
+      "stats": {
+        "weight": 7600,
+        "en_load": 180,
+        "damage": 2800,
+        "impact": 1800,
+        "fire_ms": 2600,
+        "speed_ms": 130,
+        "ammo": 999,
+        "range_m": 45,
+        "blast_m": 8
+      },
+      "mounts": {"muzzle": [0, 0, -130]},
+      "boxes": [
+        {"mesh": "cube", "at": [0, 0, -40], "size": [60, 60, 120], "paint": "secondary"},
+        {"mesh": "cube", "at": [0, 0, -40], "size": [66, 20, 100], "paint": "dark"},
+        {"mesh": "cube", "at": [0, 0, -118], "size": [18, 18, 40], "paint": "primary"},
+        {"mesh": "wedge", "at": [0, 0, -146], "size": [16, 16, 20], "rot": [90, 0, 0], "paint": "glow"}
+      ]
+    },
+    {
+      "id": "pr-corona",
+      "slot": "right_weapon",
+      "name": "PR-3 CORONA",
+      "maker": "Okabe Thrust",
+      "blurb": "A plasma rifle: slow orbs that burst where they land.",
+      "kind": "plasma",
+      "like": "lr-glint",
+      "scale_pct": 108,
+      "stats": {
+        "weight": 5400,
+        "en_load": 420,
+        "damage": 320,
+        "impact": 260,
+        "fire_ms": 500,
+        "speed_ms": 480,
+        "ammo": 160,
+        "range_m": 280,
+        "spread_deg": 1,
+        "blast_m": 7
+      }
+    },
+    {
+      "id": "pc-nova",
+      "slot": "shoulder_weapon",
+      "name": "PC-6 NOVA",
+      "maker": "Okabe Thrust",
+      "blurb": "A plasma cannon. A big orb, a bigger burst.",
+      "kind": "plasma",
+      "like": "lc-halo",
+      "scale_pct": 112,
+      "stats": {
+        "weight": 8800,
+        "en_load": 540,
+        "damage": 1150,
+        "impact": 900,
+        "fire_ms": 3000,
+        "speed_ms": 380,
+        "ammo": 24,
+        "range_m": 380,
+        "blast_m": 16
+      }
+    },
+    {
+      "id": "hd-argus",
+      "slot": "head",
+      "name": "HD-30 ARGUS",
+      "maker": "Calder Works",
+      "blurb": "Eyes in every direction. The longest lock made.",
+      "like": "hd-kestrel",
+      "scale_pct": 118,
+      "stats": {"ap": 1050, "weight": 2900, "en_load": 200, "lock_range_m": 560, "stability": 150}
+    },
+    {
+      "id": "cr-aegis",
+      "slot": "core",
+      "name": "CR-50 AEGIS",
+      "maker": "Calder Works",
+      "blurb": "A middleweight core with a heavyweight's armour.",
+      "like": "cr-vane",
+      "scale_pct": 118,
+      "stats": {"ap": 4600, "weight": 24000, "en_load": 330, "stability": 900}
+    },
+    {
+      "id": "ar-talon",
+      "slot": "arms",
+      "name": "AR-30 TALON",
+      "maker": "Okabe Thrust",
+      "blurb": "Arms built for blades: light, quick, and strong in the grip.",
+      "like": "ar-lancer",
+      "scale_pct": 110,
+      "stats": {"ap": 2000, "weight": 9500, "en_load": 170, "arms_limit": 18000}
+    },
+    {
+      "id": "lt-crawler",
+      "slot": "legs",
+      "name": "LT-70 CRAWLER",
+      "maker": "Rook Heavy",
+      "blurb": "Tank treads. They do not jump, they barely notice weight, and they never stagger easily.",
+      "stats": {
+        "ap": 7200,
+        "weight": 42000,
+        "en_load": 600,
+        "load_limit": 115000,
+        "walk_kmh": 105,
+        "jump_ms": 4,
+        "stability": 1500
+      },
+      "mounts": {"core": [0, 300, 0]},
+      "boxes": [
+        {"mesh": "cube", "at": [0, 230, 0], "size": [210, 110, 190], "paint": "primary"},
+        {"mesh": "wedge", "at": [0, 250, -110], "size": [200, 70, 40], "paint": "secondary"},
+        {"mesh": "cube", "at": [-120, 70, 0], "size": [70, 140, 320], "paint": "dark"},
+        {"mesh": "cube", "at": [120, 70, 0], "size": [70, 140, 320], "paint": "dark"},
+        {"mesh": "cube", "at": [-120, 70, -164], "size": [60, 100, 14], "paint": "secondary"},
+        {"mesh": "cube", "at": [120, 70, -164], "size": [60, 100, 14], "paint": "secondary"},
+        {"mesh": "cube", "at": [-120, 145, 0], "size": [74, 10, 300], "paint": "glow"},
+        {"mesh": "cube", "at": [120, 145, 0], "size": [74, 10, 300], "paint": "glow"}
+      ]
+    },
+    {
+      "id": "bt-nova",
+      "slot": "booster",
+      "name": "BT-15 NOVA",
+      "maker": "Okabe Thrust",
+      "blurb": "The last word in thrust: a racer's glide and a brawler's quick boost.",
+      "like": "bt-comet",
+      "scale_pct": 124,
+      "stats": {
+        "weight": 2300,
+        "en_load": 420,
+        "glide_kmh": 320,
+        "qb_kmh": 560,
+        "qb_en": 420,
+        "ascend_ms2": 72,
+        "ascend_en": 560
+      }
+    },
+    {
+      "id": "cr-ark",
+      "slot": "core",
+      "name": "CR-99 ARK HEART",
+      "maker": "Unknown",
+      "blurb": "Cut from the heart of the largest frame ever walked.",
+      "like": "cr-citadel",
+      "scale_pct": 122,
+      "stats": {"ap": 6400, "weight": 30000, "en_load": 360, "stability": 1300}
+    },
+    {
+      "id": "gn-singularity",
+      "slot": "generator",
+      "name": "GN-10 SINGULARITY",
+      "maker": "Rook Heavy",
+      "blurb": "A generator that seems to have no bottom.",
+      "stats": {"weight": 9800, "en_capacity": 4600, "en_recovery": 2200, "en_output": 4900, "supply_delay_ms": 800}
     }
   ]
 }

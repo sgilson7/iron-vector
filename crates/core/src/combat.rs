@@ -200,6 +200,8 @@ pub enum EffectKind {
     Flash,
     Spark,
     Debris,
+    /// a melee strike's arc, facing `yaw`
+    Slash,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -210,6 +212,7 @@ pub struct Effect {
     pub age: i32,
     pub life: i32,
     pub size: i32,
+    pub yaw: i32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -251,6 +254,8 @@ pub struct Craft {
     /// where a fleeing unit is driving
     pub goal: Option<V3>,
     pub wave: u32,
+    /// riding on a mech: its index, and the place on its body, metres at standard size
+    pub mount: Option<(usize, V3)>,
 }
 
 impl Weapon {

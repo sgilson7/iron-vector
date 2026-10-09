@@ -56,6 +56,12 @@ pub struct Planet {
     pub id: String,
     pub name: String,
     pub opens_at: usize,
+    /// also needs this many plus challenges met
+    #[serde(default)]
+    pub opens_at_plus: usize,
+    /// left off the star map until it opens
+    #[serde(default)]
+    pub hidden: bool,
     pub blurb: String,
     pub gimmick: String,
     pub star: Star,
@@ -158,7 +164,11 @@ impl Campaign {
 
 /// The parts every player owns from the start: the default loadout.
 pub fn starters(cat: &Catalog) -> BTreeSet<String> {
-    cat.default_loadout.values().cloned().collect()
+    cat.default_loadout
+        .values()
+        .chain(cat.starters.iter())
+        .cloned()
+        .collect()
 }
 
 /// What the player has done.
@@ -190,7 +200,13 @@ impl Progress {
     }
 
     pub fn planet_open(&self, c: &Campaign, p: usize) -> bool {
-        self.cleared.len() >= c.planets[p].opens_at
+        let pl = &c.planets[p];
+        self.cleared.len() >= pl.opens_at && self.plus.len() >= pl.opens_at_plus
+    }
+
+    /// Whether the star map shows a planet at all.
+    pub fn planet_shown(&self, c: &Campaign, p: usize) -> bool {
+        !c.planets[p].hidden || self.planet_open(c, p)
     }
 
     pub fn standing(&self, c: &Campaign, id: &str) -> Standing {
@@ -291,12 +307,44 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn five_planets_of_four_missions_open_at_two_five_eight_and_eleven() {
+    fn five_planets_open_at_two_five_eight_and_eleven_and_a_hidden_sixth_wants_plus_clears() {
         let c = campaign();
-        assert_eq!(c.planets.len(), 5);
         assert!(c.planets.iter().all(|p| (4..=8).contains(&p.missions.len())));
-        let opens: Vec<usize> = c.planets.iter().map(|p| p.opens_at).collect();
-        assert_eq!(opens, vec![0, 2, 5, 8, 11]);
+        let shown: Vec<usize> = c
+            .planets
+            .iter()
+            .filter(|p| !p.hidden)
+            .map(|p| p.opens_at)
+            .collect();
+        assert_eq!(shown, vec![0, 2, 5, 8, 11]);
+        let hidden: Vec<&Planet> = c.planets.iter().filter(|p| p.hidden).collect();
+        assert_eq!(hidden.len(), 1);
+        assert!(hidden[0].opens_at_plus > 0);
+    }
+
+    #[test]
+    fn the_hidden_planet_stays_off_the_map_until_enough_plus_challenges_are_met() {
+        let c = campaign();
+        let t = c.planets.iter().position(|p| p.hidden).unwrap();
+        let need = c.planets[t].opens_at_plus;
+        let all: Vec<String> = c
+            .planets
+            .iter()
+            .filter(|p| !p.hidden)
+            .flat_map(|p| p.missions.iter().map(|m| m.id.clone()))
+            .collect();
+        let mut p = Progress {
+            cleared: all.iter().cloned().collect(),
+            plus: BTreeSet::new(),
+        };
+        assert!(
+            !p.planet_shown(&c, t),
+            "every mission cleared, no plus: still hidden"
+        );
+        p.plus = all.iter().take(need - 1).cloned().collect();
+        assert!(!p.planet_shown(&c, t));
+        p.plus = all.iter().take(need).cloned().collect();
+        assert!(p.planet_shown(&c, t) && p.planet_open(&c, t));
     }
 
     #[test]

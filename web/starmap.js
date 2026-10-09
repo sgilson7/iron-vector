@@ -67,6 +67,9 @@ export function makeStarMap(game, copy) {
       .replace("{cleared}", info.cleared)
       .replace("{total}", info.total)
       .replace("{plus}", info.plus);
+    if (info.hidden_need !== null) {
+      el("map-progress").textContent += ` · ${copy.hidden_hint.replace("{plus}", info.plus).replace("{need}", info.hidden_need)}`;
+    }
     const p = info.planets[info.planet];
     el("planet-name").textContent = p.name;
     el("planet-blurb").textContent = p.blurb;

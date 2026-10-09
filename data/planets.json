@@ -508,7 +508,35 @@
        "wave": 2
       }
      ],
-     "time_limit_s": 420
+     "time_limit_s": 420,
+     "mechs": [
+      {
+       "name": "SIEGE WALKER",
+       "pilot": "giant",
+       "at": [
+        -360,
+        -470,
+        0
+       ],
+       "ap_pct": 260,
+       "scale_pct": 240,
+       "speed_pct": 60,
+       "damage_pct": 140,
+       "wave": 2,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
     },
     {
      "id": "halden-4",
@@ -1276,7 +1304,35 @@
        "wave": 1
       }
      ],
-     "time_limit_s": 360
+     "time_limit_s": 360,
+     "mechs": [
+      {
+       "name": "DUNE STRIDER",
+       "pilot": "giant",
+       "at": [
+        -450,
+        -80,
+        0
+       ],
+       "ap_pct": 220,
+       "scale_pct": 220,
+       "speed_pct": 60,
+       "damage_pct": 140,
+       "wave": 1,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
     },
     {
      "id": "sere-3",
@@ -1865,7 +1921,35 @@
        "wave": 2
       }
      ],
-     "time_limit_s": 90
+     "time_limit_s": 90,
+     "mechs": [
+      {
+       "name": "RING HULK",
+       "pilot": "giant",
+       "at": [
+        0,
+        -130,
+        0
+       ],
+       "ap_pct": 220,
+       "scale_pct": 200,
+       "speed_pct": 60,
+       "damage_pct": 140,
+       "wave": 2,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
     },
     {
      "id": "spindle-3",
@@ -2410,7 +2494,35 @@
        "wave": 1
       }
      ],
-     "time_limit_s": 360
+     "time_limit_s": 360,
+     "mechs": [
+      {
+       "name": "FROST COLOSSUS",
+       "pilot": "giant",
+       "at": [
+        0,
+        -150,
+        0
+       ],
+       "ap_pct": 260,
+       "scale_pct": 260,
+       "speed_pct": 60,
+       "damage_pct": 140,
+       "wave": 1,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
     },
     {
      "id": "rime-2",
@@ -3679,7 +3791,35 @@
       }
      ],
      "time_limit_s": 480,
-     "power_pct": 130
+     "power_pct": 130,
+     "mechs": [
+      {
+       "name": "MAGMA TITAN",
+       "pilot": "giant",
+       "at": [
+        -400,
+        -370,
+        0
+       ],
+       "ap_pct": 280,
+       "scale_pct": 280,
+       "speed_pct": 60,
+       "damage_pct": 140,
+       "wave": 2,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
     },
     {
      "id": "cinder-4",
@@ -3770,6 +3910,594 @@
      ],
      "time_limit_s": 420,
      "power_pct": 130
+    }
+   ]
+  },
+  {
+   "id": "tethys",
+   "name": "TETHYS",
+   "opens_at": 11,
+   "opens_at_plus": 8,
+   "hidden": true,
+   "blurb": "A dead sea of black glass that no chart shows. The frames that walk here were built for wars between worlds, and they grow larger the further in you go.",
+   "gimmick": "Giants: every mission is a fight against a bigger frame than the last, some carrying their own gun batteries.",
+   "star": {
+    "color": [
+     60,
+     30,
+     120
+    ],
+    "band": [
+     190,
+     120,
+     255
+    ],
+    "size": 124,
+    "rings": true,
+    "moons": 3,
+    "glow": 1
+   },
+   "look": {
+    "sky": [
+     6,
+     4,
+     14
+    ],
+    "fog": [
+     22,
+     14,
+     44
+    ],
+    "ground": [
+     26,
+     22,
+     44
+    ],
+    "grid": [
+     150,
+     90,
+     255
+    ],
+    "buildings": [
+     [
+      40,
+      36,
+      60
+     ],
+     [
+      30,
+      28,
+      48
+     ],
+     [
+      54,
+      46,
+      76
+     ],
+     [
+      24,
+      22,
+      38
+     ]
+    ],
+    "roof": [
+     70,
+     50,
+     110
+    ],
+    "window": [
+     190,
+     120,
+     255
+    ],
+    "windows": true,
+    "light_dir": [
+     20,
+     100,
+     40
+    ],
+    "fog_near_m": 300,
+    "fog_far_m": 1700,
+    "ground_glow_pct": 20,
+    "stars": true,
+    "structure": [
+     190,
+     120,
+     255
+    ]
+   },
+   "climate": {
+    "gravity_pct": 90,
+    "traction_pct": 100,
+    "floor_dps": 0
+   },
+   "map": {
+    "seed": 9090,
+    "width_m": 2400,
+    "length_m": 2400,
+    "cell_m": 160,
+    "street_m": 40,
+    "empty_pct": 82,
+    "min_h_m": 10,
+    "max_h_m": 45,
+    "tall_pct": 6,
+    "tall_h_m": 90,
+    "ceiling_m": 600,
+    "style": "mesas",
+    "clearings": [
+     {
+      "x_m": 0,
+      "z_m": 0,
+      "r_m": 700
+     }
+    ]
+   },
+   "missions": [
+    {
+     "id": "tethys-1",
+     "name": "FIRST GIANT",
+     "scene": "Something twice the size of a frame walks the glass. It is armed like one. Find out what it can take.",
+     "kind": "duel",
+     "start": [
+      0,
+      260,
+      0
+     ],
+     "reward": "hd-argus",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 60,
+      "reward": "cr-aegis"
+     },
+     "time_limit_s": 360,
+     "power_pct": 120,
+     "mechs": [
+      {
+       "name": "TITAN-CLASS",
+       "pilot": "giant",
+       "at": [
+        0,
+        -200,
+        180
+       ],
+       "ap_pct": 350,
+       "scale_pct": 200,
+       "speed_pct": 70,
+       "damage_pct": 150,
+       "wave": 0,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
+    },
+    {
+     "id": "tethys-2",
+     "name": "TWIN COLOSSI",
+     "scene": "Two of them now, each larger than the first. They walk together.",
+     "kind": "duel",
+     "start": [
+      0,
+      280,
+      0
+     ],
+     "reward": "ar-talon",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 200,
+      "reward": "lt-crawler"
+     },
+     "requires": [
+      "tethys-1"
+     ],
+     "time_limit_s": 420,
+     "power_pct": 125,
+     "mechs": [
+      {
+       "name": "COLOSSUS ALPHA",
+       "pilot": "giant",
+       "at": [
+        -160,
+        -220,
+        180
+       ],
+       "ap_pct": 300,
+       "scale_pct": 250,
+       "speed_pct": 65,
+       "damage_pct": 160,
+       "wave": 0,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      },
+      {
+       "name": "COLOSSUS BETA",
+       "pilot": "giant",
+       "at": [
+        160,
+        -220,
+        180
+       ],
+       "ap_pct": 300,
+       "scale_pct": 250,
+       "speed_pct": 65,
+       "damage_pct": 160,
+       "wave": 0,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": []
+      }
+     ]
+    },
+    {
+     "id": "tethys-3",
+     "name": "WALKING BASTION",
+     "scene": "A frame four times your height, with gun batteries bolted to its shoulders. Strip the guns or go for the heart.",
+     "kind": "duel",
+     "start": [
+      0,
+      300,
+      0
+     ],
+     "reward": "bt-nova",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 50,
+      "reward": "pr-corona"
+     },
+     "requires": [
+      "tethys-2"
+     ],
+     "time_limit_s": 480,
+     "power_pct": 130,
+     "mechs": [
+      {
+       "name": "BASTION",
+       "pilot": "giant",
+       "at": [
+        0,
+        -250,
+        180
+       ],
+       "ap_pct": 700,
+       "scale_pct": 400,
+       "speed_pct": 55,
+       "damage_pct": 200,
+       "wave": 0,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": [
+        [
+         -160,
+         640,
+         40
+        ],
+        [
+         160,
+         640,
+         40
+        ],
+        [
+         0,
+         700,
+         100
+        ],
+        [
+         0,
+         540,
+         -100
+        ]
+       ]
+      }
+     ],
+     "units": [
+      {
+       "type": "heli",
+       "at": [
+        -200,
+        -100,
+        120
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        200,
+        -100,
+        120
+       ],
+       "wave": 0
+      }
+     ]
+    },
+    {
+     "id": "tethys-4",
+     "name": "LEVIATHAN",
+     "scene": "Six times your height, six batteries, and gunships launching from the glass around it.",
+     "kind": "duel",
+     "start": [
+      0,
+      340,
+      0
+     ],
+     "reward": "gn-singularity",
+     "plus": {
+      "rule": "under_seconds",
+      "value": 300,
+      "reward": "pc-nova"
+     },
+     "requires": [
+      "tethys-3"
+     ],
+     "time_limit_s": 540,
+     "power_pct": 135,
+     "mechs": [
+      {
+       "name": "LEVIATHAN",
+       "pilot": "giant",
+       "at": [
+        0,
+        -300,
+        180
+       ],
+       "ap_pct": 1100,
+       "scale_pct": 600,
+       "speed_pct": 45,
+       "damage_pct": 220,
+       "wave": 0,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": [
+        [
+         -200,
+         420,
+         0
+        ],
+        [
+         200,
+         420,
+         0
+        ],
+        [
+         -120,
+         680,
+         120
+        ],
+        [
+         120,
+         680,
+         120
+        ],
+        [
+         0,
+         740,
+         -60
+        ],
+        [
+         0,
+         260,
+         140
+        ]
+       ]
+      }
+     ],
+     "units": [
+      {
+       "type": "heli",
+       "at": [
+        -260,
+        -150,
+        140
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        260,
+        -150,
+        140
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        -200,
+        -300,
+        160
+       ],
+       "wave": 0
+      },
+      {
+       "type": "heli",
+       "at": [
+        200,
+        -300,
+        160
+       ],
+       "wave": 0
+      }
+     ]
+    },
+    {
+     "id": "tethys-5",
+     "name": "THE ARK",
+     "scene": "The largest frame ever walked, nine times your height, with two escorts at its feet. Whoever built it is not coming back for it.",
+     "kind": "duel",
+     "start": [
+      0,
+      380,
+      0
+     ],
+     "reward": "pb-ramspike",
+     "plus": {
+      "rule": "min_ap_pct",
+      "value": 40,
+      "reward": "cr-ark"
+     },
+     "requires": [
+      "tethys-4"
+     ],
+     "time_limit_s": 660,
+     "power_pct": 140,
+     "mechs": [
+      {
+       "name": "THE ARK",
+       "pilot": "giant",
+       "at": [
+        0,
+        -360,
+        180
+       ],
+       "ap_pct": 1800,
+       "scale_pct": 900,
+       "speed_pct": 35,
+       "damage_pct": 250,
+       "wave": 0,
+       "loadout": {
+        "head": "hd-mantle",
+        "core": "cr-citadel",
+        "arms": "ar-bastion",
+        "legs": "lg-bastion",
+        "booster": "bt-titan",
+        "generator": "gn-forge",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "gc-anvil"
+       },
+       "turrets": [
+        [
+         -200,
+         420,
+         0
+        ],
+        [
+         200,
+         420,
+         0
+        ],
+        [
+         -120,
+         680,
+         120
+        ],
+        [
+         120,
+         680,
+         120
+        ],
+        [
+         0,
+         740,
+         -60
+        ],
+        [
+         0,
+         260,
+         140
+        ],
+        [
+         -240,
+         560,
+         -100
+        ],
+        [
+         240,
+         560,
+         -100
+        ]
+       ]
+      },
+      {
+       "name": "ESCORT ONE",
+       "pilot": "twin",
+       "at": [
+        -120,
+        -200,
+        180
+       ],
+       "ap_pct": 80,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "sg-brand",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      },
+      {
+       "name": "ESCORT TWO",
+       "pilot": "twin",
+       "at": [
+        120,
+        -200,
+        180
+       ],
+       "ap_pct": 80,
+       "loadout": {
+        "head": "hd-kestrel",
+        "core": "cr-vane",
+        "arms": "ar-reed",
+        "legs": "lg-wisp",
+        "booster": "bt-comet",
+        "generator": "gn-ember",
+        "right_weapon": "ml-hornet",
+        "left_weapon": "rf-marrow",
+        "shoulder_weapon": "mp-swarm"
+       }
+      }
+     ]
     }
    ]
   }

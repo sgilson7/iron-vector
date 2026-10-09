@@ -870,6 +870,80 @@
     }
    ]
   },
+  "giant": {
+   "reaction_ms": 300,
+   "aim_error_deg": 4,
+   "salt": 26,
+   "rules": [
+    {
+     "if": [
+      "staggered"
+     ],
+     "do": "hold",
+     "interrupt": true
+    },
+    {
+     "if": [
+      {
+       "en_below": 15
+      }
+     ],
+     "do": "recover"
+    },
+    {
+     "if": [
+      "cannot_see"
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      {
+       "dist_above": 320
+      }
+     ],
+     "do": "close_in"
+    },
+    {
+     "if": [
+      "ready_r",
+      {
+       "chance": 45
+      }
+     ],
+     "do": "missile_volley"
+    },
+    {
+     "if": [
+      "ready_s",
+      {
+       "chance": 40
+      }
+     ],
+     "do": "shoulder_shot"
+    },
+    {
+     "if": [
+      {
+       "dist_below": 50
+      }
+     ],
+     "do": "back_off"
+    },
+    {
+     "if": [
+      {
+       "chance": 50
+      }
+     ],
+     "do": "orbit_left"
+    },
+    {
+     "if": [],
+     "do": "orbit_right"
+    }
+   ]
+  },
   "ace": {
    "reaction_ms": 170,
    "aim_error_deg": 5,

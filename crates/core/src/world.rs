@@ -72,7 +72,15 @@ pub struct Mech {
     pub finished_at: Option<u32>,
     /// burning-ground damage owed, in sixtieths of a point
     burn: i32,
+    /// size against a standard frame, Q16; giants are drawn, hit and collide larger
+    pub scale: i32,
+    /// a melee strike under way: weapon slot, tick, and what it lunges at
+    pub melee: Option<(usize, i32, Option<Target>)>,
 }
+
+/// A melee strike lunges this long, lands on this tick, and is done by the last.
+pub const LUNGE_TICKS: i32 = 12;
+const MELEE_DONE_TICKS: i32 = 26;
 
 /// Weapon slots in the order the arrays use: right hand, left hand, shoulder.
 pub const WEAPON_SLOTS: [Slot; 3] = [Slot::RightWeapon, Slot::LeftWeapon, Slot::ShoulderWeapon];
@@ -110,7 +118,33 @@ impl Mech {
             course_next: 0,
             finished_at: None,
             burn: 0,
+            scale: ONE,
+            melee: None,
         }
+    }
+
+    /// Makes this frame a giant: drawn, hit and colliding `scale` times
+    /// larger, moving at `speed_pct` of its parts' speed, and hitting at
+    /// `damage_pct` of its weapons' damage.
+    pub fn grow(&mut self, scale_pct: i32, speed_pct: i32, damage_pct: i32) {
+        self.scale = fx::ratio(scale_pct, 100);
+        let t = &mut self.tuning;
+        t.height = fx::mul(t.height, self.scale);
+        t.half_width = fx::mul(t.half_width, self.scale);
+        for v in [&mut t.walk, &mut t.glide, &mut t.quick_boost] {
+            *v = *v * speed_pct / 100;
+        }
+        for w in &mut self.weapons {
+            w.damage = w.damage * damage_pct / 100;
+            w.impact = w.impact * damage_pct / 100;
+        }
+        self.lock_range = fx::mul(self.lock_range, self.scale);
+    }
+
+    /// The frame's feet, heading and size, as a transform.
+    pub fn frame(&self, pos: V3, yaw: i32) -> Affine {
+        self.root(pos, yaw)
+            .then(&Affine::scale(v3(self.scale, self.scale, self.scale)))
     }
 
     /// Impact meter as a percent of stability.
@@ -127,13 +161,17 @@ impl Mech {
     }
 
     pub fn chest(&self) -> V3 {
-        self.body.pos.add(self.rig.chest())
+        self.body.pos.add(self.rig.chest().scale(self.scale))
     }
 
     /// The two spheres a shot can hit: chest and hips.
     pub fn spheres(&self) -> [(V3, i32); 2] {
         let c = self.chest();
-        [(c, int(3)), (v3(c.x, c.y - int(3), c.z), int(2) + ONE / 2)]
+        let k = |n: i32| fx::mul(n, self.scale);
+        [
+            (c, k(int(3))),
+            (v3(c.x, c.y - k(int(3)), c.z), k(int(2) + ONE / 2)),
+        ]
     }
 }
 
@@ -239,6 +277,7 @@ impl World {
         pilots: &Pilots,
         units: &Units,
         enemy_paint: Paints,
+        giant_paint: Paints,
     ) -> World {
         let mut map = Map::generate(&planet.map);
         map.climate = planet.climate;
@@ -299,15 +338,43 @@ impl World {
             let [x, z, yaw] = ms.at;
             let pos = v3(int(x), on_top(&w.map, x, z), int(z));
             let team = if ms.racer { Team::Player } else { Team::Enemy };
-            let mut m = Mech::build(&loadout, cat, pos, deg(yaw), team, enemy_paint);
+            let paint = if ms.scale_pct > 100 {
+                giant_paint
+            } else {
+                enemy_paint
+            };
+            let mut m = Mech::build(&loadout, cat, pos, deg(yaw), team, paint);
             m.name = ms.name.clone();
             m.stats.ap = m.stats.ap * ms.ap_pct / 100;
+            m.stats.stability = m.stats.stability * ms.ap_pct / 100;
             m.ap = m.stats.ap;
             m.pilot = pilots.pilot(&ms.pilot, k as u64 + 1);
+            if ms.scale_pct != 100 || ms.speed_pct != 100 || ms.damage_pct != 100 {
+                m.grow(ms.scale_pct, ms.speed_pct, ms.damage_pct);
+            }
+            let riders: Vec<Craft> = ms
+                .turrets
+                .iter()
+                .enumerate()
+                .map(|(j, [x, y, z])| {
+                    let mut t = make_unit(
+                        "turret",
+                        &units.0["turret"],
+                        pos,
+                        ms.wave,
+                        None,
+                        spec.power_pct,
+                        (k * 7 + j) as i32,
+                    );
+                    let cm = |n: i32| fx::ratio(n, 100);
+                    t.mount = Some((usize::MAX, v3(cm(*x), cm(*y), cm(*z))));
+                    t
+                })
+                .collect();
             if ms.wave == 0 {
-                w.mechs.push(m);
+                w.add_mech(m, riders);
             } else {
-                mission.reserve_mechs.push((ms.wave, m));
+                mission.reserve_mechs.push((ms.wave, m, riders));
             }
         }
         w.mission = Some(mission);
@@ -351,6 +418,16 @@ impl World {
 
     pub fn player(&self) -> &Mech {
         &self.mechs[0]
+    }
+
+    /// Brings a mech into the world with any turrets that ride on it.
+    pub fn add_mech(&mut self, m: Mech, riders: Vec<Craft>) {
+        let idx = self.mechs.len();
+        self.mechs.push(m);
+        for mut t in riders {
+            t.mount = t.mount.map(|(_, off)| (idx, off));
+            self.craft.push(t);
+        }
     }
 
     /// From `a` to `b`, the short way round on a ring.
@@ -431,17 +508,21 @@ impl World {
             let mut c = if i == 0 { player } else { self.pilot_controls(i) };
             let m = &mut self.mechs[i];
             if m.stagger > 0 {
-                // a staggered frame drops whatever it was doing
+                // a staggered frame drops whatever it was doing, a strike included
                 c = Controls::default();
                 m.stagger -= 1;
+                m.melee = None;
             }
+            self.melee_step(i);
+            let m = &mut self.mechs[i];
             m.impact_quiet += 1;
             if m.impact_quiet > IMPACT_QUIET_TICKS {
                 m.impact = (m.impact - m.stats.stability / 150 - 1).max(0);
             }
             m.body.step(&c, &m.tuning, &self.map);
             m.hit_flash = (m.hit_flash - 1).max(0);
-            if burning > 0 && m.body.grounded && m.body.pos.y == 0 {
+            // the burning floor hurts a standard frame; a giant's feet are armoured for it
+            if burning > 0 && m.body.grounded && m.body.pos.y == 0 && m.scale == ONE {
                 m.burn += burning;
                 let owed = m.burn / TICKS_PER_SECOND;
                 m.burn %= TICKS_PER_SECOND;
@@ -570,8 +651,18 @@ impl World {
             let m = &self.mechs[i];
             let w = m.weapons[k];
             let muzzle = m
-                .root(m.body.pos, m.body.yaw)
+                .frame(m.body.pos, m.body.yaw)
                 .apply(m.rig.muzzles(&m.body.pose())[k]);
+            if w.kind == WeaponKind::Melee {
+                // a strike starts here and plays out in `melee_step`
+                if m.melee.is_none() {
+                    let target = m.lock;
+                    let st = &mut self.mechs[i].wstate[k];
+                    st.cooldown = w.fire_ticks;
+                    self.mechs[i].melee = Some((k, 0, target));
+                }
+                continue;
+            }
             // a pilot's direct fire goes where it aims; the player's is led
             // onto a locked target, as the inspiring game's lock does
             let assisted = m.pilot.is_none() || w.kind == WeaponKind::Missile;
@@ -613,8 +704,74 @@ impl World {
                 age: 0,
                 life: 3,
                 size: ONE + ONE / 2,
+                yaw: 0,
             });
         }
+    }
+
+    /// A melee strike: lunge at the target, homing, then strike everything in
+    /// reach in front, once.
+    fn melee_step(&mut self, i: usize) {
+        let Some((k, t, target)) = self.mechs[i].melee else {
+            return;
+        };
+        let w = self.mechs[i].weapons[k];
+        let reach = fx::mul(w.blast, self.mechs[i].scale);
+        let chest = self.mechs[i].chest();
+        let goal = target
+            .and_then(|tg| self.target_centre(tg))
+            .filter(|g| self.map_delta(chest, *g).len() <= w.range);
+        if t < LUNGE_TICKS {
+            let dir = match goal {
+                Some(g) => {
+                    let d = self.map_delta(chest, g);
+                    // close enough to strike: stop pushing, so the blow lands at reach
+                    if d.len() < reach * 2 / 3 {
+                        V3::ZERO
+                    } else {
+                        d.norm()
+                    }
+                }
+                None => facing(self.mechs[i].body.aim_yaw, 0),
+            };
+            let m = &mut self.mechs[i];
+            if dir != V3::ZERO {
+                m.body.vel = dir.scale(w.speed);
+                m.body.qb_ticks = 2;
+                m.body.yaw = crate::geom::yaw_pitch_of(dir).0;
+                m.body.aim_yaw = m.body.yaw;
+                m.body.thrust = 2;
+            }
+        }
+        if t == LUNGE_TICKS {
+            let m = &self.mechs[i];
+            let front = chest.add(facing(m.body.yaw, 0).scale(reach / 2));
+            let (team, yaw) = (m.team, m.body.yaw);
+            for tg in self.all_targets_of(team) {
+                if matches!(tg, Target::Structure(_)) {
+                    continue;
+                }
+                let Some(c) = self.target_centre(tg) else { continue };
+                let size = match tg {
+                    Target::Mech(j) => fx::mul(int(3), self.mechs[j].scale),
+                    Target::Craft(j) => self.craft[j].radius,
+                    Target::Structure(_) => 0,
+                };
+                if self.map_delta(front, c).len() <= reach + size {
+                    self.hurt(tg, w.damage, w.impact);
+                }
+            }
+            self.effects.push(Effect {
+                kind: EffectKind::Slash,
+                pos: front,
+                vel: V3::ZERO,
+                age: 0,
+                life: 10,
+                size: reach,
+                yaw,
+            });
+        }
+        self.mechs[i].melee = (t + 1 < MELEE_DONE_TICKS).then_some((k, t + 1, target));
     }
 
     /// One tick of every unit that is not a mech.
@@ -641,6 +798,17 @@ impl World {
                     }
                 }
                 continue;
+            }
+            // a rider goes where its mech goes, and falls with it
+            if let Some((j, off)) = c.mount {
+                let host = &self.mechs[j];
+                if !host.alive {
+                    c.alive = false;
+                    continue;
+                }
+                let at = host.frame(host.body.pos, host.body.yaw).apply(off);
+                c.vel = at.sub(c.pos);
+                c.pos = at;
             }
             // what this unit is after: its goal, a structure, or the player
             let aim_at = match c.kind {
@@ -751,6 +919,7 @@ impl World {
                 age: 0,
                 life: 3,
                 size: ONE,
+                yaw: 0,
             });
         }
     }
@@ -844,6 +1013,7 @@ impl World {
                 age: 0,
                 life: 24,
                 size: s.blast,
+                yaw: 0,
             });
         } else {
             let (kind, life, size) = match s.kind {
@@ -857,6 +1027,7 @@ impl World {
                 age: 0,
                 life,
                 size,
+                yaw: 0,
             });
         }
     }
@@ -959,6 +1130,7 @@ impl World {
                 age: 0,
                 life: 36,
                 size: int(14),
+                yaw: 0,
             });
             for k in 0..6 {
                 let dir = facing(
@@ -973,6 +1145,7 @@ impl World {
                     age: 0,
                     life: 70,
                     size: ONE,
+                    yaw: 0,
                 });
             }
         }
@@ -1032,6 +1205,7 @@ pub(crate) mod tests {
             &crate::pilot::tests::pilots(),
             &units(),
             pal.enemy.paints(),
+            pal.giant.paints(),
         )
     }
 
@@ -1225,6 +1399,131 @@ pub(crate) mod tests {
         w.map.add_block(blk);
         let (eye, _) = w.player_view();
         assert!(eye.z < blk.min.z, "eye at {:?}", eye);
+    }
+
+    fn with_blade(w: &mut World) {
+        let c = catalog();
+        let mut l = c.default_loadout();
+        l.0.insert(Slot::RightWeapon, "bl-emberline".to_string());
+        let paint = w.mechs[0].paint;
+        let pos = w.mechs[0].body.pos;
+        w.mechs[0] = Mech::build(&l, &c, pos, 0, Team::Player, paint);
+    }
+
+    #[test]
+    fn a_blade_lunges_at_a_locked_target_and_cuts_it() {
+        let mut w = world();
+        with_blade(&mut w);
+        let at = w.mechs[0].chest().add(v3(0, 0, -int(40)));
+        w.craft[0].anchor = at;
+        w.craft[0].pos = at;
+        w.craft[0].orbit = 0;
+        let ap = w.craft[0].ap;
+        aim_at(&mut w, at);
+        w.tick(Controls::default());
+        assert_eq!(w.mechs[0].lock, Some(Target::Craft(0)));
+        let start = w.mechs[0].body.pos;
+        w.tick(Controls {
+            fire: [true, false, false],
+            ..Controls::default()
+        });
+        for _ in 0..LUNGE_TICKS + 2 {
+            w.tick(Controls::default());
+        }
+        assert!(w.mechs[0].body.pos.dist(start) > int(15), "it lunged");
+        // 1300 damage against a 700 AP drone
+        assert!(!w.craft[0].alive || w.craft[0].ap < ap, "the cut landed");
+        assert!(w.effects.iter().any(|e| e.kind == EffectKind::Slash) || !w.craft[0].alive);
+        assert_eq!(w.mechs[0].wstate[0].ammo, 999, "a blade spends nothing");
+    }
+
+    #[test]
+    fn a_stagger_breaks_off_a_strike() {
+        let mut w = world();
+        with_blade(&mut w);
+        w.tick(Controls {
+            fire: [true, false, false],
+            ..Controls::default()
+        });
+        assert!(w.mechs[0].melee.is_some());
+        w.mechs[0].stagger = STAGGER_TICKS;
+        w.tick(Controls::default());
+        assert!(w.mechs[0].melee.is_none());
+    }
+
+    #[test]
+    fn a_giant_is_hit_collides_and_draws_at_its_size() {
+        let mut w = world();
+        let base = w.mechs[0].clone();
+        w.mechs[0].grow(400, 50, 200);
+        let g = &w.mechs[0];
+        assert_eq!(g.spheres()[0].1, base.spheres()[0].1 * 4);
+        assert_eq!(g.tuning.half_width, base.tuning.half_width * 4);
+        assert_eq!(g.tuning.walk, base.tuning.walk / 2);
+        assert_eq!(g.weapons[1].damage, base.weapons[1].damage * 2);
+        assert!(g.chest().y > base.chest().y * 3);
+    }
+
+    #[test]
+    fn turrets_ride_their_giant_and_fall_with_it() {
+        let mut w = mission_world("tethys-3");
+        let g = w.mechs.iter().position(|m| m.name == "BASTION").unwrap();
+        let riders: Vec<usize> = (0..w.craft.len())
+            .filter(|i| w.craft[*i].mount.is_some_and(|(j, _)| j == g))
+            .collect();
+        assert_eq!(riders.len(), 4);
+        for _ in 0..120 {
+            w.tick(Controls::default());
+        }
+        let host = &w.mechs[g];
+        for &r in &riders {
+            assert!(
+                w.craft[r].pos.dist(host.body.pos) < fx::mul(int(10), host.scale),
+                "turret {r} rides along"
+            );
+            assert!(w.craft[r].pos.y > int(15), "high on its body");
+        }
+        w.hurt(Target::Mech(g), 100_000_000, 0);
+        w.tick(Controls::default());
+        assert!(riders.iter().all(|r| !w.craft[*r].alive));
+    }
+
+    #[test]
+    fn every_planet_has_a_giant_and_the_hidden_ones_grow_mission_by_mission() {
+        let camp = crate::campaign::tests::campaign();
+        for p in &camp.planets {
+            assert!(
+                p.missions
+                    .iter()
+                    .any(|m| m.mechs.iter().any(|ms| ms.scale_pct > 100)),
+                "{} has no giant",
+                p.id
+            );
+        }
+        let tethys = camp.planets.iter().find(|p| p.hidden).unwrap();
+        let sizes: Vec<i32> = tethys
+            .missions
+            .iter()
+            .map(|m| m.mechs.iter().map(|ms| ms.scale_pct).max().unwrap_or(0))
+            .collect();
+        assert!(sizes.windows(2).all(|s| s[0] < s[1]), "{sizes:?}");
+    }
+
+    #[test]
+    fn a_plasma_orb_bursts_where_it_lands() {
+        let c = catalog();
+        let w = Weapon::from_part(c.get("pr-corona").unwrap());
+        assert_eq!(w.kind, WeaponKind::Plasma);
+        assert!(w.blast > 0);
+        let mut world = world();
+        let at = v3(0, int(30), -int(80));
+        world.craft[0].pos = at;
+        let mut rng = Rng::new(1);
+        let mut s = Shot::fire(&w, Team::Player, at.add(v3(int(4), 0, 0)), at, None, &mut rng)[0];
+        s.pos = at.add(v3(int(4), 0, 0));
+        let ap = world.craft[0].ap;
+        world.impact(&s, None);
+        assert!(world.craft[0].ap < ap, "the burst reached a drone 4 m off");
     }
 
     #[test]

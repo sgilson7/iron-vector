@@ -71,6 +71,16 @@ pub struct MechSpawn {
     /// a friendly rival in a race, not a hostile
     #[serde(default)]
     pub racer: bool,
+    /// a giant: percent of standard size, of its parts' speed, of its weapons' damage
+    #[serde(default = "hundred")]
+    pub scale_pct: i32,
+    #[serde(default = "hundred")]
+    pub speed_pct: i32,
+    #[serde(default = "hundred")]
+    pub damage_pct: i32,
+    /// turrets riding on its body, x, y, z centimetres at standard size
+    #[serde(default)]
+    pub turrets: Vec<[i32; 3]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -265,6 +275,7 @@ pub fn make_unit(
         }),
         goal,
         wave,
+        mount: None,
     }
 }
 
@@ -326,7 +337,7 @@ pub struct Mission {
     pub floor_ticks: i32,
     /// units and frames held for later waves
     pub reserve_craft: Vec<Craft>,
-    pub reserve_mechs: Vec<(u32, crate::world::Mech)>,
+    pub reserve_mechs: Vec<(u32, crate::world::Mech, Vec<Craft>)>,
     pub course: Vec<V3>,
     pub stages: Vec<StageNow>,
     pub stage: usize,
@@ -492,9 +503,11 @@ impl World {
         let (now, later): (Vec<Craft>, Vec<Craft>) = m.reserve_craft.drain(..).partition(|c| c.wave == w);
         m.reserve_craft = later;
         self.craft.extend(now);
-        let (now, later): (Vec<_>, Vec<_>) = m.reserve_mechs.drain(..).partition(|(wv, _)| *wv == w);
+        let (now, later): (Vec<_>, Vec<_>) = m.reserve_mechs.drain(..).partition(|(wv, _, _)| *wv == w);
         m.reserve_mechs = later;
-        self.mechs.extend(now.into_iter().map(|(_, mech)| mech));
+        for (_, mech, riders) in now {
+            self.add_mech(mech, riders);
+        }
     }
 
     /// A stage is done when its hostiles are down and, if it names a place,
@@ -720,12 +733,7 @@ mod tests {
     fn a_defence_is_won_when_every_wave_is_down() {
         let mut w = mission_world("halden-3");
         for _ in 0..4 {
-            for i in 0..w.craft.len() {
-                if w.craft[i].alive {
-                    w.hurt(Target::Craft(i), 1_000_000, 0);
-                }
-            }
-            run(&mut w, 1);
+            kill_all(&mut w);
         }
         assert_eq!(w.mission.as_ref().unwrap().wave, 2, "three waves rose");
         assert_eq!(outcome(&w), (Some(true), None));

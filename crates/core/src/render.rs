@@ -297,7 +297,7 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
         }
         let pos = m.body.prev_pos.lerp(m.body.pos, alpha);
         let yaw = fx::lerp_angle(m.body.prev_yaw, m.body.yaw, alpha);
-        let root = m.root(pos, yaw);
+        let root = m.frame(pos, yaw);
         let pose = m.body.pose();
         parts.clear();
         m.rig.pose(&root, &pose, &mut parts);
@@ -325,7 +325,7 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
                 );
             }
         }
-        push_shadow(&mut b, w, pos, int(4), shadow);
+        push_shadow(&mut b, w, pos, fx::mul(int(4), m.scale), shadow);
     }
     for c in w.craft.iter().filter(|c| c.alive) {
         let pos = c.prev_pos.lerp(c.pos, alpha);
@@ -408,6 +408,10 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
                     ONE,
                 );
             }
+            WeaponKind::Plasma => {
+                let r = ONE + s.blast / 6;
+                b.push(Mesh::Sphere, &boxed(pos, v3(r, r, r)), colour(pal.plasma), ONE);
+            }
             _ => {
                 let len = s.vel.len().min(int(6));
                 let a = Affine::translate(pos.sub(dir.scale(len / 2))).then(&Affine::looking(dir));
@@ -451,6 +455,18 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
                 );
             }
             EffectKind::Debris => b.push(Mesh::Cube, &place(ONE), dark, 0),
+            EffectKind::Slash => {
+                // an arc of light swept across the front, fading as it goes
+                let sweep = fx::mul(deg(120), k) - deg(60);
+                for s in 0..7 {
+                    let a = e.yaw + sweep - deg(10) * s;
+                    let p = e.pos.add(facing(a, 0).scale(e.size / 2));
+                    let seg = Affine::translate(p)
+                        .then(&Affine::rot_y(a))
+                        .then(&Affine::scale(v3(e.size / 3, ONE / 3, ONE / 2)));
+                    b.push(Mesh::Cube, &seg, colour(pal.slash), ONE - k / 2);
+                }
+            }
         }
     }
     b
@@ -708,6 +724,8 @@ pub struct WeaponHud {
     pub ammo: i32,
     pub ready_pct: i32,
     pub empty: bool,
+    /// a melee weapon: no rounds to count
+    pub infinite: bool,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -849,6 +867,7 @@ pub fn hud(
                 ammo: st.ammo,
                 ready_pct: 100 - st.cooldown * 100 / wpn.fire_ticks.max(1),
                 empty: st.ammo <= 0,
+                infinite: wpn.kind == WeaponKind::Melee,
             }
         })
         .collect();

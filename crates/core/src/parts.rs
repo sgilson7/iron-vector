@@ -42,6 +42,12 @@ impl Slot {
         }
     }
 
+    /// Whether a part can go in this slot: the category, and a melee weapon
+    /// only in the right hand.
+    pub fn fits(self, p: &Part) -> bool {
+        self.takes(p.slot) && !(self == Slot::LeftWeapon && p.kind == Some(WeaponKind::Melee))
+    }
+
     pub fn is_weapon(self) -> bool {
         matches!(self, Slot::RightWeapon | Slot::LeftWeapon | Slot::ShoulderWeapon)
     }
@@ -72,6 +78,10 @@ pub enum WeaponKind {
     Missile,
     Laser,
     Grenade,
+    /// a blade or a ram: lunge at the target and strike; right arm only
+    Melee,
+    /// slow orbs that burst where they land
+    Plasma,
 }
 
 /// Every stat a part can carry. Each slot uses the ones that mean something
@@ -145,6 +155,9 @@ pub struct Catalog {
     pub parts: Vec<Part>,
     /// The loadout a new player starts with, and what an invalid save becomes.
     pub default_loadout: BTreeMap<Slot, String>,
+    /// Parts every player owns besides the default loadout.
+    #[serde(default)]
+    pub starters: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -250,7 +263,7 @@ impl Catalog {
             let part = self
                 .get(id)
                 .ok_or_else(|| CatalogError(format!("default loadout names unknown part {id}")))?;
-            if !slot.takes(part.slot) {
+            if !slot.fits(part) {
                 return Err(CatalogError(format!("{id} does not fit {slot:?}")));
             }
         }
@@ -263,7 +276,7 @@ impl Catalog {
 
     /// The parts that fit a slot, in file order.
     pub fn for_slot(&self, slot: Slot) -> Vec<&Part> {
-        self.parts.iter().filter(|p| slot.takes(p.slot)).collect()
+        self.parts.iter().filter(|p| slot.fits(p)).collect()
     }
 
     pub fn default_loadout(&self) -> Loadout {
@@ -283,7 +296,7 @@ impl Loadout {
         let parsed: BTreeMap<Slot, String> = serde_json::from_str(saved).unwrap_or_default();
         let mut l = cat.default_loadout();
         for (slot, id) in parsed {
-            if cat.get(&id).map(|p| slot.takes(p.slot)).unwrap_or(false) {
+            if cat.get(&id).map(|p| slot.fits(p)).unwrap_or(false) {
                 l.0.insert(slot, id);
             }
         }
@@ -472,6 +485,27 @@ pub(crate) mod tests {
         assert_eq!(
             spear.mounts["muzzle"],
             base.mounts["muzzle"].map(|x| x * 115 / 100)
+        );
+    }
+
+    #[test]
+    fn a_melee_weapon_fits_the_right_hand_and_not_the_left() {
+        let c = catalog();
+        let blade = c.get("bl-emberline").unwrap();
+        assert!(Slot::RightWeapon.fits(blade));
+        assert!(!Slot::LeftWeapon.fits(blade));
+        assert!(c
+            .for_slot(Slot::RightWeapon)
+            .iter()
+            .any(|p| p.id == "bl-emberline"));
+        assert!(!c
+            .for_slot(Slot::LeftWeapon)
+            .iter()
+            .any(|p| p.id == "bl-emberline"));
+        let saved = r#"{"left_weapon":"bl-emberline"}"#;
+        assert_eq!(
+            Loadout::restore(saved, &c).0[&Slot::LeftWeapon],
+            c.default_loadout().0[&Slot::LeftWeapon]
         );
     }
 

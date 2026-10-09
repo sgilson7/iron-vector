@@ -131,6 +131,8 @@ fn kind_key(k: WeaponKind) -> String {
         WeaponKind::Missile => "missile",
         WeaponKind::Laser => "laser",
         WeaponKind::Grenade => "grenade",
+        WeaponKind::Melee => "melee",
+        WeaponKind::Plasma => "plasma",
     };
     format!("kind_{name}")
 }
@@ -166,9 +168,20 @@ pub fn detail_rows(p: &Part) -> Vec<(String, i32)> {
         ("stat_en_recovery", s.en_recovery),
         ("stat_en_output", s.en_output),
     ];
+    let melee = p.kind == Some(WeaponKind::Melee);
     all.iter()
         .filter(|(_, v)| *v != 0)
-        .map(|(k, v)| (k.to_string(), *v))
+        // a melee weapon's numbers mean a lunge and a reach, and it has no rounds
+        .filter(|(k, _)| !(melee && *k == "stat_ammo"))
+        .map(|(k, v)| {
+            let k = match (melee, *k) {
+                (true, "stat_range_m") => "stat_lunge_m",
+                (true, "stat_speed_ms") => "stat_lunge_ms",
+                (true, "stat_blast_m") => "stat_reach_m",
+                (_, k) => k,
+            };
+            (k.to_string(), *v)
+        })
         .collect()
 }
 
@@ -378,9 +391,19 @@ mod tests {
     #[test]
     fn both_hands_offer_every_arm_weapon() {
         let c = catalog();
-        assert_eq!(c.for_slot(Slot::RightWeapon), c.for_slot(Slot::LeftWeapon));
         let arm_weapons = c.parts.iter().filter(|p| p.slot == Slot::RightWeapon).count();
+        let melee = c
+            .parts
+            .iter()
+            .filter(|p| p.kind == Some(WeaponKind::Melee))
+            .count();
+        assert_eq!(melee, 2);
         assert_eq!(c.for_slot(Slot::RightWeapon).len(), arm_weapons);
+        assert_eq!(
+            c.for_slot(Slot::LeftWeapon).len(),
+            arm_weapons - melee,
+            "no blade in the left hand"
+        );
     }
 
     #[test]

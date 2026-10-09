@@ -48,6 +48,8 @@ pub struct Palette {
     pub note: String,
     pub schemes: Vec<Scheme>,
     pub enemy: Scheme,
+    /// what giant frames are painted in, so they stand out against any sky
+    pub giant: Scheme,
     /// the garage bay; each planet brings its own look
     pub hangar: crate::campaign::Look,
     pub shadow: Rgb,
@@ -64,6 +66,8 @@ pub struct Palette {
     pub tank: Rgb,
     pub turret: Rgb,
     pub checkpoint: Rgb,
+    pub slash: Rgb,
+    pub plasma: Rgb,
     /// the cockpit and its star map
     pub cockpit: Rgb,
     pub cockpit_light: Rgb,

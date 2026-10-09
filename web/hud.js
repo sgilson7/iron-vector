@@ -169,7 +169,7 @@ export function makeHud(copy) {
       h.weapons.forEach((w, i) => {
         const n = nodes.weapons[i];
         set(n.name, `wn${i}`, w.part, text);
-        set(n.ammo, `wa${i}`, w.empty ? copy.ammo_empty : w.ammo, text);
+        set(n.ammo, `wa${i}`, w.infinite ? copy.infinite : w.empty ? copy.ammo_empty : w.ammo, text);
         set(n.bar, `wr${i}`, w.ready_pct, pct);
         set(n.root, `we${i}`, w.empty, cls("empty"));
       });

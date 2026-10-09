@@ -256,6 +256,7 @@ impl Game {
                     &self.pilots,
                     &self.units,
                     self.pal.enemy.paints(),
+                    self.pal.giant.paints(),
                 );
                 self.look = planet.look.clone();
             }
@@ -485,7 +486,7 @@ impl Game {
                 &self.pal,
             );
             if grow > ONE * 9 / 10 {
-                let (nodes, _) = starmap::layout(&self.campaign);
+                let (nodes, _) = starmap::layout_for(&self.campaign, Some(&self.progress));
                 for (n, p) in nodes.iter().zip(placed) {
                     if let Some((x, y)) = render::to_screen(&vp, p, self.css.0, self.css.1) {
                         let planet = &self.campaign.planets[n.planet];
@@ -606,8 +607,11 @@ impl Game {
     }
 
     pub fn select_planet(&mut self, planet: usize) {
-        self.select.planet = planet.min(self.campaign.planets.len() - 1);
-        self.select.mission = None;
+        let p = planet.min(self.campaign.planets.len() - 1);
+        if self.progress.planet_shown(&self.campaign, p) {
+            self.select.planet = p;
+            self.select.mission = None;
+        }
     }
 
     pub fn select_mission(&mut self, planet: usize, mission: usize) {
@@ -690,7 +694,11 @@ impl Game {
             "mission": self.select.mission,
             "cleared": self.progress.cleared.len(),
             "plus": self.progress.plus.len(),
-            "total": c.total_missions(),
+                        "total": c.total_missions(),
+            // a hidden planet still to find: how many plus challenges it wants
+            "hidden_need": c.planets.iter().enumerate()
+                .find(|(p, pl)| pl.hidden && !self.progress.planet_open(c, *p))
+                .map(|(_, pl)| pl.opens_at_plus),
             "ready": self.mode == Mode::Select && self.sweep().2 > ONE * 9 / 10,
         })
         .to_string()
@@ -961,7 +969,7 @@ pub(crate) mod tests {
             g.camera().eye.dist(g.cockpit_eye()) < ONE / 64,
             "the camera ends at the pilot's eye"
         );
-        let nodes = starmap::layout(&g.campaign).0.len();
+        let nodes = starmap::layout_for(&g.campaign, Some(&g.progress)).0.len();
         assert_eq!(g.hotspots.len(), nodes, "every node is on screen");
         assert!(g
             .hotspots

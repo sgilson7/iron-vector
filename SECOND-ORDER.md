@@ -62,3 +62,16 @@ One row per assumption, surprise or open item. **Kind** is *divergence* (what wa
 | D3 | finding | The wall mission needed new kinds of geometry. | Map blocks can now hang above the ground (`base`), a mission can clear rectangles of the planet's city (`clear`), and a mission can run in stages, each with a wave and a place to reach. | Halden-5 THE BREAKWATER: approach, gate tunnel, inner face with ledges, guardian on the crest. Planted defect (stage ignores "reach"): `the_wall_is_taken_stage_by_stage_and_its_guardian_waits_on_top` fails. | done |
 | D4 | finding | Multi-frame fights. | Sere-4 is now two frames (the Scorpion and a missile frame above it), Spindle-4 three (the keeper and two wardens), Rime-4 already two. Each partner's AP is cut so the fight stays fair. | | done |
 | D5 | worklist | Whether the wall and the multi-frame fights are fun. | | Sam's playtest. | person |
+
+## Milestone 4: Tethys, giants, melee, plasma
+
+| # | Kind | What was assumed or found | What is true | What changed | Status |
+| --- | --- | --- | --- | --- | --- |
+| E1 | finding | A giant needs its own rules. | It is a standard frame with a scale: drawn through `Mech::frame`, hit through scaled spheres, colliding with a scaled box, at a share of its parts' speed and a multiple of its weapons' damage (`Mech::grow`). It still moves by `Body::step` and flies a behaviour tree. | Test `a_giant_is_hit_collides_and_draws_at_its_size`. | done |
+| E2 | divergence | Giants on Cinder would walk the lava like everything else. | A giant standing in lava burned to death on its own. | The burning floor hurts standard frames only; a giant's feet are armoured for it. | done |
+| E3 | finding | Arms-fort batteries. | Turrets can ride a mech (`Craft.mount`): placed on its body each tick, fighting as turrets, falling when it falls. | Test `turrets_ride_their_giant_and_fall_with_it`. | done |
+| E4 | finding | Melee. | A strike is a homing lunge for `LUNGE_TICKS`, then one blow at reach in front; a stagger breaks it off. Melee parts fit the right hand only (`Slot::fits`), and a save that put one in the left hand loads with the default there. | Planted defect (left hand accepts melee): `a_melee_weapon_fits_the_right_hand_and_not_the_left` fails. | done |
+| E5 | divergence | Every part is won on a mission. | The laser blade is a starter, so melee can be tried at once; `Catalog.starters`. | | done |
+| E6 | finding | The hidden planet. | Tethys opens at 11 clears and 8 plus challenges, and is left off the star map until then; the map's progress line says how many plus challenges it wants. Its five missions are duels against frames 2, 2.5, 4, 6 and 9 times standard size. | Tests: `the_hidden_planet_stays_off_the_map_until_enough_plus_challenges_are_met`, `every_planet_has_a_giant_and_the_hidden_ones_grow_mission_by_mission`. | done |
+| E7 | finding | The first screenshot of Tethys put the giants a kilometre off, specks in the haze. | | Starts moved in to about 450 m; giants painted in a light scheme with violet lights. | done |
+| E8 | worklist | Whether the giants and melee are fun, and whether The Ark is beatable. | | Sam's playtest. | person |

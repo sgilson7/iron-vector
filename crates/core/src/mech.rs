@@ -82,6 +82,8 @@ pub struct Tuning {
     pub supply_delay: i32,
     pub max_ap: i32,
     pub height: i32,
+    /// half the width of the frame's collision box
+    pub half_width: i32,
 }
 
 impl Tuning {
@@ -100,6 +102,7 @@ impl Tuning {
             supply_delay: s.supply_delay_ms * TICKS_PER_SECOND / 1000,
             max_ap: s.ap,
             height,
+            half_width: HALF_WIDTH,
         }
     }
 }
@@ -300,8 +303,8 @@ impl Body {
 
     fn bounds(&self, at: V3, t: &Tuning) -> (V3, V3) {
         (
-            v3(at.x - HALF_WIDTH, at.y, at.z - HALF_WIDTH),
-            v3(at.x + HALF_WIDTH, at.y + t.height, at.z + HALF_WIDTH),
+            v3(at.x - t.half_width, at.y, at.z - t.half_width),
+            v3(at.x + t.half_width, at.y + t.height, at.z + t.half_width),
         )
     }
 
@@ -323,10 +326,10 @@ impl Body {
                     return;
                 }
                 let edge = match axis {
-                    0 if self.vel.x > 0 => b.min.x - HALF_WIDTH - 1,
-                    0 => b.max.x + HALF_WIDTH + 1,
-                    1 if self.vel.z > 0 => b.min.z - HALF_WIDTH - 1,
-                    1 => b.max.z + HALF_WIDTH + 1,
+                    0 if self.vel.x > 0 => b.min.x - t.half_width - 1,
+                    0 => b.max.x + t.half_width + 1,
+                    1 if self.vel.z > 0 => b.min.z - t.half_width - 1,
+                    1 => b.max.z + t.half_width + 1,
                     _ if self.vel.y > 0 => b.min.y - t.height - 1,
                     _ => b.max.y,
                 };
@@ -372,8 +375,8 @@ impl Body {
             let (min, max) = self.bounds(v3(self.pos.x, self.pos.y - ONE / 16, self.pos.z), t);
             self.grounded = map.box_blocked(min, max);
         }
-        let mx = map.half_x - HALF_WIDTH;
-        let mz = map.half_z - HALF_WIDTH;
+        let mx = map.half_x - t.half_width;
+        let mz = map.half_z - t.half_width;
         if map.wrap {
             let wrapped = map.wrap_x(self.pos.x);
             // move the last position by the same jump, so drawing does not streak
