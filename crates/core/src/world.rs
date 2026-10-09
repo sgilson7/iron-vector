@@ -7,6 +7,7 @@ use crate::combat::{
     WeaponState,
 };
 use crate::content::Proving;
+use crate::course::{self, Machine};
 use crate::fx::{self, deg, int, ONE};
 use crate::geom::{facing, v3, Affine, V3};
 use crate::map::{Block, Map};
@@ -160,6 +161,15 @@ impl Mech {
         Affine::translate(pos).then(&Affine::rot_y(yaw))
     }
 
+    /// The box a frame collides with.
+    pub fn bounds(&self) -> (V3, V3) {
+        let (p, t) = (self.body.pos, &self.tuning);
+        (
+            v3(p.x - t.half_width, p.y, p.z - t.half_width),
+            v3(p.x + t.half_width, p.y + t.height, p.z + t.half_width),
+        )
+    }
+
     pub fn chest(&self) -> V3 {
         self.body.pos.add(self.rig.chest().scale(self.scale))
     }
@@ -244,6 +254,8 @@ pub struct World {
     pub kills: u32,
     pub mission: Option<Mission>,
     pub fortresses: Vec<Fortress>,
+    /// a race's moving parts
+    pub machines: Vec<Machine>,
 }
 
 fn empty_world(map: Map, player: Mech, seed: u64) -> World {
@@ -259,6 +271,7 @@ fn empty_world(map: Map, player: Mech, seed: u64) -> World {
         kills: 0,
         mission: None,
         fortresses: Vec::new(),
+        machines: Vec::new(),
     }
 }
 
@@ -335,6 +348,15 @@ impl World {
         let player = Mech::build(l, cat, start, deg(syaw), Team::Player, paint);
         let mut w = empty_world(map, player, planet.map.seed ^ 0x5eed);
         w.structures = structures;
+        for ms in &spec.machines {
+            let mc = Machine::new(ms, w.map.movers.len());
+            w.map.movers.push(Block {
+                min: mc.home.sub(mc.half),
+                max: mc.home.add(mc.half),
+                shade: 2,
+            });
+            w.machines.push(mc);
+        }
         let mut mission = Mission::new(spec);
         for (k, u) in spec.units.iter().enumerate() {
             let [x, z, alt] = u.at;
@@ -494,28 +516,82 @@ impl World {
             let step = to.norm().scale(f.speed);
             f.pos = f.pos.add(step);
             let (start, n) = f.movers;
-            // what stands on a deck is found before the deck moves
-            let riders: Vec<usize> = (0..self.mechs.len())
-                .filter(|&i| {
-                    let m = &self.mechs[i];
-                    let p = m.body.pos;
-                    m.alive
-                        && m.body.grounded
-                        && self.map.movers[start..start + n].iter().any(|b| {
-                            p.y == b.max.y
-                                && p.x >= b.min.x
-                                && p.x <= b.max.x
-                                && p.z >= b.min.z
-                                && p.z <= b.max.z
-                        })
-                })
-                .collect();
-            for b in &mut self.map.movers[start..start + n] {
-                b.min = b.min.add(step);
-                b.max = b.max.add(step);
+            self.carry(start, n, step);
+        }
+    }
+
+    /// Moves the map's moving boxes `start..start + n` by `step`, and every
+    /// frame standing on them with them.
+    fn carry(&mut self, start: usize, n: usize, step: V3) {
+        // what stands on a deck is found before the deck moves
+        let riders: Vec<usize> = (0..self.mechs.len())
+            .filter(|&i| {
+                let m = &self.mechs[i];
+                let p = m.body.pos;
+                m.alive
+                    && m.body.grounded
+                    && self.map.movers[start..start + n].iter().any(|b| {
+                        p.y == b.max.y && p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z
+                    })
+            })
+            .collect();
+        for b in &mut self.map.movers[start..start + n] {
+            b.min = b.min.add(step);
+            b.max = b.max.add(step);
+        }
+        for i in riders {
+            self.mechs[i].body.pos = self.mechs[i].body.pos.add(step);
+        }
+    }
+
+    /// Moves every machine of a race a step. A frame a hazard touches is
+    /// thrown aside and stunned; one a lift or door closes on is lifted onto it.
+    fn update_machines(&mut self) {
+        for k in 0..self.machines.len() {
+            let step = self.machines[k].step();
+            let block = self.machines[k].block;
+            if step != V3::ZERO {
+                self.carry(block, 1, step);
             }
-            for i in riders {
-                self.mechs[i].body.pos = self.mechs[i].body.pos.add(step);
+            let (role, centre, b) = (
+                self.machines[k].role,
+                self.machines[k].centre(),
+                self.map.movers[block],
+            );
+            let touch = ONE / 4;
+            for i in 0..self.mechs.len() {
+                let m = &self.mechs[i];
+                let (lo, hi) = m.bounds();
+                let near = Block {
+                    min: b.min.sub(v3(touch, touch, touch)),
+                    max: b.max.add(v3(touch, touch, touch)),
+                    shade: 0,
+                };
+                if !m.alive || !near.overlaps(lo, hi) {
+                    continue;
+                }
+                let m = &mut self.mechs[i];
+                if role.hazard() {
+                    if m.stagger == 0 {
+                        m.body.vel = course::knock(centre, m.body.pos, step);
+                        m.body.grounded = false;
+                        m.stagger = course::KNOCK_TICKS;
+                        m.melee = None;
+                    }
+                    // out of the box the way it is thrown, or on top if it cannot be
+                    let out = v3(m.body.vel.x, 0, m.body.vel.z).norm();
+                    for _ in 0..80 {
+                        let (lo, hi) = m.bounds();
+                        if !b.overlaps(lo, hi) {
+                            break;
+                        }
+                        m.body.pos = m.body.pos.add(out.scale(ONE / 2));
+                    }
+                } else if b.overlaps(lo, hi) {
+                    m.body.pos.y = b.max.y;
+                    m.body.vel.y = m.body.vel.y.max(0);
+                    m.body.grounded = true;
+                }
             }
         }
     }
@@ -680,6 +756,7 @@ impl World {
             self.fire(i, &c);
         }
         self.update_fortresses();
+        self.update_machines();
         self.update_craft();
         self.update_shots();
         self.update_effects();
@@ -687,7 +764,7 @@ impl World {
     }
 
     /// What mech `i` can see, as its pilot is shown it.
-    fn senses(&self, i: usize) -> Senses {
+    pub fn senses(&self, i: usize) -> Senses {
         let me = &self.mechs[i];
         let target = self.player();
         let my_chest = me.chest();
@@ -699,11 +776,17 @@ impl World {
             })
             .map(|s| self.map_delta(my_chest, s.pos).len())
             .min();
-        let to_course = self
-            .mission
-            .as_ref()
-            .and_then(|m| m.course.get(me.course_next))
-            .map(|c| self.map_delta(my_chest, *c));
+        let gate = self.mission.as_ref().and_then(|m| m.course.get(me.course_next));
+        // a pad is aimed at as if standing on it, so "above" means its top is above my feet
+        let to_course = gate.map(|g| {
+            let lift = if g.kind.landing() {
+                me.rig.chest().scale(me.scale)
+            } else {
+                V3::ZERO
+            };
+            self.map_delta(my_chest, self.gate_point(g).add(lift))
+        });
+        let course_landing = gate.is_some_and(|g| g.kind.landing());
         Senses {
             me: my_chest,
             my_vel: me.body.vel,
@@ -722,6 +805,7 @@ impl World {
             can_see: target.alive && self.map.clear_line(my_chest, target.chest()),
             missile,
             to_course,
+            course_landing,
             weapons: me
                 .weapons
                 .map(|w| (w.speed, w.range, w.kind == WeaponKind::Missile)),

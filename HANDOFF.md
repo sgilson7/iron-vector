@@ -15,6 +15,10 @@ Iron Vector is live at https://sgilson7.github.io/iron-vector/ (repository `sgil
 
 The campaign, the cockpit star map and behaviour-tree pilots. `PLAN-M2.md` is the plan; `SECOND-ORDER.md` section "Milestone 2" is the notebook. Planet one was deployed first, at Sam's mid-session request ("deploy to live whenever you have a planet completed"); planets two to five followed once each was checked by eye. New core modules: `campaign` (planets, progress, unlocks, Hasse levels), `starmap` (layout and cockpit), `pilot` (rewritten as trees), `mission` (rewritten as a data-driven engine). New data: `planets.json`, `units.json`; `pilots.json` now holds moves and trees. Generator scripts for `parts.json`, `planets.json` and `pilots.json` were used during the build and are not in the repository; edit the JSON directly.
 
+## Milestone 6 (2026-10-09): obstacle-course races, save data
+
+The five races are obstacle courses (`crates/core/src/course.rs`): rings flown through the way they face, pads to land on, boost rings, switches that open doors, and machines (lifts, sweepers, pistons, doors) that ride in `Map.movers` beside fortress hulls. `tools/genplanets.py` now writes `data/planets.json` (`python3 tools/genplanets.py > data/planets.json`); the course pieces are at its top. To tune a race, run `RACES=halden-2 cargo test -p iv_core --test race_probe -- --ignored --nocapture` (add `TRACE=halden-2` for a step-by-step trace), then keep the balance test passing. The garage has save, load, a test save with everything won, and restart; `data/saves/everything-unlocked.json` is the same test save as a file. Notebook: `SECOND-ORDER.md`, "Milestone 6".
+
 ## What changed, by layer
 
 - `crates/core`: every rule. `fx` and `geom` are the Q16.16 maths; `mech` is movement and EN; `world` is the tick; `combat` is shots and damage; `pilot` is the enemy's behaviour tree; `mission` is the phases and the rank; `garage` is the garage screen's content; `render` is the instance list, the cameras and the HUD; `game` is the modes, the clock and the input latch.

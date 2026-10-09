@@ -113,6 +113,20 @@ impl Game {
         self.inner.saved()
     }
 
+    /// Replaces the game with a save the player brought; an error is a copy key.
+    pub fn load_save(&mut self, text: &str) -> Result<(), JsValue> {
+        self.inner.load_save(text).map_err(|e| JsValue::from_str(&e))
+    }
+
+    pub fn restart(&mut self) {
+        self.inner.restart()
+    }
+
+    /// A save with everything cleared, for testing.
+    pub fn everything_save(&self) -> String {
+        self.inner.everything_save()
+    }
+
     pub fn star_map(&mut self) {
         self.inner.star_map()
     }

@@ -55,6 +55,10 @@ pub enum Cond {
     CourseAbove(i32),
     /// my next checkpoint is farther than this
     CourseFar(i32),
+    /// my next checkpoint is nearer than this, measured flat
+    CourseNearFlat(i32),
+    /// my next checkpoint is a pad to land on
+    CourseLanding,
     /// I stand on burning ground
     FloorBurning,
 }
@@ -204,6 +208,7 @@ pub struct Senses {
     pub missile: Option<i32>,
     /// my next checkpoint, as a vector from me
     pub to_course: Option<V3>,
+    pub course_landing: bool,
     /// for each weapon slot: shot speed per tick, range, whether it homes
     pub weapons: [(i32, i32, bool); 3],
     pub ready: [bool; 3],
@@ -274,6 +279,8 @@ impl Pilot {
             Cond::ReadyS => now.ready[2],
             Cond::CourseAbove(d) => now.to_course.is_some_and(|c| c.y > m(*d)),
             Cond::CourseFar(d) => now.to_course.is_some_and(|c| c.len() > m(*d)),
+            Cond::CourseNearFlat(d) => now.to_course.is_some_and(|c| c.len_xz() < m(*d)),
+            Cond::CourseLanding => now.course_landing,
             Cond::FloorBurning => now.floor_burning,
         }
     }
@@ -423,6 +430,7 @@ pub(crate) mod tests {
             can_see: true,
             missile: None,
             to_course: None,
+            course_landing: false,
             weapons: [
                 (int(3), int(360), true),
                 (int(11), int(260), false),

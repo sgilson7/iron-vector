@@ -3,6 +3,7 @@
 //! that asks for the same win under a constraint. Phases advance only here.
 
 use crate::combat::{Craft, CraftKind, Team};
+use crate::course::{self, Gate, GateKind, GateSpec, MachineSpec};
 use crate::fx::{deg, int};
 use crate::geom::{v3, V3};
 use crate::mech::TICKS_PER_SECOND;
@@ -164,9 +165,12 @@ pub struct MissionSpec {
     pub pads: Vec<Building>,
     #[serde(default)]
     pub may_lose: i32,
-    /// checkpoints, x, z, altitude (m)
+    /// a race's gates, in order
     #[serde(default)]
-    pub course: Vec<[i32; 3]>,
+    pub course: Vec<GateSpec>,
+    /// a race's moving parts: lifts, sweepers, pistons and doors
+    #[serde(default)]
+    pub machines: Vec<MachineSpec>,
     #[serde(default)]
     pub time_limit_s: i32,
     #[serde(default = "yes")]
@@ -266,8 +270,6 @@ impl Units {
     }
 }
 
-/// How far from a checkpoint's centre a frame passes through it.
-pub const CHECKPOINT_RADIUS: i32 = int(30);
 /// How near its goal a fleeing unit counts as escaped.
 const ESCAPE_RADIUS: i32 = int(25);
 /// Seconds the world keeps running after the mission ends, before the debrief.
@@ -381,7 +383,7 @@ pub struct Mission {
     /// units and frames held for later waves
     pub reserve_craft: Vec<Craft>,
     pub reserve_mechs: Vec<(u32, crate::world::Mech, Vec<Craft>)>,
-    pub course: Vec<V3>,
+    pub course: Vec<Gate>,
     pub stages: Vec<StageNow>,
     pub stage: usize,
 }
@@ -413,11 +415,7 @@ impl Mission {
             floor_ticks: 0,
             reserve_craft: Vec::new(),
             reserve_mechs: Vec::new(),
-            course: spec
-                .course
-                .iter()
-                .map(|c| v3(int(c[0]), int(c[2]), int(c[1])))
-                .collect(),
+            course: course::gates(&spec.course, v3(int(spec.start[0]), int(5), int(spec.start[1]))),
             stages: spec
                 .stages
                 .iter()
@@ -569,7 +567,8 @@ impl World {
         }
     }
 
-    /// Moves every racer's next checkpoint on when it passes through one.
+    /// Moves every racer's next gate on when it flies through a ring or lands
+    /// on a pad; a boost ring throws it on, and a switch opens its door.
     fn update_course(&mut self, m: &Mission) {
         if m.course.is_empty() {
             return;
@@ -579,12 +578,41 @@ impl World {
             if !self.mechs[i].alive || next >= m.course.len() {
                 continue;
             }
-            if self.map_delta(self.mechs[i].chest(), m.course[next]).len() < CHECKPOINT_RADIUS {
-                self.mechs[i].course_next += 1;
-                if self.mechs[i].course_next == m.course.len() {
-                    self.mechs[i].finished_at = Some(m.ticks);
-                }
+            let g = &m.course[next];
+            let at = self.gate_point(g);
+            let me = &self.mechs[i];
+            let passed = if g.kind.landing() {
+                course::landed(g, at, at.add(self.map_delta(at, me.body.pos)), me.body.grounded)
+            } else {
+                // the chest's path this tick, measured from the gate so a ring's seam does not matter
+                let chest = me.rig.chest().scale(me.scale);
+                let a = at.add(self.map_delta(at, me.body.prev_pos.add(chest)));
+                let b = at.add(self.map_delta(at, me.chest()));
+                course::through_ring(g, at, a, b)
+            };
+            if !passed {
+                continue;
             }
+            let me = &mut self.mechs[i];
+            me.course_next += 1;
+            if me.course_next == m.course.len() {
+                me.finished_at = Some(m.ticks);
+            }
+            if g.kind == GateKind::Boost {
+                me.body.vel = course::boost(g);
+                me.body.glide = true;
+            }
+            if let Some(d) = g.opens.and_then(|d| self.machines.get_mut(d)) {
+                d.open = true;
+            }
+        }
+    }
+
+    /// Where a gate is now: a gate riding a machine moves with it.
+    pub fn gate_point(&self, g: &Gate) -> V3 {
+        match g.ride.and_then(|k| self.machines.get(k)) {
+            Some(mc) => g.at.add(mc.offset),
+            None => g.at,
         }
     }
 
@@ -645,7 +673,9 @@ impl World {
         if m.kind != Kind::Race {
             return None;
         }
-        m.course.get(self.player().course_next).copied()
+        m.course
+            .get(self.player().course_next)
+            .map(|g| self.gate_point(g))
     }
 
     /// The structures that have fallen.
@@ -729,10 +759,23 @@ mod tests {
     fn a_race_is_won_by_passing_every_checkpoint_first() {
         let mut w = mission_world("halden-2");
         let course = w.mission.as_ref().unwrap().course.clone();
-        for cp in &course {
-            w.mechs[0].body.pos = cp.sub(w.mechs[0].rig.chest());
-            w.mechs[0].body.grounded = false;
-            run(&mut w, 1);
+        let mut passed = 0;
+        for g in &course {
+            let at = w.gate_point(g);
+            if g.kind.landing() {
+                w.mechs[0].body.pos = at;
+                w.mechs[0].body.prev_pos = at;
+                w.mechs[0].body.vel = V3::ZERO;
+                run(&mut w, 1);
+            } else {
+                let chest = w.mechs[0].rig.chest();
+                w.mechs[0].body.pos = at.sub(chest).sub(g.normal.scale(ONE / 2));
+                w.mechs[0].body.vel = g.normal.scale(ONE);
+                w.mechs[0].body.grounded = false;
+                run(&mut w, 1);
+            }
+            passed += 1;
+            assert_eq!(w.mechs[0].course_next, passed, "{g:?}");
         }
         assert_eq!(outcome(&w), (Some(true), None));
     }
@@ -748,6 +791,104 @@ mod tests {
             w.mechs[1].course_next
         );
         assert_eq!(outcome(&w), (Some(false), Some("fail_beaten")));
+    }
+
+    fn race_at(w: &mut World, kind: GateKind) -> usize {
+        let k = w
+            .mission
+            .as_ref()
+            .unwrap()
+            .course
+            .iter()
+            .position(|g| g.kind == kind)
+            .unwrap();
+        w.mechs[0].course_next = k;
+        k
+    }
+
+    fn stand(w: &mut World, at: V3) {
+        w.mechs[0].body.pos = at;
+        w.mechs[0].body.prev_pos = at;
+        w.mechs[0].body.vel = V3::ZERO;
+        w.mechs[0].body.grounded = true;
+    }
+
+    #[test]
+    fn landing_on_a_switch_opens_its_door_and_the_door_clears_the_way() {
+        let mut w = mission_world("halden-2");
+        let k = race_at(&mut w, GateKind::Switch);
+        let g = w.mission.as_ref().unwrap().course[k].clone();
+        let door = g.opens.unwrap();
+        run(&mut w, 120);
+        assert_eq!(w.machines[door].offset, V3::ZERO, "shut until the switch");
+        let at = w.gate_point(&g);
+        stand(&mut w, at);
+        run(&mut w, 1);
+        assert_eq!(w.mechs[0].course_next, k + 1);
+        assert!(w.machines[door].open);
+        run(&mut w, 120);
+        let top = w.map.movers[w.machines[door].block].max.y;
+        assert!(top <= 0, "sunk into the ground, its top at {top}");
+    }
+
+    #[test]
+    fn a_pad_is_not_passed_by_flying_over_it() {
+        let mut w = mission_world("halden-2");
+        let k = race_at(&mut w, GateKind::Pad);
+        let g = w.mission.as_ref().unwrap().course[k].clone();
+        let over = w.gate_point(&g).add(v3(0, int(6), 0));
+        w.mechs[0].body.pos = over;
+        w.mechs[0].body.grounded = false;
+        run(&mut w, 1);
+        assert_eq!(w.mechs[0].course_next, k, "still to land");
+    }
+
+    #[test]
+    fn a_sweeper_throws_a_frame_aside_and_stuns_it() {
+        let mut w = mission_world("halden-2");
+        let sweeper = w
+            .machines
+            .iter()
+            .position(|m| m.role == course::Role::Sweeper)
+            .unwrap();
+        let mut hit = false;
+        let at = w.machines[sweeper].centre().add(v3(int(20), 0, 0));
+        for _ in 0..6 * 60 {
+            stand(&mut w, v3(at.x, 0, at.z));
+            run(&mut w, 1);
+            if w.mechs[0].stagger > 0 {
+                hit = true;
+                break;
+            }
+        }
+        assert!(hit, "the sweeper's run crosses where the frame stands");
+        assert!(w.mechs[0].body.vel.len_xz() > int(1) / 4, "thrown");
+        let (lo, hi) = w.mechs[0].bounds();
+        assert!(
+            !w.map.movers[w.machines[sweeper].block].overlaps(lo, hi),
+            "and out of the bar"
+        );
+        assert_eq!(w.mechs[0].ap, w.mechs[0].stats.ap, "a knock costs time, not AP");
+    }
+
+    #[test]
+    fn a_lift_carries_whoever_stands_on_it() {
+        let mut w = mission_world("halden-2");
+        let lift = w
+            .machines
+            .iter()
+            .position(|m| m.role == course::Role::Lift)
+            .unwrap();
+        let top = w.map.movers[w.machines[lift].block].max;
+        let centre = w.machines[lift].centre();
+        stand(&mut w, v3(centre.x, top.y, centre.z));
+        let start = w.mechs[0].body.pos.y;
+        let mut highest = start;
+        for _ in 0..8 * 60 {
+            run(&mut w, 1);
+            highest = highest.max(w.mechs[0].body.pos.y);
+        }
+        assert!(highest >= start + int(25), "rode up from {start} to {highest}");
     }
 
     #[test]

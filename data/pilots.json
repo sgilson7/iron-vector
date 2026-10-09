@@ -361,6 +361,33 @@
      "face": "course"
     }
    ]
+  },
+  "race_land": {
+   "label": "landing on the pad",
+   "beats": [
+    {
+     "from": 0,
+     "to": 12,
+     "keys": [
+      "fwd",
+      "walk"
+     ],
+     "face": "course"
+    }
+   ]
+  },
+  "race_settle": {
+   "label": "settling",
+   "beats": [
+    {
+     "from": 0,
+     "to": 8,
+     "keys": [
+      "walk"
+     ],
+     "face": "course"
+    }
+   ]
   }
  },
  "trees": {
@@ -376,6 +403,36 @@
       }
      ],
      "do": "race_recover"
+    },
+    {
+     "if": [
+      "course_landing",
+      {
+       "course_above": 1
+      },
+      {
+       "course_near_flat": 45
+      }
+     ],
+     "do": "race_climb"
+    },
+    {
+     "if": [
+      "course_landing",
+      {
+       "course_near_flat": 6
+      }
+     ],
+     "do": "race_settle"
+    },
+    {
+     "if": [
+      "course_landing",
+      {
+       "course_near_flat": 30
+      }
+     ],
+     "do": "race_land"
     },
     {
      "if": [
@@ -403,6 +460,36 @@
       }
      ],
      "do": "race_recover"
+    },
+    {
+     "if": [
+      "course_landing",
+      {
+       "course_above": 1
+      },
+      {
+       "course_near_flat": 45
+      }
+     ],
+     "do": "race_climb"
+    },
+    {
+     "if": [
+      "course_landing",
+      {
+       "course_near_flat": 6
+      }
+     ],
+     "do": "race_settle"
+    },
+    {
+     "if": [
+      "course_landing",
+      {
+       "course_near_flat": 30
+      }
+     ],
+     "do": "race_land"
     },
     {
      "if": [

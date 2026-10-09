@@ -89,6 +89,16 @@
         <button id="to-test" type="button" class="secondary" data-copy="test_field"></button>
         <button id="to-map" type="button" data-copy="missions_button"></button>
       </div>
+      <h2 data-copy="save_title"></h2>
+      <p class="hint" data-copy="save_note"></p>
+      <div class="actions save-actions">
+        <button id="save-game" type="button" class="secondary" data-copy="save_game"></button>
+        <button id="load-game" type="button" class="secondary" data-copy="load_game"></button>
+        <button id="load-everything" type="button" class="secondary" data-copy="load_everything"></button>
+        <button id="restart" type="button" class="secondary danger" data-copy="restart"></button>
+      </div>
+      <input id="save-file" type="file" accept=".json,application/json" hidden>
+      <p id="save-status" role="status"></p>
       <p class="build" id="build"></p>
     </div>
   </section>

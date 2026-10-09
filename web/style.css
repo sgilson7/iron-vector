@@ -191,3 +191,11 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 #mission-list li.plus { border-color: #ffd65a; box-shadow: inset 3px 0 0 #ffd65a; }
 #mission-list .m-plus.met { color: #ffd65a; font-weight: 700; }
 .tally { color: var(--hud); font-size: 12px; letter-spacing: 0.08em; }
+
+/* save data in the garage */
+.save-actions { margin-top: 8px; }
+.save-actions button { padding: 8px 10px; font-size: 11px; flex: 1 1 40%; }
+button.danger { color: var(--warn); border-color: var(--warn); }
+button.danger.armed { background: var(--warn); color: #111; }
+#save-status { min-height: 1.2em; color: var(--glow); font-size: 11px; }
+#save-status.bad { color: var(--warn); }

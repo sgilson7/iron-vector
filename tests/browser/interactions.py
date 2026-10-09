@@ -12,6 +12,8 @@ copied from the game's own output:
   Halden's race, so a new player cannot fit it.
 - The default legs walk at 95 km/h, so after a second and a half of holding
   W in the test field the speed readout is between 90 and 96.
+- The test save (every mission cleared) leaves no part locked; a restart
+  locks them again.
 - The star map has 5 planets and 21 missions (Halden has five, with the
   wall): 26 places to click. The second
   planet, Sere, opens when 2 missions are cleared.
@@ -126,3 +128,21 @@ def run(page, check, engine):
     check(page.inner_text("#planet-lock") == "", "after two clears Sere is open")
     page.click("#mission-list li:nth-child(1)")
     check(page.is_enabled("#launch"), "Sere's first mission can launch")
+
+    # save data: the test save opens everything, restart asks twice and wipes it
+    page.click("#map-back")
+    page.wait_for_selector("#garage:not([hidden])", timeout=8000)
+    page.click("#load-everything")
+    page.wait_for_timeout(200)
+    check(page.inner_text("#save-status") == COPY["everything_ok"], "the test save says it loaded")
+    page.click("#slots li:nth-child(7)")
+    check(len(page.query_selector_all("#parts li.locked")) == 0, "with the test save no part is locked")
+    page.click("#restart")
+    check(page.inner_text("#restart") == COPY["restart_confirm"], "restart asks before it erases")
+    page.click("#restart")
+    page.wait_for_timeout(200)
+    check(page.inner_text("#save-status") == COPY["restarted"], "restart says it erased")
+    check(len(page.query_selector_all("#parts li.locked")) > 0, "after a restart parts are locked again")
+    with page.expect_download() as dl:
+        page.click("#save-game")
+    check(dl.value.suggested_filename == "iron-vector-save.json", "saving offers a file")

@@ -8,6 +8,7 @@
 pub mod campaign;
 pub mod combat;
 pub mod content;
+pub mod course;
 pub mod fx;
 pub mod game;
 pub mod garage;

@@ -47,6 +47,65 @@ function fillCopy(copy) {
   }
 }
 
+// Save data: a file out, a file in, a test save with everything won, and a
+// restart that asks twice. The core reads and checks every save.
+function wireSaves(game, copy, save, redraw) {
+  const status = el("save-status");
+  const say = (key, bad) => {
+    status.textContent = copy[key];
+    status.classList.toggle("bad", Boolean(bad));
+  };
+  const adopt = (text) => {
+    try {
+      game.load_save(text);
+      save();
+      redraw();
+      return true;
+    } catch (e) {
+      say(String(e), true);
+      return false;
+    }
+  };
+  el("save-game").addEventListener("click", () => {
+    save();
+    const url = URL.createObjectURL(new Blob([game.saved()], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "iron-vector-save.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    say("saved_ok");
+  });
+  const picker = el("save-file");
+  el("load-game").addEventListener("click", () => picker.click());
+  picker.addEventListener("change", async () => {
+    const [f] = picker.files;
+    picker.value = "";
+    if (f && adopt(await f.text())) say("loaded_ok");
+  });
+  el("load-everything").addEventListener("click", () => {
+    if (adopt(game.everything_save())) say("everything_ok");
+  });
+  const restart = el("restart");
+  restart.addEventListener("click", () => {
+    if (!restart.classList.contains("armed")) {
+      restart.classList.add("armed");
+      restart.textContent = copy.restart_confirm;
+      return;
+    }
+    restart.classList.remove("armed");
+    restart.textContent = copy.restart;
+    game.restart();
+    save();
+    redraw();
+    say("restarted");
+  });
+  restart.addEventListener("mouseleave", () => {
+    restart.classList.remove("armed");
+    restart.textContent = copy.restart;
+  });
+}
+
 async function start() {
   const texts = await Promise.all(
     [
@@ -143,6 +202,7 @@ async function start() {
   el("debrief-map").addEventListener("click", () => game.star_map());
   el("abort").addEventListener("click", () => game.to_garage());
   el("start").addEventListener("click", () => input.engage());
+  wireSaves(game, copy, save, () => garage.draw(true));
   canvas.addEventListener("click", () => {
     if ((mode === "sortie" || mode === "test") && !input.engaged()) input.engage();
   });

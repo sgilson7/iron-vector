@@ -95,6 +95,26 @@ struct Saved {
     progress: Progress,
 }
 
+/// A save made sense of against this build: a part, paint or mission it
+/// names that no longer exists, or a part not yet won, falls back.
+fn restore(saved: Option<Saved>, cat: &Catalog, pal: &Palette, c: &Campaign) -> (Loadout, usize, Progress) {
+    let (mut loadout, paint, progress) = match saved {
+        Some(s) => (
+            Loadout::restore(&serde_json::to_string(&s.loadout).unwrap_or_default(), cat),
+            s.paint.min(pal.schemes.len() - 1),
+            s.progress.clean(c),
+        ),
+        None => (cat.default_loadout(), 0, Progress::default()),
+    };
+    let unlocked = progress.unlocked(c, cat);
+    for (slot, id) in cat.default_loadout().0 {
+        if !unlocked.contains(&loadout.0[&slot]) {
+            loadout.0.insert(slot, id);
+        }
+    }
+    (loadout, paint, progress)
+}
+
 /// A place on screen the page should make clickable on the star map.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Hotspot {
@@ -171,22 +191,9 @@ impl Game {
                 return Err(format!("planets: {} names no unit {}", m.id, u.unit));
             }
         }
-        let (loadout, paint, progress) = match serde_json::from_str::<Saved>(saved) {
-            Ok(s) => (
-                Loadout::restore(&serde_json::to_string(&s.loadout).unwrap_or_default(), &cat),
-                s.paint.min(pal.schemes.len() - 1),
-                s.progress.clean(&campaign),
-            ),
-            Err(_) => (cat.default_loadout(), 0, Progress::default()),
-        };
+        let (loadout, paint, progress) =
+            restore(serde_json::from_str::<Saved>(saved).ok(), &cat, &pal, &campaign);
         let unlocked = progress.unlocked(&campaign, &cat);
-        // a saved part that is no longer won goes back to the starter
-        let mut loadout = loadout;
-        for (slot, id) in cat.default_loadout().0 {
-            if !unlocked.contains(&loadout.0[&slot]) {
-                loadout.0.insert(slot, id);
-            }
-        }
         let world = World::hangar(&cat, &loadout, pal.scheme(paint).paints());
         let look = pal.hangar.clone();
         let mut g = Game {
@@ -587,6 +594,52 @@ impl Game {
             progress: self.progress.clone(),
         };
         serde_json::to_string(&s).unwrap_or_default()
+    }
+
+    /// Replaces the game with a save the player brought, and goes to the
+    /// garage. A save that cannot be read changes nothing and says so.
+    pub fn load_save(&mut self, text: &str) -> Result<(), String> {
+        let s = serde_json::from_str::<Saved>(text).map_err(|_| "save_unreadable".to_string())?;
+        self.adopt(Some(s));
+        Ok(())
+    }
+
+    /// Starts over: the starting frame, the first paint, nothing cleared.
+    pub fn restart(&mut self) {
+        self.adopt(None);
+    }
+
+    /// A save with every mission cleared and every plus met, in the current
+    /// frame and paint: for trying anything without earning it.
+    pub fn everything_save(&self) -> String {
+        let all: BTreeSet<String> = self
+            .campaign
+            .planets
+            .iter()
+            .flat_map(|p| p.missions.iter().map(|m| m.id.clone()))
+            .collect();
+        let s = Saved {
+            loadout: self.loadout.0.clone(),
+            paint: self.paint,
+            progress: Progress {
+                cleared: all.clone(),
+                plus: all,
+            },
+        };
+        serde_json::to_string(&s).unwrap_or_default()
+    }
+
+    fn adopt(&mut self, s: Option<Saved>) {
+        let (loadout, paint, progress) = restore(s, &self.cat, &self.pal, &self.campaign);
+        self.loadout = loadout;
+        self.paint = paint;
+        self.progress = progress;
+        self.unlocked = self.progress.unlocked(&self.campaign, &self.cat);
+        self.flying = None;
+        self.debrief = None;
+        self.select = Selection::default();
+        self.garage = Garage::default();
+        self.enter(Mode::Garage);
     }
 
     // ---- the star map ----
@@ -997,6 +1050,54 @@ pub(crate) mod tests {
         g.launch();
         assert_eq!(g.mode(), Mode::Sortie);
         assert_eq!(g.world().mission.as_ref().unwrap().id, "halden-1");
+    }
+
+    #[test]
+    fn the_everything_save_opens_every_mission_and_part() {
+        let mut g = game();
+        let all = g.everything_save();
+        g.load_save(&all).unwrap();
+        assert_eq!(g.mode(), Mode::Garage);
+        let total: usize = g.campaign.planets.iter().map(|p| p.missions.len()).sum();
+        assert_eq!(g.progress().plus.len(), total);
+        assert!(
+            (0..g.campaign.planets.len()).all(|p| g.progress().planet_open(&g.campaign, p)),
+            "the hidden planet too"
+        );
+        assert!(
+            g.cat.parts.iter().all(|p| g.unlocked.contains(&p.id)),
+            "every part is won"
+        );
+    }
+
+    #[test]
+    fn the_shipped_test_save_is_the_everything_save() {
+        let file = include_str!("../../../data/saves/everything-unlocked.json");
+        assert_eq!(
+            file.trim(),
+            game().everything_save(),
+            "regenerate data/saves/everything-unlocked.json"
+        );
+    }
+
+    #[test]
+    fn a_save_round_trips_and_restart_wipes_it() {
+        let mut g = game();
+        g.load_save(&g.everything_save()).unwrap();
+        let kept = g.saved();
+        g.restart();
+        assert!(g.progress().cleared.is_empty());
+        assert_ne!(g.saved(), kept);
+        g.load_save(&kept).unwrap();
+        assert_eq!(g.saved(), kept);
+    }
+
+    #[test]
+    fn an_unreadable_save_changes_nothing() {
+        let mut g = game();
+        let before = g.saved();
+        assert_eq!(g.load_save("not a save"), Err("save_unreadable".to_string()));
+        assert_eq!(g.saved(), before);
     }
 
     #[test]

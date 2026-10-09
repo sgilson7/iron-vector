@@ -8,6 +8,7 @@
 use crate::campaign::Look;
 use crate::combat::{CraftKind, EffectKind, Target, Team};
 use crate::content::{q16, Palette, Rgb};
+use crate::course::{GateKind, Role};
 use crate::fx::{self, deg, int, ONE};
 use crate::geom::{facing, v3, Affine, Mat4, V3};
 use crate::map::Map;
@@ -378,18 +379,51 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
             b.push(Mesh::Cube, &band, structure, ONE / 2);
         }
     }
+    // a race's machines: hazards in warning colours, lifts and doors in the course's
+    for mc in &w.machines {
+        let at = mc.home.add(mc.prev_offset.lerp(mc.offset, alpha));
+        let size = mc.half.scale(int(2));
+        let (body, trim) = match mc.role {
+            Role::Sweeper | Role::Piston => (colour(pal.hazard), colour(pal.hazard_trim)),
+            Role::Lift => (shade(colour(pal.checkpoint), 30), colour(pal.checkpoint)),
+            Role::Door => (shade(colour(pal.switch), 30), colour(pal.switch)),
+        };
+        b.push(
+            Mesh::Cube,
+            &boxed(at, size),
+            body,
+            if mc.role.hazard() { ONE / 3 } else { 0 },
+        );
+        // a glowing band round the top edge, so its shape reads at speed
+        let band = boxed(
+            v3(at.x, at.y + mc.half.y - ONE / 4, at.z),
+            v3(size.x + ONE / 4, ONE / 2, size.z + ONE / 4),
+        );
+        b.push(Mesh::Cube, &band, trim, ONE);
+    }
     if let Some(mi) = &w.mission {
         let next = w.player().course_next;
-        for (k, cp) in mi.course.iter().enumerate().skip(next).take(3) {
-            let ahead = mi.course.get(k + 1).copied().unwrap_or(cp.add(v3(0, 0, -ONE)));
-            let behind = if k == 0 {
-                cp.add(v3(0, 0, ONE))
-            } else {
-                mi.course[k - 1]
-            };
-            let dir = w.map_delta(behind, ahead).norm();
+        for (k, g) in mi.course.iter().enumerate().skip(next).take(3) {
             let glow = if k == next { ONE } else { ONE / 4 };
-            checkpoint(&mut b, *cp, dir, colour(pal.checkpoint), glow);
+            let at = w.gate_point(g);
+            let c = match g.kind {
+                GateKind::Ring | GateKind::Pad => colour(pal.checkpoint),
+                GateKind::Boost => colour(pal.boost),
+                GateKind::Switch => colour(pal.switch),
+            };
+            if g.kind.landing() {
+                // a ring lying on the pad, and a beacon standing up from the next one
+                checkpoint(&mut b, at.add(v3(0, ONE / 4, 0)), V3::UP, g.r, c, glow);
+                if k == next {
+                    let beam = boxed(at.add(v3(0, int(30), 0)), v3(ONE / 2, int(60), ONE / 2));
+                    b.push(Mesh::Cube, &beam, c, ONE);
+                }
+            } else {
+                checkpoint(&mut b, at, g.normal, g.r, c, glow);
+                if g.kind == GateKind::Boost {
+                    checkpoint(&mut b, at, g.normal, g.r * 2 / 3, c, glow);
+                }
+            }
         }
     }
     for s in &w.shots {
@@ -489,10 +523,11 @@ pub fn frame(w: &World, look: &Look, pal: &Palette, alpha: i32, hide_player: boo
 }
 
 /// A ring of glowing segments standing across the course at `at`.
-fn checkpoint(b: &mut Batch, at: V3, dir: V3, c: [i32; 3], glow: i32) {
+fn checkpoint(b: &mut Batch, at: V3, dir: V3, r: i32, c: [i32; 3], glow: i32) {
     let basis = Affine::looking(if dir == V3::ZERO { v3(0, 0, -ONE) } else { dir });
     const SEGMENTS: i32 = 16;
-    let r = int(20);
+    // each segment a little longer than its share of the rim, so they meet
+    let seg_len = r * 2 / 5 + ONE;
     for k in 0..SEGMENTS {
         let a = fx::TURN * k / SEGMENTS;
         let p = v3(fx::mul(r, fx::cos(a)), fx::mul(r, fx::sin(a)), 0);
@@ -500,7 +535,7 @@ fn checkpoint(b: &mut Batch, at: V3, dir: V3, c: [i32; 3], glow: i32) {
             .then(&basis)
             .then(&Affine::translate(p))
             .then(&Affine::rot_z(a + fx::QUARTER))
-            .then(&Affine::scale(v3(int(8), ONE, ONE)));
+            .then(&Affine::scale(v3(seg_len, ONE, ONE)));
         b.push(Mesh::Cube, &seg, c, glow);
     }
 }
@@ -1006,15 +1041,13 @@ pub fn hud(
         .min_by_key(|c| w.map_delta(m.chest(), *c).len());
     let waypoint = match (w.objective_point(), nearest) {
         (Some(p), _) => {
-            let staged = w.mission.as_ref().is_some_and(|mi| mi.staged());
-            Some(pointer(
-                vp,
-                cam,
-                drawn(w, p),
-                css_w,
-                css_h,
-                if staged { "wp_objective" } else { "wp_checkpoint" },
-            ))
+            let mi = w.mission.as_ref();
+            let label = match mi.and_then(|mi| mi.course.get(m.course_next)) {
+                _ if mi.is_some_and(|mi| mi.staged()) => "wp_objective",
+                Some(g) => g.kind.label(),
+                None => "wp_checkpoint",
+            };
+            Some(pointer(vp, cam, drawn(w, p), css_w, css_h, label))
         }
         (None, Some(p)) if w.mission.is_some() => {
             Some(pointer(vp, cam, drawn(w, p), css_w, css_h, "wp_target"))
